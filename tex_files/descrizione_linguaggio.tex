@@ -1,0 +1,122 @@
+\documentclass[11pt,a4paper,italian]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{babel}
+\usepackage{color, soul}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+\title{Descrizione del linguaggio SBF}
+
+% Nome del linguaggio.
+\newcommand{\SBF}{\textbf{SBF}}
+
+% Token
+\newcommand{\token}[1]{\langle \mathit{#1} \rangle }
+
+% Parole riservate
+\newcommand{\False}{\texttt{False}}
+\newcommand{\True}{\texttt{True}}
+\newcommand{\If}{\texttt{if}}
+\newcommand{\Else}{\texttt{else}}
+\newcommand{\Do}{\texttt{do}}
+\newcommand{\While}{\texttt{while}}
+\newcommand{\Def}{\texttt{def}}
+\newcommand{\Return}{\texttt{return}}
+\newcommand{\Val}{\texttt{val}}
+\newcommand{\Var}{\texttt{var}}
+
+\begin{document}
+	\maketitle
+	
+	\section{Struttura lessicale di \SBF}
+	\subsection*{Parole riservate}
+	Le parole riservate in \SBF sono le seguenti alfanumeriche
+	\begin{equation}
+	\False,\ \True,\ \If,\ \Else,\ \Do,\ \While,\ \Def,\ \Return,\ \Val,\ \Var
+	\end{equation}
+	\hl{andrebbero ordinate}
+	e i seguenti simboli
+	\begin{equation}
+	\texttt{\_},\ \texttt{:},\ \texttt{=},\ \texttt{=>},\ \texttt{<-},\ \texttt{<:},\ \texttt{<\%},\ \texttt{>:},\ \texttt{\#},\ \texttt{@}
+	\end{equation}
+	\hl{non serviranno tutti}
+	
+	\subsection*{Identificatori}
+	Un identificatore $\token{Ident}$ è uno dei seguenti:
+	\begin{enumerate}
+		\item una lettera o il carattere '\_' seguiti da una sequenza arbitraria di lettere, cifre e del carattere '\_';
+		\item una sequenza di uno o più operatori (ad esempio '+', ':', '?'). Il simbolo '\$' è escluso;
+		\item identificatori del primo tipo, seguiti da '\_' e da un un identificatore del secondo tipo;
+		\item una stringa arbitraria racchiusa fra back-quotes (ad esempio `def`).
+	\end{enumerate}
+	Sono escluse le parole riservate.
+	
+	\hl{Ci sarebbe la distinzione fra identificatori di costante e non.}
+	
+	\subsection*{Caratteri di ritorno a capo}
+	Nel linguaggio \SBF\ le istruzioni possono terminare con ';' oppure '\textbackslash n'. 
+	\begin{equation*}
+	\token{End} ::= \texttt{;}\ |\ \token{NewLine}
+	\end{equation*}
+	
+	Il carattere di ritorno a capo '\textbackslash n' è sintatticamente significativo, e corrisponde a un token $\token{NewLine}$ quando le seguenti condizioni sono soddisfatte:
+	\begin{itemize}
+		\item il token immediatamente precedente può terminare una istruzione;
+		\item il token immediatamente successivo può iniziare una istruzione;
+		\item il carattere appare in una regione dove il new line è abilitato.
+	\end{itemize}
+	\hl{Complicate da spiegare, sono scritte qua. }
+	\url{https://scala-lang.org/files/archive/spec/2.13/01-lexical-syntax.html#identifiers}
+	
+	\subsection*{Letterali}
+	Ci sono letterali per numeri interi, numeri in virgola mobile, singoli caratteri, booleani, stringhe. Essi seguono le convenzioni della maggior parte dei linguaggi di programmazione.
+	\begin{align*}
+	\token{Literal} ::=
+	& \token{Int}\\
+	& \token{Float}\\
+	& \token{Char}\\
+	& \token{Boolean}\\
+	& \token{String}
+	\end{align*}
+	
+	\subsection*{Caratteri di spaziatura e commenti}
+	I token possono essere separati da caratteri di spaziatura o commenti.
+	
+	I commenti sono di due tipi:
+	\begin{itemize}
+		\item i commenti di una riga sono sequenze di caratteri che iniziano con \verb$\\$ e finiscono al termine della riga;
+		\item i commenti multi-riga sono sequenze di caratteri che iniziano con \verb$/*$ e terminano con \verb$*/$. Possono essere annidati, ma in modo bilanciato. Ad esempio \verb$/*commento*/*/$ non è un commento valido.
+	\end{itemize}
+	
+	\hl{Permettiamo le trailing commas? In caso va detto qua in una sottosezione che non diventano token.}
+	
+	\section{Struttura sintattica di \SBF}
+	\begin{itemize}
+	\item Un \emph{programma} è una sequenza di dichiarazioni.
+	
+	\item Una \emph{dichiarazione} ha una delle seguenti forme:
+	\begin{itemize}
+		\item \emph{Dichiarazione di variabili.} \hl{Descrizione}
+		\item \emph{Dichiarazione di funzioni/procedure.} \hl{Descrizione}
+	\end{itemize}
+
+	\item Un \emph{blocco} ha la forma
+	\begin{align*}
+	\token{Block} ::=\ &\texttt{\{} \token{Stmts}\ \token{Expr} \texttt{\}}\\
+	|\ & \texttt{\{} \token{Stmts} \texttt{\}}
+	\end{align*}
+	Il primo elemento $\token{Stmts}$ è una sequenza, eventualmente vuota, di istruzioni.
+	
+	\item Una \emph{istruzione} ha la forma
+	\begin{align*}
+	\token{Stmt} ::= \ & \token{Block}\\
+	| \ & \token{Ident}\ \texttt{(} \ \token{RExprList}\ \texttt{)}
+	\end{align*}
+	
+	\end{itemize}
+	
+\end{document}
