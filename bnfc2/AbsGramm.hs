@@ -5,6 +5,10 @@ module AbsGramm where
 
 
 data Loc = Loc { line, column :: Int }
+  deriving (Eq, Ord, Read)
+
+instance Show Loc where
+  show (Loc line column) = show "(linea: " ++ show line ++ ", colonna: " ++ show column ++ " )"
 type Ident = String
 
 newtype Id = Id (Loc,Ident)
