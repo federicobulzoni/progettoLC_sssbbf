@@ -1,0 +1,64 @@
+-- Per avere liste non vuote c'è la parola nonempty: terminator nonempty Def "";
+-- Per ricordare la posizione di un token: position token Ident.
+entrypoints Program;
+position token Id (letter (letter | digit | '_')*);
+
+
+comment "//";
+comment "/*" "*/";
+
+
+Prog. Program ::= [Decl];
+terminator Decl "";
+
+DFunInLine. Decl ::= "def" Id [Args] ":" Type "=" Exp;
+
+DecVar. Decl ::= "var" Id ":" Type;
+DefVar. Decl ::= "var" Id ":" Type "=" Exp;
+
+separator Args "";
+terminator nonempty Args "";
+
+DArgs. Args ::= "(" [Arg] ")";
+
+separator  Arg ",";
+terminator Arg "";
+
+DArg. Arg ::= Id ":" Type;
+
+
+EAdd. Exp  ::= Exp  "+" Exp1 ;
+ESub. Exp  ::= Exp  "-" Exp1 ;
+EMul. Exp1 ::= Exp1 "*" Exp2 ;
+EDiv. Exp1 ::= Exp1 "/" Exp2 ;
+EInt. Exp2 ::= Integer ;
+EVar. Exp2 ::= Id;
+
+coercions Exp 2 ; 
+
+terminator Stm "";
+separator Stm ";";
+
+rules Type ::= "float" | "int";
+
+Decla. Stm ::= Decl;
+Expr. Stm ::= Exp;
+SBlock. Stm ::= Block;
+
+
+
+Assign. Stm ::= Id "=" Exp;
+DBlock. Block ::= "{" [Stm] "}" ;
+While. Stm ::= "while" "(" Exp ")" Stm ;
+If. Stm ::= "if" "(" Exp ")" Stm "else" Stm ;
+
+
+internal ETyped. Exp ::= "[" Exp ":" Type "]" ;
+
+
+
+
+
+
+
+
