@@ -1,0 +1,13 @@
+*~
+*.aux
+*.bak
+*.bbl
+*.blg
+*.chi
+*.chs.h
+*.fdb_latexmk
+*.fls
+*.hi
+*.log
+*.o
+
