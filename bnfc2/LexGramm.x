@@ -21,11 +21,10 @@ $i = [$l $d _ ']     -- identifier character
 $u = [. \n]          -- universal: any character
 
 @rsyms =    -- symbols and non-identifier-like reserved words
-   \: | \= | \( | \) | \, | \+ | \- | \* | \/ | \; | \{ | \}
+   \; | \: | \= | \( | \) | \, | \+ | \- | \/ | \{ | \}
 
 :-
 "//" [.]* ; -- Toss single line comments
-"/*" ([$u # \*] | \*+ [$u # [\* \/]])* ("*")+ "/" ;
 
 $white+ ;
 @rsyms
@@ -108,7 +107,7 @@ eitherResIdent tv s = treeFind resWords
                               | s == a = t
 
 resWords :: BTree
-resWords = b "=" 10 (b "," 5 (b "*" 3 (b ")" 2 (b "(" 1 N N) N) (b "+" 4 N N)) (b ":" 8 (b "/" 7 (b "-" 6 N N) N) (b ";" 9 N N))) (b "int" 15 (b "float" 13 (b "else" 12 (b "def" 11 N N) N) (b "if" 14 N N)) (b "{" 18 (b "while" 17 (b "var" 16 N N) N) (b "}" 19 N N)))
+resWords = b "def" 10 (b "-" 5 (b "+" 3 (b ")" 2 (b "(" 1 N N) N) (b "," 4 N N)) (b ";" 8 (b ":" 7 (b "/" 6 N N) N) (b "=" 9 N N))) (b "null" 15 (b "if" 13 (b "float" 12 (b "else" 11 N N) N) (b "int" 14 N N)) (b "{" 18 (b "while" 17 (b "var" 16 N N) N) (b "}" 19 N N)))
    where b s n = let bs = id s
                   in B bs (TS bs n)
 

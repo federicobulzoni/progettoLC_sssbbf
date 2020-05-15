@@ -6,99 +6,137 @@ import AbsGramm
 import ErrM
 import Environment
 import PrintGramm
+import Control.Monad.Writer
 
-type Result = Err Env
+typeCheck :: Program -> Writer [String] Program
 
-failure :: Show a => a -> Result
-failure x = Bad $ "Undefined case: " ++ show x
+-- data Program = Prog [Decl]
 
-typeCheck :: Program -> Err ()
-typeCheck (Prog decls) = checkDecls emptyEnv decls
+typeCheck (Prog decls) = do
+  res <- checkDecls decls emptyEnv
+  return (Prog res)
 
-checkDecls :: Env -> [Decl] -> Err ()
-checkDecls env [] = return ()
-checkDecls env (decl:decls) = do
- env' <- checkDecl env decl
- checkDecls env' decls
+checkDecls :: [Decl] -> Env -> Writer [String] [Decl]
+checkDecls [] env = return []
+checkDecls (decl:decls) env = do
+ (decl' , env') <-  checkDecl decl env
+ xs <- checkDecls decls env'
+ return (decl':xs)
 
-checkDecl :: Env -> Decl -> Err Env
-checkDecl env decl = case decl of
+checkDecl :: Decl -> Env -> Writer [String] (Decl, Env)
+checkDecl decl env = case decl of
   --  DecVar Id Type
-  DecVar id typ -> updateVar env id typ
+  DecVar id typ -> let x = updateVar env id typ in
+    case x of
+      Ok env' -> return (decl, env')
+      Bad msg -> do
+        tell [msg]
+        return (decl, env)
   --  DefVar Id Type Exp
-  DefVar id typ exp -> do 
-    env' <- updateVar env id typ
-    checkExp env' exp typ 
-    return env'
+  DefVar id typ exp -> let x = updateVar env id typ in
+    case x of
+      Ok env' -> do
+        -- Teniamo il vecchio env, perchè altrimenti si potrebbe usare nella parte destra della dichiarazione
+        -- la variabile che si sta istanziando.
+        texp <- checkExp exp typ env
+        return ((DefVar id typ texp), env')
+      Bad msg -> do
+        tell [msg]
+        return (decl, env)
+
+-- OK!!!
+checkExp :: Exp -> Type -> Env -> Writer [String] Exp
+checkExp exp typ env = do
+  typ' <- inferExp exp env
+  if typ' == Type_null
+    then
+      return (ETyped exp Type_null)
+    else 
+      if (checkExpAux typ typ')
+        then
+          return (ETyped exp typ)
+        else
+          do 
+            tell [printTree exp ++ " e' di tipo " ++ printTree typ' ++ ", ma il tipo aspettato e' " ++ printTree typ ++ "\n"]
+            return (ETyped exp Type_null)
 
 
-checkExp :: Env -> Exp -> Type -> Err ()
-checkExp env exp typ = do
-  typ' <- inferExp env exp
-  if typ' == typ
-    then return ()
-  else 
-   error $ printTree exp ++ " è di tipo " ++ printTree typ' 
-   ++ ", ma il tipo aspettato e' " ++ printTree typ ++ "\n"
+checkExpAux :: Type -> Type -> Bool
+checkExpAux typ typ'
+  | typ' == typ = True
+  | otherwise = False
 
-inferExp :: Env -> Exp -> Err Type
-inferExp env exp = case exp of
+-- OK!!!
+inferExp :: Exp -> Env -> Writer [String] Type
+inferExp exp env = case exp of
   EAdd exp1 exp2 -> do 
-    t1 <- inferExp env exp1
-    t2 <- inferExp env exp2
-    if t1 == t2
-      then 
-        return t1
-      else 
-        error $ "operatori di tipo diverso: " ++ 
-        printTree exp1 ++ " ha tipo: " ++ show t1 ++
-        ", " ++ printTree exp2 ++ " ha tipo: " ++ show t2
-        ++ ".\n"
+    -- Writer [String] Type
+    t1 <- inferExp exp1 env
+    t2 <- inferExp exp2 env
+
+    case (t1,t2) of
+      (_, Type_null) -> return Type_null
+      (Type_null, _) -> return Type_null
+      (x, y) -> if x == y
+        then 
+          return t1
+        else
+          do
+            tell ["operatori di tipo diverso: " ++ printTree exp1 ++ " ha tipo: " ++ show t1 ++ ", " ++ printTree exp2 ++ " ha tipo: " ++ show t2 ++ ".\n"]
+            return Type_null
   EInt n -> return Type_int
-  EVar id -> do
-    t1 <- lookupVar env id
-    return t1
+  EVar id -> let t1 = lookupVar env id in
+    case t1 of
+      Bad msg -> do
+        tell [msg]
+        return Type_null
+      Ok typ -> return typ
 
-  {-
+--Prog [DefVar (Id ((1,5),"x")) Type_int (EInt 3),DefVar (Id ((1,22),"y")) Type_int (EInt 3),DefVar (Id ((1,39),"z")) Type_int (EAdd (EVar (Id ((1,49),"x"))) (EVar (Id ((1,51),"y"))))]
 
-transId :: Id -> Result
-transId x = case x of
-  Id string -> failure x
 
-  
-transDecl :: Decl -> Result
-transDecl x = case x of
-  DFunInLine id argss type_ exp -> failure x
-  DFunBlock id argss type_ block -> failure x
-  DecVar id type_ -> failure x
-  DefVar id type_ exp -> failure x
-transArgs :: Args -> Result
-transArgs x = case x of
-  DArgs args -> failure x
-transArg :: Arg -> Result
-transArg x = case x of
-  DArg id type_ -> failure x
-transExp :: Exp -> Result
-transExp x = case x of
-  EAdd exp1 exp2 -> failure x
-  ESub exp1 exp2 -> failure x
-  EMul exp1 exp2 -> failure x
-  EDiv exp1 exp2 -> failure x
-  EInt integer -> failure x
-  EVar id -> failure x
-transType :: Type -> Result
-transType x = case x of
-  Type_float -> failure x
-  Type_int -> failure x
-transStm :: Stm -> Result
-transStm x = case x of
-  Decla decl -> failure x
-  Expr exp -> failure x
-  SBlock block -> failure x
-  Assign id exp -> failure x
-  While exp stm -> failure x
-  If exp stm1 stm2 -> failure x
-transBlock :: Block -> Result
-transBlock x = case x of
-  DBlock stms -> failure x
--}
+
+-- Tests:
+getEnv = do 
+  env1 <- updateVar emptyEnv (Id ((1,5),"x")) Type_int
+  updateVar env1 (Id ((1,22),"y")) Type_float
+
+
+test4 :: Writer [String] (Decl, Env)
+test4 = let x = getEnv
+  in
+    case x of
+      Ok env -> checkDecl (DefVar (Id ((1,5),"z")) Type_int (EAdd (EVar (Id ((1,49),"y"))) (EVar (Id ((1,51),"x"))))) env
+      Bad _ -> error $ "ciao"
+
+test5 = let x = getEnv
+  in 
+    case x of
+      Ok env -> checkDecl (DefVar (Id ((1,5),"x")) Type_int (EAdd (EVar (Id ((1,49),"y"))) (EVar (Id ((1,51),"x"))))) env
+      Bad _ -> error $ "ciao"
+
+
+test3 = let x = getEnv 
+  in
+    case x of
+      Ok env -> checkExp (EAdd (EVar (Id ((1,49),"y"))) (EVar (Id ((1,51),"x")))) Type_float env
+      Bad _ -> return (ETyped  (EVar (Id ((1,49),"crocs"))) Type_null)
+
+
+
+test2 = let x = getEnv
+  --updateVar (updateVar emptyEnv (Id ((1,5),"x")) Type_int) (Id ((1,22),"y")) Type_int
+  in 
+    case x of
+      Ok env -> inferExp (EAdd (EVar (Id ((1,49),"x"))) (EVar (Id ((1,51),"y")))) env
+      Bad msg -> return Type_int
+
+test = let x = updateVar emptyEnv (Id ((3,5), "y")) Type_int in
+  case x of
+    Ok env -> inferExp (EVar (Id ((1,2), "x"))) env
+    Bad msg -> return Type_int
+--updateVar emptyEnv (Id ((3,5), "x")) Type_int >>= inferExp (EVar (Id ((1,2), "x")))
+
+    
+
+

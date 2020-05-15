@@ -104,6 +104,9 @@ instance Print AbsGramm.Decl where
     AbsGramm.DecVar id type_ -> prPrec i 0 (concatD [doc (showString "var"), prt 0 id, doc (showString ":"), prt 0 type_])
     AbsGramm.DefVar id type_ exp -> prPrec i 0 (concatD [doc (showString "var"), prt 0 id, doc (showString ":"), prt 0 type_, doc (showString "="), prt 0 exp])
   prtList _ [] = concatD []
+  prtList _ [] = concatD []
+  prtList _ [x] = concatD [prt 0 x]
+  prtList _ (x:xs) = concatD [prt 0 x, doc (showString ";"), prt 0 xs]
   prtList _ (x:xs) = concatD [prt 0 x, prt 0 xs]
 
 instance Print [AbsGramm.Args] where
@@ -133,7 +136,7 @@ instance Print AbsGramm.Exp where
   prt i e = case e of
     AbsGramm.EAdd exp1 exp2 -> prPrec i 0 (concatD [prt 0 exp1, doc (showString "+"), prt 1 exp2])
     AbsGramm.ESub exp1 exp2 -> prPrec i 0 (concatD [prt 0 exp1, doc (showString "-"), prt 1 exp2])
-    AbsGramm.EMul exp1 exp2 -> prPrec i 1 (concatD [prt 1 exp1, doc (showString "*"), prt 2 exp2])
+    AbsGramm.EMul exp1 exp2 -> prPrec i 1 (concatD [prt 1 exp1, prt 2 exp2])
     AbsGramm.EDiv exp1 exp2 -> prPrec i 1 (concatD [prt 1 exp1, doc (showString "/"), prt 2 exp2])
     AbsGramm.EInt n -> prPrec i 2 (concatD [prt 0 n])
     AbsGramm.EVar id -> prPrec i 2 (concatD [prt 0 id])
@@ -146,6 +149,7 @@ instance Print AbsGramm.Type where
   prt i e = case e of
     AbsGramm.Type_float -> prPrec i 0 (concatD [doc (showString "float")])
     AbsGramm.Type_int -> prPrec i 0 (concatD [doc (showString "int")])
+    AbsGramm.Type_null -> prPrec i 0 (concatD [doc (showString "null")])
 
 instance Print AbsGramm.Stm where
   prt i e = case e of

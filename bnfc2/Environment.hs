@@ -38,10 +38,10 @@ lookupFun env (Id (loc, ident)) = case Map.lookup ident env of
 updateVar :: Env -> Id -> Type -> Err Env
 updateVar env (Id (loc, ident)) typ = case Map.lookup ident env of
 		Nothing -> return $ Map.insert ident (Variable loc typ) env
-		Just (Variable loc1 _) -> error $ "identificatore" ++ ident ++
+		Just (Variable loc1 _) -> Bad $ "identificatore" ++ ident ++
 			                   "usato in precedenza per una variabile in posizione" ++
 			                    show loc ++ ".\n"
-		Just (Function loc1 _ _) -> error $ "identificatore" ++ ident ++
+		Just (Function loc1 _ _) -> Bad $ "identificatore" ++ ident ++
 			                   "usato in precedenza per una funzione in posizione" ++
 			                    show loc ++ ".\n"
 		
@@ -50,10 +50,10 @@ updateFun :: Env -> Id -> ([Arg],Type) -> Err Env
 updateFun env (Id (loc, ident)) (args, typ) = 
 	case Map.lookup ident env of
 		Nothing -> return $ Map.insert ident (Function loc args typ) env
-		Just (Variable loc1 _) -> error $ "identificatore" ++ ident ++
+		Just (Variable loc1 _) -> Bad $ "identificatore" ++ ident ++
 			                   "usato in precedenza per una variabile in posizione" ++
 			                    show loc ++ ".\n"
-		Just (Function loc1 _ _) -> error $ "identificatore" ++ ident ++
+		Just (Function loc1 _ _) -> Bad $ "identificatore" ++ ident ++
 			                   "usato in precedenza per una funzione in posizione" ++
 			                    show loc ++ ".\n"
 

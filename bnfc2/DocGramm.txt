@@ -26,15 +26,15 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 
 The reserved words used in gramm are the following:
   | ``def`` | ``else`` | ``float`` | ``if``
-  | ``int`` | ``var`` | ``while`` |
+  | ``int`` | ``null`` | ``var`` | ``while``
 
 The symbols used in gramm are the following:
-  | : | = | ( | )
-  | , | + | - | *
-  | / | ; | { | }
+  | ; | : | = | (
+  | ) | , | + | -
+  | / | { | } |
 
 ===Comments===
-Single-line comments begin with //.Multiple-line comments are  enclosed with /* and */.
+Single-line comments begin with //.Multiple-line comments are  enclosed with / and /.
 
 ==The syntactic structure of gramm==
 Non-terminals are enclosed between < and >.
@@ -44,6 +44,9 @@ All other symbols are terminals.
 
   | //Program// | -> | //[Decl]//
   | //[Decl]// | -> | **eps**
+  |  |  **|**  | //Decl//
+  |  |  **|**  | //Decl// ``;`` //[Decl]//
+  |  |  **|**  | **eps**
   |  |  **|**  | //Decl// //[Decl]//
   | //Decl// | -> | ``def`` //Id// //[Args]// ``:`` //Type// ``=`` //Exp//
   |  |  **|**  | ``var`` //Id// ``:`` //Type//
@@ -62,7 +65,7 @@ All other symbols are terminals.
   | //Exp// | -> | //Exp// ``+`` //Exp1//
   |  |  **|**  | //Exp// ``-`` //Exp1//
   |  |  **|**  | //Exp1//
-  | //Exp1// | -> | //Exp1// ``*`` //Exp2//
+  | //Exp1// | -> | //Exp1// //Exp2//
   |  |  **|**  | //Exp1// ``/`` //Exp2//
   |  |  **|**  | //Exp2//
   | //Exp2// | -> | //Integer//
@@ -75,6 +78,7 @@ All other symbols are terminals.
   |  |  **|**  | //Stm// ``;`` //[Stm]//
   | //Type// | -> | ``float``
   |  |  **|**  | ``int``
+  |  |  **|**  | ``null``
   | //Stm// | -> | //Decl//
   |  |  **|**  | //Exp//
   |  |  **|**  | //Block//

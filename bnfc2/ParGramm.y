@@ -15,19 +15,19 @@ import ErrM
 %token
   '(' { PT _ (TS _ 1) }
   ')' { PT _ (TS _ 2) }
-  '*' { PT _ (TS _ 3) }
-  '+' { PT _ (TS _ 4) }
-  ',' { PT _ (TS _ 5) }
-  '-' { PT _ (TS _ 6) }
-  '/' { PT _ (TS _ 7) }
-  ':' { PT _ (TS _ 8) }
-  ';' { PT _ (TS _ 9) }
-  '=' { PT _ (TS _ 10) }
-  'def' { PT _ (TS _ 11) }
-  'else' { PT _ (TS _ 12) }
-  'float' { PT _ (TS _ 13) }
-  'if' { PT _ (TS _ 14) }
-  'int' { PT _ (TS _ 15) }
+  '+' { PT _ (TS _ 3) }
+  ',' { PT _ (TS _ 4) }
+  '-' { PT _ (TS _ 5) }
+  '/' { PT _ (TS _ 6) }
+  ':' { PT _ (TS _ 7) }
+  ';' { PT _ (TS _ 8) }
+  '=' { PT _ (TS _ 9) }
+  'def' { PT _ (TS _ 10) }
+  'else' { PT _ (TS _ 11) }
+  'float' { PT _ (TS _ 12) }
+  'if' { PT _ (TS _ 13) }
+  'int' { PT _ (TS _ 14) }
+  'null' { PT _ (TS _ 15) }
   'var' { PT _ (TS _ 16) }
   'while' { PT _ (TS _ 17) }
   '{' { PT _ (TS _ 18) }
@@ -44,9 +44,13 @@ Id :: { Id}
 Id  : L_Id { Id (mkPosToken $1)}
 
 Program :: { Program }
-Program : ListDecl { AbsGramm.Prog (reverse $1) }
+Program : ListDecl { AbsGramm.Prog $1 }
 ListDecl :: { [Decl] }
-ListDecl : {- empty -} { [] } | ListDecl Decl { flip (:) $1 $2 }
+ListDecl : {- empty -} { [] }
+         | Decl { (:[]) $1 }
+         | Decl ';' ListDecl { (:) $1 $3 }
+         | {- empty -} { [] }
+         | Decl ListDecl { (:) $1 $2 }
 Decl :: { Decl }
 Decl : 'def' Id ListArgs ':' Type '=' Exp { AbsGramm.DFunInLine $2 $3 $5 $7 }
      | 'var' Id ':' Type { AbsGramm.DecVar $2 $4 }
@@ -71,7 +75,7 @@ Exp : Exp '+' Exp1 { AbsGramm.EAdd $1 $3 }
     | Exp '-' Exp1 { AbsGramm.ESub $1 $3 }
     | Exp1 { $1 }
 Exp1 :: { Exp }
-Exp1 : Exp1 '*' Exp2 { AbsGramm.EMul $1 $3 }
+Exp1 : Exp1 Exp2 { AbsGramm.EMul $1 $2 }
      | Exp1 '/' Exp2 { AbsGramm.EDiv $1 $3 }
      | Exp2 { $1 }
 Exp2 :: { Exp }
@@ -87,6 +91,7 @@ ListStm : {- empty -} { [] }
 Type :: { Type }
 Type : 'float' { AbsGramm.Type_float }
      | 'int' { AbsGramm.Type_int }
+     | 'null' { AbsGramm.Type_null }
 Stm :: { Stm }
 Stm : Decl { AbsGramm.Decla $1 }
     | Exp { AbsGramm.Expr $1 }

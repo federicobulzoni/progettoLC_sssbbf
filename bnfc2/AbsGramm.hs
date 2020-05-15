@@ -3,14 +3,8 @@
 
 module AbsGramm where
 
-
-data Loc = Loc { line, column :: Int }
-  deriving (Eq, Ord, Read)
-
-instance Show Loc where
-  show (Loc line column) = show "(linea: " ++ show line ++ ", colonna: " ++ show column ++ " )"
+type Loc = (Int, Int)
 type Ident = String
-
 newtype Id = Id (Loc,Ident)
   deriving (Eq, Ord, Show, Read)
 
@@ -39,7 +33,7 @@ data Exp
     | ETyped Exp Type
   deriving (Eq, Ord, Show, Read)
 
-data Type = Type_float | Type_int
+data Type = Type_float | Type_int | Type_null
   deriving (Eq, Ord, Show, Read)
 
 data Stm

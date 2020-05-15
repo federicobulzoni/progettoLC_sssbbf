@@ -39,6 +39,7 @@ transType :: Type -> Result
 transType x = case x of
   Type_float -> failure x
   Type_int -> failure x
+  Type_null -> failure x
 transStm :: Stm -> Result
 transStm x = case x of
   Decla decl -> failure x
