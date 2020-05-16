@@ -9,43 +9,79 @@ type Result = Err String
 failure :: Show a => a -> Result
 failure x = Bad $ "Undefined case: " ++ show x
 
-transId :: Id -> Result
-transId x = case x of
-  Id string -> failure x
+transPIdent :: PIdent -> Result
+transPIdent x = case x of
+  PIdent string -> failure x
+transPFloat :: PFloat -> Result
+transPFloat x = case x of
+  PFloat string -> failure x
+transPInteger :: PInteger -> Result
+transPInteger x = case x of
+  PInteger string -> failure x
+transPString :: PString -> Result
+transPString x = case x of
+  PString string -> failure x
+transPChar :: PChar -> Result
+transPChar x = case x of
+  PChar string -> failure x
 transProgram :: Program -> Result
 transProgram x = case x of
   Prog decls -> failure x
 transDecl :: Decl -> Result
 transDecl x = case x of
-  DFunInLine id argss type_ exp -> failure x
-  DecVar id type_ -> failure x
-  DefVar id type_ exp -> failure x
+  DFunInLine pident argss type_ exp -> failure x
+  DecVar pident type_ -> failure x
+  DefVar pident type_ exp -> failure x
 transArgs :: Args -> Result
 transArgs x = case x of
   DArgs args -> failure x
 transArg :: Arg -> Result
 transArg x = case x of
-  DArg id type_ -> failure x
+  DArg pident type_ -> failure x
+transOp :: Op -> Result
+transOp x = case x of
+  Or -> failure x
+  And -> failure x
+  Less -> failure x
+  LessEq -> failure x
+  Greater -> failure x
+  GreterEq -> failure x
+  Equal -> failure x
+  NotEq -> failure x
+  Plus -> failure x
+  Minus -> failure x
+  Prod -> failure x
+  Div -> failure x
+  Mod -> failure x
+  Pow -> failure x
 transExp :: Exp -> Result
 transExp x = case x of
-  EAdd exp1 exp2 -> failure x
-  ESub exp1 exp2 -> failure x
-  EMul exp1 exp2 -> failure x
-  EDiv exp1 exp2 -> failure x
-  EInt integer -> failure x
-  EVar id -> failure x
+  ENot exp -> failure x
+  ENeg exp -> failure x
+  EInt pinteger -> failure x
+  EFloat pfloat -> failure x
+  EVar pident -> failure x
+  EChar pchar -> failure x
+  EString pstring -> failure x
+  ETrue -> failure x
+  EFalse -> failure x
+  EOp exp1 op exp2 -> failure x
   ETyped exp type_ -> failure x
+  EVarTyped pident type_ pinteger1 pinteger2 -> failure x
 transType :: Type -> Result
 transType x = case x of
   Type_float -> failure x
   Type_int -> failure x
+  Type_char -> failure x
+  Type_string -> failure x
+  Type_bool -> failure x
   Type_null -> failure x
 transStm :: Stm -> Result
 transStm x = case x of
   Decla decl -> failure x
   Expr exp -> failure x
   SBlock block -> failure x
-  Assign id exp -> failure x
+  Assign pident exp -> failure x
   While exp stm -> failure x
   If exp stm1 stm2 -> failure x
 transBlock :: Block -> Result

@@ -3,44 +3,82 @@
 
 module AbsGramm where
 
-type Loc = (Int, Int)
-type Ident = String
-newtype Id = Id (Loc,Ident)
+newtype PIdent = PIdent ((Int,Int),String)
+  deriving (Eq, Ord, Show, Read)
+
+newtype PFloat = PFloat ((Int,Int),String)
+  deriving (Eq, Ord, Show, Read)
+
+newtype PInteger = PInteger ((Int,Int),String)
+  deriving (Eq, Ord, Show, Read)
+
+newtype PString = PString ((Int,Int),String)
+  deriving (Eq, Ord, Show, Read)
+
+newtype PChar = PChar ((Int,Int),String)
   deriving (Eq, Ord, Show, Read)
 
 data Program = Prog [Decl]
   deriving (Eq, Ord, Show, Read)
 
 data Decl
-    = DFunInLine Id [Args] Type Exp
-    | DecVar Id Type
-    | DefVar Id Type Exp
+    = DFunInLine PIdent [Args] Type Exp
+    | DecVar PIdent Type
+    | DefVar PIdent Type Exp
   deriving (Eq, Ord, Show, Read)
 
 data Args = DArgs [Arg]
   deriving (Eq, Ord, Show, Read)
 
-data Arg = DArg Id Type
+data Arg = DArg PIdent Type
+  deriving (Eq, Ord, Show, Read)
+
+data Op
+    = Or
+    | And
+    | Less
+    | LessEq
+    | Greater
+    | GreterEq
+    | Equal
+    | NotEq
+    | Plus
+    | Minus
+    | Prod
+    | Div
+    | Mod
+    | Pow
   deriving (Eq, Ord, Show, Read)
 
 data Exp
-    = EAdd Exp Exp
-    | ESub Exp Exp
-    | EMul Exp Exp
-    | EDiv Exp Exp
-    | EInt Integer
-    | EVar Id
+    = ENot Exp
+    | ENeg Exp
+    | EInt PInteger
+    | EFloat PFloat
+    | EVar PIdent
+    | EChar PChar
+    | EString PString
+    | ETrue
+    | EFalse
+    | EOp Exp Op Exp
     | ETyped Exp Type
+    | EVarTyped PIdent Type PInteger PInteger
   deriving (Eq, Ord, Show, Read)
 
-data Type = Type_float | Type_int | Type_null
+data Type
+    = Type_float
+    | Type_int
+    | Type_char
+    | Type_string
+    | Type_bool
+    | Type_null
   deriving (Eq, Ord, Show, Read)
 
 data Stm
     = Decla Decl
     | Expr Exp
     | SBlock Block
-    | Assign Id Exp
+    | Assign PIdent Exp
     | While Exp Stm
     | If Exp Stm Stm
   deriving (Eq, Ord, Show, Read)

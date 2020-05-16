@@ -13,35 +13,64 @@ import ErrM
 %monad { Err } { thenM } { returnM }
 %tokentype {Token}
 %token
-  '(' { PT _ (TS _ 1) }
-  ')' { PT _ (TS _ 2) }
-  '+' { PT _ (TS _ 3) }
-  ',' { PT _ (TS _ 4) }
-  '-' { PT _ (TS _ 5) }
-  '/' { PT _ (TS _ 6) }
-  ':' { PT _ (TS _ 7) }
-  ';' { PT _ (TS _ 8) }
-  '=' { PT _ (TS _ 9) }
-  'def' { PT _ (TS _ 10) }
-  'else' { PT _ (TS _ 11) }
-  'float' { PT _ (TS _ 12) }
-  'if' { PT _ (TS _ 13) }
-  'int' { PT _ (TS _ 14) }
-  'null' { PT _ (TS _ 15) }
-  'var' { PT _ (TS _ 16) }
-  'while' { PT _ (TS _ 17) }
-  '{' { PT _ (TS _ 18) }
-  '}' { PT _ (TS _ 19) }
-  L_integ  { PT _ (TI $$) }
-  L_Id { PT _ (T_Id _) }
+  '!' { PT _ (TS _ 1) }
+  '!=' { PT _ (TS _ 2) }
+  '%' { PT _ (TS _ 3) }
+  '&&' { PT _ (TS _ 4) }
+  '(' { PT _ (TS _ 5) }
+  ')' { PT _ (TS _ 6) }
+  '*' { PT _ (TS _ 7) }
+  '+' { PT _ (TS _ 8) }
+  ',' { PT _ (TS _ 9) }
+  '-' { PT _ (TS _ 10) }
+  '/' { PT _ (TS _ 11) }
+  ':' { PT _ (TS _ 12) }
+  ';' { PT _ (TS _ 13) }
+  '<' { PT _ (TS _ 14) }
+  '<=' { PT _ (TS _ 15) }
+  '=' { PT _ (TS _ 16) }
+  '==' { PT _ (TS _ 17) }
+  '>' { PT _ (TS _ 18) }
+  '>=' { PT _ (TS _ 19) }
+  '^' { PT _ (TS _ 20) }
+  'bool' { PT _ (TS _ 21) }
+  'char' { PT _ (TS _ 22) }
+  'def' { PT _ (TS _ 23) }
+  'else' { PT _ (TS _ 24) }
+  'false' { PT _ (TS _ 25) }
+  'float' { PT _ (TS _ 26) }
+  'if' { PT _ (TS _ 27) }
+  'int' { PT _ (TS _ 28) }
+  'null' { PT _ (TS _ 29) }
+  'string' { PT _ (TS _ 30) }
+  'true' { PT _ (TS _ 31) }
+  'var' { PT _ (TS _ 32) }
+  'while' { PT _ (TS _ 33) }
+  '{' { PT _ (TS _ 34) }
+  '||' { PT _ (TS _ 35) }
+  '}' { PT _ (TS _ 36) }
+  L_PIdent { PT _ (T_PIdent _) }
+  L_PFloat { PT _ (T_PFloat _) }
+  L_PInteger { PT _ (T_PInteger _) }
+  L_PString { PT _ (T_PString _) }
+  L_PChar { PT _ (T_PChar _) }
 
 %%
 
-Integer :: { Integer }
-Integer  : L_integ  { (read ( $1)) :: Integer }
+PIdent :: { PIdent}
+PIdent  : L_PIdent { PIdent (mkPosToken $1)}
 
-Id :: { Id}
-Id  : L_Id { Id (mkPosToken $1)}
+PFloat :: { PFloat}
+PFloat  : L_PFloat { PFloat (mkPosToken $1)}
+
+PInteger :: { PInteger}
+PInteger  : L_PInteger { PInteger (mkPosToken $1)}
+
+PString :: { PString}
+PString  : L_PString { PString (mkPosToken $1)}
+
+PChar :: { PChar}
+PChar  : L_PChar { PChar (mkPosToken $1)}
 
 Program :: { Program }
 Program : ListDecl { AbsGramm.Prog $1 }
@@ -52,9 +81,9 @@ ListDecl : {- empty -} { [] }
          | {- empty -} { [] }
          | Decl ListDecl { (:) $1 $2 }
 Decl :: { Decl }
-Decl : 'def' Id ListArgs ':' Type '=' Exp { AbsGramm.DFunInLine $2 $3 $5 $7 }
-     | 'var' Id ':' Type { AbsGramm.DecVar $2 $4 }
-     | 'var' Id ':' Type '=' Exp { AbsGramm.DefVar $2 $4 $6 }
+Decl : 'def' PIdent ListArgs ':' Type '=' Exp { AbsGramm.DFunInLine $2 $3 $5 $7 }
+     | 'var' PIdent ':' Type { AbsGramm.DecVar $2 $4 }
+     | 'var' PIdent ':' Type '=' Exp { AbsGramm.DefVar $2 $4 $6 }
 ListArgs :: { [Args] }
 ListArgs : {- empty -} { [] }
          | Args ListArgs { (:) $1 $2 }
@@ -69,18 +98,58 @@ ListArg : {- empty -} { [] }
         | {- empty -} { [] }
         | Arg ListArg { (:) $1 $2 }
 Arg :: { Arg }
-Arg : Id ':' Type { AbsGramm.DArg $1 $3 }
+Arg : PIdent ':' Type { AbsGramm.DArg $1 $3 }
+Op :: { Op }
+Op : Op1 { $1 } | Op2 { $1 } | Op1 { $1 }
+Op1 :: { Op }
+Op1 : '||' { AbsGramm.Or } | Op2 { $1 }
+Op2 :: { Op }
+Op2 : '&&' { AbsGramm.And } | Op3 { $1 }
+Op4 :: { Op }
+Op4 : '<' { AbsGramm.Less }
+    | '<=' { AbsGramm.LessEq }
+    | '>' { AbsGramm.Greater }
+    | '>=' { AbsGramm.GreterEq }
+    | '==' { AbsGramm.Equal }
+    | '!=' { AbsGramm.NotEq }
+    | Op5 { $1 }
+Op5 :: { Op }
+Op5 : '+' { AbsGramm.Plus } | '-' { AbsGramm.Minus } | Op6 { $1 }
+Op6 :: { Op }
+Op6 : '*' { AbsGramm.Prod }
+    | '/' { AbsGramm.Div }
+    | '%' { AbsGramm.Mod }
+    | Op7 { $1 }
+Op7 :: { Op }
+Op7 : '^' { AbsGramm.Pow } | Op8 { $1 }
+Op3 :: { Op }
+Op3 : Op4 { $1 }
+Op8 :: { Op }
+Op8 : '(' Op ')' { $2 }
 Exp :: { Exp }
-Exp : Exp '+' Exp1 { AbsGramm.EAdd $1 $3 }
-    | Exp '-' Exp1 { AbsGramm.ESub $1 $3 }
-    | Exp1 { $1 }
+Exp : Exp Op1 Exp1 { op_ $1 $2 $3 } | Exp1 { $1 }
 Exp1 :: { Exp }
-Exp1 : Exp1 Exp2 { AbsGramm.EMul $1 $2 }
-     | Exp1 '/' Exp2 { AbsGramm.EDiv $1 $3 }
-     | Exp2 { $1 }
+Exp1 : Exp1 Op2 Exp2 { op_ $1 $2 $3 } | Exp2 { $1 }
 Exp2 :: { Exp }
-Exp2 : Integer { AbsGramm.EInt $1 }
-     | Id { AbsGramm.EVar $1 }
+Exp2 : '!' Exp2 { AbsGramm.ENot $2 } | Exp3 { $1 }
+Exp3 :: { Exp }
+Exp3 : Exp4 Op4 Exp4 { op_ $1 $2 $3 } | Exp4 { $1 }
+Exp4 :: { Exp }
+Exp4 : Exp4 Op5 Exp5 { op_ $1 $2 $3 } | Exp5 { $1 }
+Exp5 :: { Exp }
+Exp5 : Exp5 Op6 Exp6 { op_ $1 $2 $3 } | Exp6 { $1 }
+Exp6 :: { Exp }
+Exp6 : Exp7 Op7 Exp6 { op_ $1 $2 $3 } | Exp7 { $1 }
+Exp7 :: { Exp }
+Exp7 : '-' Exp8 { AbsGramm.ENeg $2 } | Exp8 { $1 }
+Exp8 :: { Exp }
+Exp8 : PInteger { AbsGramm.EInt $1 }
+     | PFloat { AbsGramm.EFloat $1 }
+     | PIdent { AbsGramm.EVar $1 }
+     | PChar { AbsGramm.EChar $1 }
+     | PString { AbsGramm.EString $1 }
+     | 'true' { AbsGramm.ETrue }
+     | 'false' { AbsGramm.EFalse }
      | '(' Exp ')' { $2 }
 ListStm :: { [Stm] }
 ListStm : {- empty -} { [] }
@@ -91,12 +160,15 @@ ListStm : {- empty -} { [] }
 Type :: { Type }
 Type : 'float' { AbsGramm.Type_float }
      | 'int' { AbsGramm.Type_int }
+     | 'char' { AbsGramm.Type_char }
+     | 'string' { AbsGramm.Type_string }
+     | 'bool' { AbsGramm.Type_bool }
      | 'null' { AbsGramm.Type_null }
 Stm :: { Stm }
 Stm : Decl { AbsGramm.Decla $1 }
     | Exp { AbsGramm.Expr $1 }
     | Block { AbsGramm.SBlock $1 }
-    | Id '=' Exp { AbsGramm.Assign $1 $3 }
+    | PIdent '=' Exp { AbsGramm.Assign $1 $3 }
     | 'while' '(' Exp ')' Stm { AbsGramm.While $3 $5 }
     | 'if' '(' Exp ')' Stm 'else' Stm { AbsGramm.If $3 $5 $7 }
 Block :: { Block }
@@ -118,5 +190,6 @@ happyError ts =
     t:_     -> " before `" ++ id(prToken t) ++ "'"
 
 myLexer = tokens
+op_ e1_ o_ e2_ = EOp e1_ o_ e2_
 }
 

@@ -88,8 +88,20 @@ instance Print Integer where
 instance Print Double where
   prt _ x = doc (shows x)
 
-instance Print AbsGramm.Id where
-  prt _ (AbsGramm.Id (_,i)) = doc (showString i)
+instance Print AbsGramm.PIdent where
+  prt _ (AbsGramm.PIdent (_,i)) = doc (showString i)
+
+instance Print AbsGramm.PFloat where
+  prt _ (AbsGramm.PFloat (_,i)) = doc (showString i)
+
+instance Print AbsGramm.PInteger where
+  prt _ (AbsGramm.PInteger (_,i)) = doc (showString i)
+
+instance Print AbsGramm.PString where
+  prt _ (AbsGramm.PString (_,i)) = doc (showString i)
+
+instance Print AbsGramm.PChar where
+  prt _ (AbsGramm.PChar (_,i)) = doc (showString i)
 
 instance Print AbsGramm.Program where
   prt i e = case e of
@@ -100,9 +112,9 @@ instance Print [AbsGramm.Decl] where
 
 instance Print AbsGramm.Decl where
   prt i e = case e of
-    AbsGramm.DFunInLine id argss type_ exp -> prPrec i 0 (concatD [doc (showString "def"), prt 0 id, prt 0 argss, doc (showString ":"), prt 0 type_, doc (showString "="), prt 0 exp])
-    AbsGramm.DecVar id type_ -> prPrec i 0 (concatD [doc (showString "var"), prt 0 id, doc (showString ":"), prt 0 type_])
-    AbsGramm.DefVar id type_ exp -> prPrec i 0 (concatD [doc (showString "var"), prt 0 id, doc (showString ":"), prt 0 type_, doc (showString "="), prt 0 exp])
+    AbsGramm.DFunInLine pident argss type_ exp -> prPrec i 0 (concatD [doc (showString "def"), prt 0 pident, prt 0 argss, doc (showString ":"), prt 0 type_, doc (showString "="), prt 0 exp])
+    AbsGramm.DecVar pident type_ -> prPrec i 0 (concatD [doc (showString "var"), prt 0 pident, doc (showString ":"), prt 0 type_])
+    AbsGramm.DefVar pident type_ exp -> prPrec i 0 (concatD [doc (showString "var"), prt 0 pident, doc (showString ":"), prt 0 type_, doc (showString "="), prt 0 exp])
   prtList _ [] = concatD []
   prtList _ [] = concatD []
   prtList _ [x] = concatD [prt 0 x]
@@ -125,22 +137,44 @@ instance Print [AbsGramm.Arg] where
 
 instance Print AbsGramm.Arg where
   prt i e = case e of
-    AbsGramm.DArg id type_ -> prPrec i 0 (concatD [prt 0 id, doc (showString ":"), prt 0 type_])
+    AbsGramm.DArg pident type_ -> prPrec i 0 (concatD [prt 0 pident, doc (showString ":"), prt 0 type_])
   prtList _ [] = concatD []
   prtList _ [] = concatD []
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
   prtList _ (x:xs) = concatD [prt 0 x, prt 0 xs]
 
+instance Print AbsGramm.Op where
+  prt i e = case e of
+    AbsGramm.Or -> prPrec i 1 (concatD [doc (showString "||")])
+    AbsGramm.And -> prPrec i 2 (concatD [doc (showString "&&")])
+    AbsGramm.Less -> prPrec i 4 (concatD [doc (showString "<")])
+    AbsGramm.LessEq -> prPrec i 4 (concatD [doc (showString "<=")])
+    AbsGramm.Greater -> prPrec i 4 (concatD [doc (showString ">")])
+    AbsGramm.GreterEq -> prPrec i 4 (concatD [doc (showString ">=")])
+    AbsGramm.Equal -> prPrec i 4 (concatD [doc (showString "==")])
+    AbsGramm.NotEq -> prPrec i 4 (concatD [doc (showString "!=")])
+    AbsGramm.Plus -> prPrec i 5 (concatD [doc (showString "+")])
+    AbsGramm.Minus -> prPrec i 5 (concatD [doc (showString "-")])
+    AbsGramm.Prod -> prPrec i 6 (concatD [doc (showString "*")])
+    AbsGramm.Div -> prPrec i 6 (concatD [doc (showString "/")])
+    AbsGramm.Mod -> prPrec i 6 (concatD [doc (showString "%")])
+    AbsGramm.Pow -> prPrec i 7 (concatD [doc (showString "^")])
+
 instance Print AbsGramm.Exp where
   prt i e = case e of
-    AbsGramm.EAdd exp1 exp2 -> prPrec i 0 (concatD [prt 0 exp1, doc (showString "+"), prt 1 exp2])
-    AbsGramm.ESub exp1 exp2 -> prPrec i 0 (concatD [prt 0 exp1, doc (showString "-"), prt 1 exp2])
-    AbsGramm.EMul exp1 exp2 -> prPrec i 1 (concatD [prt 1 exp1, prt 2 exp2])
-    AbsGramm.EDiv exp1 exp2 -> prPrec i 1 (concatD [prt 1 exp1, doc (showString "/"), prt 2 exp2])
-    AbsGramm.EInt n -> prPrec i 2 (concatD [prt 0 n])
-    AbsGramm.EVar id -> prPrec i 2 (concatD [prt 0 id])
+    AbsGramm.ENot exp -> prPrec i 2 (concatD [doc (showString "!"), prt 2 exp])
+    AbsGramm.ENeg exp -> prPrec i 7 (concatD [doc (showString "-"), prt 8 exp])
+    AbsGramm.EInt pinteger -> prPrec i 8 (concatD [prt 0 pinteger])
+    AbsGramm.EFloat pfloat -> prPrec i 8 (concatD [prt 0 pfloat])
+    AbsGramm.EVar pident -> prPrec i 8 (concatD [prt 0 pident])
+    AbsGramm.EChar pchar -> prPrec i 8 (concatD [prt 0 pchar])
+    AbsGramm.EString pstring -> prPrec i 8 (concatD [prt 0 pstring])
+    AbsGramm.ETrue -> prPrec i 8 (concatD [doc (showString "true")])
+    AbsGramm.EFalse -> prPrec i 8 (concatD [doc (showString "false")])
+    AbsGramm.EOp exp1 op exp2 -> prPrec i 0 (concatD [prt 8 exp1, prt 0 op, prt 8 exp2])
     AbsGramm.ETyped exp type_ -> prPrec i 0 (concatD [doc (showString "["), prt 0 exp, doc (showString ":"), prt 0 type_, doc (showString "]")])
+    AbsGramm.EVarTyped pident type_ pinteger1 pinteger2 -> prPrec i 2 (concatD [doc (showString "["), prt 0 pident, doc (showString ":"), prt 0 type_, doc (showString ","), doc (showString "("), prt 0 pinteger1, doc (showString ","), prt 0 pinteger2, doc (showString ")"), doc (showString "]")])
 
 instance Print [AbsGramm.Stm] where
   prt = prtList
@@ -149,6 +183,9 @@ instance Print AbsGramm.Type where
   prt i e = case e of
     AbsGramm.Type_float -> prPrec i 0 (concatD [doc (showString "float")])
     AbsGramm.Type_int -> prPrec i 0 (concatD [doc (showString "int")])
+    AbsGramm.Type_char -> prPrec i 0 (concatD [doc (showString "char")])
+    AbsGramm.Type_string -> prPrec i 0 (concatD [doc (showString "string")])
+    AbsGramm.Type_bool -> prPrec i 0 (concatD [doc (showString "bool")])
     AbsGramm.Type_null -> prPrec i 0 (concatD [doc (showString "null")])
 
 instance Print AbsGramm.Stm where
@@ -156,7 +193,7 @@ instance Print AbsGramm.Stm where
     AbsGramm.Decla decl -> prPrec i 0 (concatD [prt 0 decl])
     AbsGramm.Expr exp -> prPrec i 0 (concatD [prt 0 exp])
     AbsGramm.SBlock block -> prPrec i 0 (concatD [prt 0 block])
-    AbsGramm.Assign id exp -> prPrec i 0 (concatD [prt 0 id, doc (showString "="), prt 0 exp])
+    AbsGramm.Assign pident exp -> prPrec i 0 (concatD [prt 0 pident, doc (showString "="), prt 0 exp])
     AbsGramm.While exp stm -> prPrec i 0 (concatD [doc (showString "while"), doc (showString "("), prt 0 exp, doc (showString ")"), prt 0 stm])
     AbsGramm.If exp stm1 stm2 -> prPrec i 0 (concatD [doc (showString "if"), doc (showString "("), prt 0 exp, doc (showString ")"), prt 0 stm1, doc (showString "else"), prt 0 stm2])
   prtList _ [] = concatD []

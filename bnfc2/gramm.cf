@@ -1,10 +1,13 @@
 -- Per avere liste non vuote c'è la parola nonempty: terminator nonempty Def "";
--- Per ricordare la posizione di un token: position token Ident.
+-- Per ricordare la posizione di un token: position token PIdent.
 entrypoints Program;
 
-position token Id (letter(letter | digit | '_')*);
-
-
+position token PIdent ( letter (letter | digit | '_' )* );
+					-- Sia parte int che decim. Solo int.   Solo decim.
+position token PFloat ( (digit+ '.' digit+) | (digit+ '.') | ('.' digit+));
+position token PInteger ( digit+ );
+--position token PString ( '"' ((char - ["\"\\"]) | ('\\' ["\"\\nt"]))* '"' );
+--position token PChar ('\'' ((char - ["'\\"]) | ('\\' ["'\\nt"])) '\'' );
 
 comment "//";
 comment "/" "/";
@@ -14,10 +17,10 @@ Prog. Program ::= [Decl];
 separator Decl ";";
 terminator Decl "";
 
-DFunInLine. Decl ::= "def" Id [Args] ":" Type "=" Exp;
+DFunInLine. Decl ::= "def" PIdent [Args] ":" Type "=" Exp;
 
-DecVar. Decl ::= "var" Id ":" Type;
-DefVar. Decl ::= "var" Id ":" Type "=" Exp;
+DecVar. Decl ::= "var" PIdent ":" Type;
+DefVar. Decl ::= "var" PIdent ":" Type "=" Exp;
 
 separator Args "";
 terminator nonempty Args "";
@@ -27,34 +30,90 @@ DArgs. Args ::= "(" [Arg] ")";
 separator  Arg ",";
 terminator Arg "";
 
-DArg. Arg ::= Id ":" Type;
+DArg. Arg ::= PIdent ":" Type;
+
+_. Op ::= Op1;
+_. Op ::= Op2;
 
 
-EAdd. Exp  ::= Exp  "+" Exp1 ;
-ESub. Exp  ::= Exp  "-" Exp1 ;
-EMul. Exp1 ::= Exp1 "" Exp2 ;
-EDiv. Exp1 ::= Exp1 "/" Exp2 ;
+-- LAss
+Or. Op1 ::= "||";
+And. Op2 ::= "&&";
+--Not. Op3 ::= "!";
 
-EInt. Exp2 ::= Integer ;
-EVar. Exp2 ::= Id;
+-- Tutti questi (i 4) sono non associativi.
+Less. Op4 ::= "<";
+LessEq. Op4 ::= "<=";
+Greater. Op4 ::= ">";
+GreterEq. Op4 ::= ">=";
+-- Le stringhe si può controllare che siano uguali o diverse.
+Equal. Op4 ::= "==";
+NotEq. Op4 ::= "!=";
 
-coercions Exp 2 ; 
+-- LAss.
+Plus. Op5 ::= "+";
+Minus. Op5 ::= "-";
+Prod. Op6 ::= "*";
+Div. Op6 ::= "/";
+Mod. Op6 ::= "%";
+
+-- RAss.
+Pow. Op7 ::= "^"; 
+-- Unario
+--Neg. Op8 ::= "-";
+
+coercions Op 8;
+
+-- OR
+op. Exp ::= Exp Op1 Exp1;
+op. Exp1 ::= Exp1 Op2 Exp2;
+-- Diamo il permesso di mettere più negazioni.
+ENot. Exp2 ::= "!" Exp2;
+
+op. Exp3 ::= Exp4 Op4 Exp4;
+
+op. Exp4 ::= Exp4 Op5 Exp5;
+op. Exp5 ::= Exp5 Op6 Exp6;
+
+op. Exp6 ::= Exp7 Op7 Exp6;
+ENeg. Exp7 ::= "-" Exp8;
+
+EInt. Exp8 ::= PInteger  ;
+EFloat. Exp8 ::= PFloat ;
+EVar. Exp8 ::= PIdent ; 
+EChar. Exp8 ::= PChar ;
+EString. Exp8 ::= PString ;
+ETrue. Exp8 ::= "true";
+EFalse. Exp8 ::= "false";
+
+
+
+coercions Exp 8 ; 
+-- LExp è qualcosa che ha un indirizzo e quindi gli possiamo assegnare un valore.
+-- RExp è un qualcosa che valutata ci da un valore.
+-- Le REXp corrispondono nel nostro Exp.
+
+internal EOp. Exp ::= Exp8 Op Exp8;
+--internal UEOp. Exp ::= Op8 Exp8;
+define op e1 o e2 = EOp e1 o e2;
+--define opU o e = UEOp o e;
+
 
 terminator Stm "";
 separator Stm ";";
 
-rules Type ::= "float" | "int" | "null" ;
+rules Type ::= "float" | "int" | "char" | "string" | "bool" | "null" ;
 
 Decla. Stm ::= Decl;
 Expr. Stm ::= Exp;
 SBlock. Stm ::= Block;
 
 
-
-Assign. Stm ::= Id "=" Exp;
+Assign. Stm ::= PIdent "=" Exp;
 DBlock. Block ::= "{" [Stm] "}" ;
 While. Stm ::= "while" "(" Exp ")" Stm ;
 If. Stm ::= "if" "(" Exp ")" Stm "else" Stm ;
-
-
+--internal Loc. Loc ::= "(" PInteger "," PInteger ")";
 internal ETyped. Exp ::= "[" Exp ":" Type "]" ;
+-- La seconda coppia è la posizione corrispondente a dove la variabile id è stata dichiarata.
+internal EVarTyped. Exp2 ::= "[" PIdent ":" Type "," "(" PInteger "," PInteger ")" "]";
