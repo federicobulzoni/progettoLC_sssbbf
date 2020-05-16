@@ -18,16 +18,30 @@ newtype PString = PString ((Int,Int),String)
 newtype PChar = PChar ((Int,Int),String)
   deriving (Eq, Ord, Show, Read)
 
-data Program = Prog [Decl]
+data Program = Prog [Declaration]
   deriving (Eq, Ord, Show, Read)
 
-data Decl
-    = DFunInLine PIdent [Args] Type Exp
-    | DecVar PIdent Type
-    | DefVar PIdent Type Exp
+data TypeSpec
+    = TSimple SType | TPointer TypeSpec | TArray Exp TypeSpec
   deriving (Eq, Ord, Show, Read)
 
-data Args = DArgs [Arg]
+data SType
+    = SType_float
+    | SType_int
+    | SType_char
+    | SType_string
+    | SType_bool
+    | SType_null
+  deriving (Eq, Ord, Show, Read)
+
+data Declaration
+    = DecVar PIdent TypeSpec
+    | DefVar PIdent TypeSpec Exp
+    | DefArray PIdent [Exp]
+    | DefProc PIdent [Arg] Body
+  deriving (Eq, Ord, Show, Read)
+
+data Body = EBody Exp | BBody Block
   deriving (Eq, Ord, Show, Read)
 
 data Arg = DArg PIdent Type
@@ -51,8 +65,11 @@ data Op
   deriving (Eq, Ord, Show, Read)
 
 data Exp
-    = ENot Exp
+    = EArray [Exp]
+    | ENot Exp
     | ENeg Exp
+    | EDeref Exp
+    | ERef Exp
     | EInt PInteger
     | EFloat PFloat
     | EVar PIdent
@@ -75,7 +92,7 @@ data Type
   deriving (Eq, Ord, Show, Read)
 
 data Stm
-    = Decla Decl
+    = Decla Declaration
     | Expr Exp
     | SBlock Block
     | Assign PIdent Exp

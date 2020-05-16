@@ -26,15 +26,30 @@ transPChar x = case x of
   PChar string -> failure x
 transProgram :: Program -> Result
 transProgram x = case x of
-  Prog decls -> failure x
-transDecl :: Decl -> Result
-transDecl x = case x of
-  DFunInLine pident argss type_ exp -> failure x
-  DecVar pident type_ -> failure x
-  DefVar pident type_ exp -> failure x
-transArgs :: Args -> Result
-transArgs x = case x of
-  DArgs args -> failure x
+  Prog declarations -> failure x
+transTypeSpec :: TypeSpec -> Result
+transTypeSpec x = case x of
+  TSimple stype -> failure x
+  TPointer typespec -> failure x
+  TArray exp typespec -> failure x
+transSType :: SType -> Result
+transSType x = case x of
+  SType_float -> failure x
+  SType_int -> failure x
+  SType_char -> failure x
+  SType_string -> failure x
+  SType_bool -> failure x
+  SType_null -> failure x
+transDeclaration :: Declaration -> Result
+transDeclaration x = case x of
+  DecVar pident typespec -> failure x
+  DefVar pident typespec exp -> failure x
+  DefArray pident exps -> failure x
+  DefProc pident args body -> failure x
+transBody :: Body -> Result
+transBody x = case x of
+  EBody exp -> failure x
+  BBody block -> failure x
 transArg :: Arg -> Result
 transArg x = case x of
   DArg pident type_ -> failure x
@@ -56,8 +71,11 @@ transOp x = case x of
   Pow -> failure x
 transExp :: Exp -> Result
 transExp x = case x of
+  EArray exps -> failure x
   ENot exp -> failure x
   ENeg exp -> failure x
+  EDeref exp -> failure x
+  ERef exp -> failure x
   EInt pinteger -> failure x
   EFloat pfloat -> failure x
   EVar pident -> failure x
@@ -78,7 +96,7 @@ transType x = case x of
   Type_null -> failure x
 transStm :: Stm -> Result
 transStm x = case x of
-  Decla decl -> failure x
+  Decla declaration -> failure x
   Expr exp -> failure x
   SBlock block -> failure x
   Assign pident exp -> failure x

@@ -10,22 +10,45 @@ position token PInteger ( digit+ );
 --position token PChar ('\'' ((char - ["'\\"]) | ('\\' ["'\\nt"])) '\'' );
 
 comment "//";
-comment "/" "/";
+comment "/*" "*/";
 
 
-Prog. Program ::= [Decl];
-separator Decl ";";
-terminator Decl "";
+Prog. Program ::= [Declaration];
+separator Declaration ";";
+separator Declaration "\n";
+terminator Declaration "";
 
-DFunInLine. Decl ::= "def" PIdent [Args] ":" Type "=" Exp;
+TSimple. TypeSpec ::= SType ;
+-- Problema durante il parsing se ci sono più &..& consecutive.
+TPointer. TypeSpec ::= "&" TypeSpec;
+-- Questa è una nostra versione speciale, degli array,
+-- abbiamo fatto così perchè scala non ha i puntatori, ma 
+-- noi avendoli avevamo problemi con il dichiarare puntatori
+-- ad array, dato che la dichiarazione degli array,
+-- ha una sintassi speciale che non utilizza i ':', bensì '='.
+TArray. TypeSpec ::= "Array" "[" Exp "]" "(" TypeSpec ")";
 
-DecVar. Decl ::= "var" PIdent ":" Type;
-DefVar. Decl ::= "var" PIdent ":" Type "=" Exp;
+rules SType ::= "float" | "int" | "char" | "string" | "bool" | "null" ;
 
-separator Args "";
-terminator nonempty Args "";
+DecVar. Declaration ::= "var" PIdent ":" TypeSpec;
+DefVar. Declaration ::= "var" PIdent ":" TypeSpec "=" Exp;
+-- La espressione nella dichiarazione di array ne determina la dimensione
+-- segue, che tale espressione deve avere tipo Intero.
+-- Il tipo dell'array è il tipo delle espressioni che gli sono assegnate,
+-- tutte le espressioni devono avere stesso tipo.
+DefArray. Declaration ::= "var" PIdent "=" "Array" "("[Exp]")";
+separator Exp ",";
+terminator Exp ""; 
+-- Tutti i nostri Exp corrispondono agli RExpr del Prof.
 
-DArgs. Args ::= "(" [Arg] ")";
+-- Dichiarazioni di funzioni/procedure.
+-- Non abbiamo liste di liste di argomenti, 
+-- è una nostra scelta quella di mantenere una lista,
+-- unica.
+DefProc. Declaration ::= "def" PIdent "(" [Arg] ")" "=" Body;
+--DefFun. Declaration ::= "def" PIdent "(" [Arg] ")" ":" RetType;
+EBody. Body ::= Exp;
+BBody. Body ::= Block;
 
 separator  Arg ",";
 terminator Arg "";
@@ -64,6 +87,9 @@ Pow. Op7 ::= "^";
 
 coercions Op 8;
 
+
+-- Ci va EArray???
+EArray. Exp ::= "Array" "("[Exp]")";
 -- OR
 op. Exp ::= Exp Op1 Exp1;
 op. Exp1 ::= Exp1 Op2 Exp2;
@@ -77,6 +103,10 @@ op. Exp5 ::= Exp5 Op6 Exp6;
 
 op. Exp6 ::= Exp7 Op7 Exp6;
 ENeg. Exp7 ::= "-" Exp8;
+-- Dereferenziazione
+EDeref. Exp8 ::= "&" Exp8;
+-- Referenziazione.
+ERef. Exp8 ::= "*" Exp8;
 
 EInt. Exp8 ::= PInteger  ;
 EFloat. Exp8 ::= PFloat ;
@@ -104,7 +134,7 @@ separator Stm ";";
 
 rules Type ::= "float" | "int" | "char" | "string" | "bool" | "null" ;
 
-Decla. Stm ::= Decl;
+Decla. Stm ::= Declaration;
 Expr. Stm ::= Exp;
 SBlock. Stm ::= Block;
 

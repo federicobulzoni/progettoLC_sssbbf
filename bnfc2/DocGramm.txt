@@ -38,21 +38,23 @@ PChar literals are recognized by the regular expression
 The set of reserved words is the set of terminals appearing in the grammar. Those reserved words that consist of non-letter characters are called symbols, and they are treated in a different way from those that are similar to identifiers. The lexer follows rules familiar from languages like Haskell, C, and Java, including longest match and spacing conventions.
 
 The reserved words used in gramm are the following:
-  | ``bool`` | ``char`` | ``def`` | ``else``
-  | ``false`` | ``float`` | ``if`` | ``int``
-  | ``null`` | ``string`` | ``true`` | ``var``
-  | ``while`` |  |  |
+  | ``Array`` | ``bool`` | ``char`` | ``def``
+  | ``else`` | ``false`` | ``float`` | ``if``
+  | ``int`` | ``null`` | ``string`` | ``true``
+  | ``var`` | ``while`` |  |
 
 The symbols used in gramm are the following:
-  | ; | : | = | (
-  | ) | , | || | &&
+  | ; |
+ | & | [
+  | ] | ( | ) | :
+  | = | , | || | &&
   | < | <= | > | >=
   | == | != | + | -
   | * | / | % | ^
   | ! | { | } |
 
 ===Comments===
-Single-line comments begin with //.Multiple-line comments are  enclosed with / and /.
+Single-line comments begin with //.Multiple-line comments are  enclosed with /* and */.
 
 ==The syntactic structure of gramm==
 Non-terminals are enclosed between < and >.
@@ -60,20 +62,36 @@ The symbols -> (production),  **|**  (union)
 and **eps** (empty rule) belong to the BNF notation.
 All other symbols are terminals.
 
-  | //Program// | -> | //[Decl]//
-  | //[Decl]// | -> | **eps**
-  |  |  **|**  | //Decl//
-  |  |  **|**  | //Decl// ``;`` //[Decl]//
+  | //Program// | -> | //[Declaration]//
+  | //[Declaration]// | -> | **eps**
+  |  |  **|**  | //Declaration//
+  |  |  **|**  | //Declaration// ``;`` //[Declaration]//
   |  |  **|**  | **eps**
-  |  |  **|**  | //Decl// //[Decl]//
-  | //Decl// | -> | ``def`` //PIdent// //[Args]// ``:`` //Type// ``=`` //Exp//
-  |  |  **|**  | ``var`` //PIdent// ``:`` //Type//
-  |  |  **|**  | ``var`` //PIdent// ``:`` //Type// ``=`` //Exp//
-  | //[Args]// | -> | **eps**
-  |  |  **|**  | //Args// //[Args]//
-  |  |  **|**  | //Args//
-  |  |  **|**  | //Args// //[Args]//
-  | //Args// | -> | ``(`` //[Arg]// ``)``
+  |  |  **|**  | //Declaration//
+  |  |  **|**  | //Declaration// ``
+`` //[Declaration]//
+  |  |  **|**  | **eps**
+  |  |  **|**  | //Declaration// //[Declaration]//
+  | //TypeSpec// | -> | //SType//
+  |  |  **|**  | ``&`` //TypeSpec//
+  |  |  **|**  | ``Array`` ``[`` //Exp// ``]`` ``(`` //TypeSpec// ``)``
+  | //SType// | -> | ``float``
+  |  |  **|**  | ``int``
+  |  |  **|**  | ``char``
+  |  |  **|**  | ``string``
+  |  |  **|**  | ``bool``
+  |  |  **|**  | ``null``
+  | //Declaration// | -> | ``var`` //PIdent// ``:`` //TypeSpec//
+  |  |  **|**  | ``var`` //PIdent// ``:`` //TypeSpec// ``=`` //Exp//
+  |  |  **|**  | ``var`` //PIdent// ``=`` ``Array`` ``(`` //[Exp]// ``)``
+  |  |  **|**  | ``def`` //PIdent// ``(`` //[Arg]// ``)`` ``=`` //Body//
+  | //[Exp]// | -> | **eps**
+  |  |  **|**  | //Exp//
+  |  |  **|**  | //Exp// ``,`` //[Exp]//
+  |  |  **|**  | **eps**
+  |  |  **|**  | //Exp// //[Exp]//
+  | //Body// | -> | //Exp//
+  |  |  **|**  | //Block//
   | //[Arg]// | -> | **eps**
   |  |  **|**  | //Arg//
   |  |  **|**  | //Arg// ``,`` //[Arg]//
@@ -105,7 +123,8 @@ All other symbols are terminals.
   |  |  **|**  | //Op8//
   | //Op3// | -> | //Op4//
   | //Op8// | -> | ``(`` //Op// ``)``
-  | //Exp// | -> | //Exp// //Op1// //Exp1//
+  | //Exp// | -> | ``Array`` ``(`` //[Exp]// ``)``
+  |  |  **|**  | //Exp// //Op1// //Exp1//
   |  |  **|**  | //Exp1//
   | //Exp1// | -> | //Exp1// //Op2// //Exp2//
   |  |  **|**  | //Exp2//
@@ -121,7 +140,9 @@ All other symbols are terminals.
   |  |  **|**  | //Exp7//
   | //Exp7// | -> | ``-`` //Exp8//
   |  |  **|**  | //Exp8//
-  | //Exp8// | -> | //PInteger//
+  | //Exp8// | -> | ``&`` //Exp8//
+  |  |  **|**  | ``*`` //Exp8//
+  |  |  **|**  | //PInteger//
   |  |  **|**  | //PFloat//
   |  |  **|**  | //PIdent//
   |  |  **|**  | //PChar//
@@ -140,7 +161,7 @@ All other symbols are terminals.
   |  |  **|**  | ``string``
   |  |  **|**  | ``bool``
   |  |  **|**  | ``null``
-  | //Stm// | -> | //Decl//
+  | //Stm// | -> | //Declaration//
   |  |  **|**  | //Exp//
   |  |  **|**  | //Block//
   |  |  **|**  | //PIdent// ``=`` //Exp//

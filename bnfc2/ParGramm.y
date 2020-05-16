@@ -13,42 +13,48 @@ import ErrM
 %monad { Err } { thenM } { returnM }
 %tokentype {Token}
 %token
-  '!' { PT _ (TS _ 1) }
-  '!=' { PT _ (TS _ 2) }
-  '%' { PT _ (TS _ 3) }
-  '&&' { PT _ (TS _ 4) }
-  '(' { PT _ (TS _ 5) }
-  ')' { PT _ (TS _ 6) }
-  '*' { PT _ (TS _ 7) }
-  '+' { PT _ (TS _ 8) }
-  ',' { PT _ (TS _ 9) }
-  '-' { PT _ (TS _ 10) }
-  '/' { PT _ (TS _ 11) }
-  ':' { PT _ (TS _ 12) }
-  ';' { PT _ (TS _ 13) }
-  '<' { PT _ (TS _ 14) }
-  '<=' { PT _ (TS _ 15) }
-  '=' { PT _ (TS _ 16) }
-  '==' { PT _ (TS _ 17) }
-  '>' { PT _ (TS _ 18) }
-  '>=' { PT _ (TS _ 19) }
-  '^' { PT _ (TS _ 20) }
-  'bool' { PT _ (TS _ 21) }
-  'char' { PT _ (TS _ 22) }
-  'def' { PT _ (TS _ 23) }
-  'else' { PT _ (TS _ 24) }
-  'false' { PT _ (TS _ 25) }
-  'float' { PT _ (TS _ 26) }
-  'if' { PT _ (TS _ 27) }
-  'int' { PT _ (TS _ 28) }
-  'null' { PT _ (TS _ 29) }
-  'string' { PT _ (TS _ 30) }
-  'true' { PT _ (TS _ 31) }
-  'var' { PT _ (TS _ 32) }
-  'while' { PT _ (TS _ 33) }
-  '{' { PT _ (TS _ 34) }
-  '||' { PT _ (TS _ 35) }
-  '}' { PT _ (TS _ 36) }
+  '
+' { PT _ (TS _ 1) }
+  '!' { PT _ (TS _ 2) }
+  '!=' { PT _ (TS _ 3) }
+  '%' { PT _ (TS _ 4) }
+  '&' { PT _ (TS _ 5) }
+  '&&' { PT _ (TS _ 6) }
+  '(' { PT _ (TS _ 7) }
+  ')' { PT _ (TS _ 8) }
+  '*' { PT _ (TS _ 9) }
+  '+' { PT _ (TS _ 10) }
+  ',' { PT _ (TS _ 11) }
+  '-' { PT _ (TS _ 12) }
+  '/' { PT _ (TS _ 13) }
+  ':' { PT _ (TS _ 14) }
+  ';' { PT _ (TS _ 15) }
+  '<' { PT _ (TS _ 16) }
+  '<=' { PT _ (TS _ 17) }
+  '=' { PT _ (TS _ 18) }
+  '==' { PT _ (TS _ 19) }
+  '>' { PT _ (TS _ 20) }
+  '>=' { PT _ (TS _ 21) }
+  'Array' { PT _ (TS _ 22) }
+  '[' { PT _ (TS _ 23) }
+  ']' { PT _ (TS _ 24) }
+  '^' { PT _ (TS _ 25) }
+  'bool' { PT _ (TS _ 26) }
+  'char' { PT _ (TS _ 27) }
+  'def' { PT _ (TS _ 28) }
+  'else' { PT _ (TS _ 29) }
+  'false' { PT _ (TS _ 30) }
+  'float' { PT _ (TS _ 31) }
+  'if' { PT _ (TS _ 32) }
+  'int' { PT _ (TS _ 33) }
+  'null' { PT _ (TS _ 34) }
+  'string' { PT _ (TS _ 35) }
+  'true' { PT _ (TS _ 36) }
+  'var' { PT _ (TS _ 37) }
+  'while' { PT _ (TS _ 38) }
+  '{' { PT _ (TS _ 39) }
+  '||' { PT _ (TS _ 40) }
+  '}' { PT _ (TS _ 41) }
   L_PIdent { PT _ (T_PIdent _) }
   L_PFloat { PT _ (T_PFloat _) }
   L_PInteger { PT _ (T_PInteger _) }
@@ -73,24 +79,41 @@ PChar :: { PChar}
 PChar  : L_PChar { PChar (mkPosToken $1)}
 
 Program :: { Program }
-Program : ListDecl { AbsGramm.Prog $1 }
-ListDecl :: { [Decl] }
-ListDecl : {- empty -} { [] }
-         | Decl { (:[]) $1 }
-         | Decl ';' ListDecl { (:) $1 $3 }
-         | {- empty -} { [] }
-         | Decl ListDecl { (:) $1 $2 }
-Decl :: { Decl }
-Decl : 'def' PIdent ListArgs ':' Type '=' Exp { AbsGramm.DFunInLine $2 $3 $5 $7 }
-     | 'var' PIdent ':' Type { AbsGramm.DecVar $2 $4 }
-     | 'var' PIdent ':' Type '=' Exp { AbsGramm.DefVar $2 $4 $6 }
-ListArgs :: { [Args] }
-ListArgs : {- empty -} { [] }
-         | Args ListArgs { (:) $1 $2 }
-         | Args { (:[]) $1 }
-         | Args ListArgs { (:) $1 $2 }
-Args :: { Args }
-Args : '(' ListArg ')' { AbsGramm.DArgs $2 }
+Program : ListDeclaration { AbsGramm.Prog $1 }
+ListDeclaration :: { [Declaration] }
+ListDeclaration : {- empty -} { [] }
+                | Declaration { (:[]) $1 }
+                | Declaration ';' ListDeclaration { (:) $1 $3 }
+                | {- empty -} { [] }
+                | Declaration { (:[]) $1 }
+                | Declaration '
+' ListDeclaration { (:) $1 $3 }
+                | {- empty -} { [] }
+                | Declaration ListDeclaration { (:) $1 $2 }
+TypeSpec :: { TypeSpec }
+TypeSpec : SType { AbsGramm.TSimple $1 }
+         | '&' TypeSpec { AbsGramm.TPointer $2 }
+         | 'Array' '[' Exp ']' '(' TypeSpec ')' { AbsGramm.TArray $3 $6 }
+SType :: { SType }
+SType : 'float' { AbsGramm.SType_float }
+      | 'int' { AbsGramm.SType_int }
+      | 'char' { AbsGramm.SType_char }
+      | 'string' { AbsGramm.SType_string }
+      | 'bool' { AbsGramm.SType_bool }
+      | 'null' { AbsGramm.SType_null }
+Declaration :: { Declaration }
+Declaration : 'var' PIdent ':' TypeSpec { AbsGramm.DecVar $2 $4 }
+            | 'var' PIdent ':' TypeSpec '=' Exp { AbsGramm.DefVar $2 $4 $6 }
+            | 'var' PIdent '=' 'Array' '(' ListExp ')' { AbsGramm.DefArray $2 $6 }
+            | 'def' PIdent '(' ListArg ')' '=' Body { AbsGramm.DefProc $2 $4 $7 }
+ListExp :: { [Exp] }
+ListExp : {- empty -} { [] }
+        | Exp { (:[]) $1 }
+        | Exp ',' ListExp { (:) $1 $3 }
+        | {- empty -} { [] }
+        | Exp ListExp { (:) $1 $2 }
+Body :: { Body }
+Body : Exp { AbsGramm.EBody $1 } | Block { AbsGramm.BBody $1 }
 ListArg :: { [Arg] }
 ListArg : {- empty -} { [] }
         | Arg { (:[]) $1 }
@@ -127,7 +150,9 @@ Op3 : Op4 { $1 }
 Op8 :: { Op }
 Op8 : '(' Op ')' { $2 }
 Exp :: { Exp }
-Exp : Exp Op1 Exp1 { op_ $1 $2 $3 } | Exp1 { $1 }
+Exp : 'Array' '(' ListExp ')' { AbsGramm.EArray $3 }
+    | Exp Op1 Exp1 { op_ $1 $2 $3 }
+    | Exp1 { $1 }
 Exp1 :: { Exp }
 Exp1 : Exp1 Op2 Exp2 { op_ $1 $2 $3 } | Exp2 { $1 }
 Exp2 :: { Exp }
@@ -143,7 +168,9 @@ Exp6 : Exp7 Op7 Exp6 { op_ $1 $2 $3 } | Exp7 { $1 }
 Exp7 :: { Exp }
 Exp7 : '-' Exp8 { AbsGramm.ENeg $2 } | Exp8 { $1 }
 Exp8 :: { Exp }
-Exp8 : PInteger { AbsGramm.EInt $1 }
+Exp8 : '&' Exp8 { AbsGramm.EDeref $2 }
+     | '*' Exp8 { AbsGramm.ERef $2 }
+     | PInteger { AbsGramm.EInt $1 }
      | PFloat { AbsGramm.EFloat $1 }
      | PIdent { AbsGramm.EVar $1 }
      | PChar { AbsGramm.EChar $1 }
@@ -165,7 +192,7 @@ Type : 'float' { AbsGramm.Type_float }
      | 'bool' { AbsGramm.Type_bool }
      | 'null' { AbsGramm.Type_null }
 Stm :: { Stm }
-Stm : Decl { AbsGramm.Decla $1 }
+Stm : Declaration { AbsGramm.Decla $1 }
     | Exp { AbsGramm.Expr $1 }
     | Block { AbsGramm.SBlock $1 }
     | PIdent '=' Exp { AbsGramm.Assign $1 $3 }
