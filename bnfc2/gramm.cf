@@ -2,12 +2,16 @@
 -- Per ricordare la posizione di un token: position token PIdent.
 entrypoints Program;
 
+
+position token PTrue 'T' 'r' 'u' 'e' ;						
+position token PFalse 'F' 'a' 'l' 's' 'e' ;						
+position token PReturn 'r' 'e' 't' 'u' 'r' 'n' ;	
+position token PNull 'N' 'u' 'l' 'l';			
 position token PIdent ( letter (letter | digit | '_' )* );
 					-- Sia parte int che decim. Solo int.   Solo decim.
 position token PFloat ( (digit+ '.' digit+) | (digit+ '.') | ('.' digit+));
 position token PInteger ( digit+ );
---position token PString ( '"' ((char - ["\"\\"]) | ('\\' ["\"\\nt"]))* '"' );
---position token PChar ('\'' ((char - ["'\\"]) | ('\\' ["'\\nt"])) '\'' );
+
 
 comment "//";
 comment "/*" "*/";
@@ -16,19 +20,23 @@ comment "/*" "*/";
 Prog. Program ::= [Declaration];
 separator Declaration ";";
 separator Declaration "\n";
+terminator Declaration ";";
 terminator Declaration "";
 
 TSimple. TypeSpec ::= SType ;
--- Problema durante il parsing se ci sono più &..& consecutive.
-TPointer. TypeSpec ::= "&" TypeSpec;
+TPointer. TypeSpec ::= "*" TypeSpec;
 -- Questa è una nostra versione speciale, degli array,
 -- abbiamo fatto così perchè scala non ha i puntatori, ma 
 -- noi avendoli avevamo problemi con il dichiarare puntatori
 -- ad array, dato che la dichiarazione degli array,
 -- ha una sintassi speciale che non utilizza i ':', bensì '='.
-TArray. TypeSpec ::= "Array" "[" Exp "]" "(" TypeSpec ")";
 
-rules SType ::= "float" | "int" | "char" | "string" | "bool" | "null" ;
+-- Rimane il dubbio se mettere Exp o PInteger
+TArray. TypeSpec ::= "Array" "[" TypeSpec "]" "(" Exp ")";
+
+rules SType ::= "Float" | "Int" | "Char" | "String" | "Bool";
+-- Da considerare se renderlo disponibile all'utente o tenerlo solo interno.
+internal TypeNull. SType ::= "Null";
 
 DecVar. Declaration ::= "var" PIdent ":" TypeSpec;
 DefVar. Declaration ::= "var" PIdent ":" TypeSpec "=" Exp;
@@ -36,114 +44,134 @@ DefVar. Declaration ::= "var" PIdent ":" TypeSpec "=" Exp;
 -- segue, che tale espressione deve avere tipo Intero.
 -- Il tipo dell'array è il tipo delle espressioni che gli sono assegnate,
 -- tutte le espressioni devono avere stesso tipo.
-DefArray. Declaration ::= "var" PIdent "=" "Array" "("[Exp]")";
-separator Exp ",";
-terminator Exp ""; 
+
+-- La definizione di Array è ridondante, infatti, basta mettere Array(Exp) come RExp.
+-- DefArray. Declaration ::= "var" PIdent "=" "Array" "("[Exp]")";
+
 -- Tutti i nostri Exp corrispondono agli RExpr del Prof.
 
 -- Dichiarazioni di funzioni/procedure.
 -- Non abbiamo liste di liste di argomenti, 
 -- è una nostra scelta quella di mantenere una lista,
 -- unica.
-DefProc. Declaration ::= "def" PIdent "(" [Arg] ")" "=" Body;
---DefFun. Declaration ::= "def" PIdent "(" [Arg] ")" ":" RetType;
-EBody. Body ::= Exp;
-BBody. Body ::= Block;
+DefProc. Declaration ::= "def" PIdent [ParamClause] "=" Block;
+DefFun.  Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Body;
+PArg. ParamClause ::= "("  [Arg] ")";
 
+separator nonempty ParamClause "";
+terminator nonempty ParamClause ""; 
 separator  Arg ",";
 terminator Arg "";
 
-DArg. Arg ::= PIdent ":" Type;
-
-_. Op ::= Op1;
-_. Op ::= Op2;
-
+--DefFun. Declaration ::= "def" PIdent "(" [Arg] ")" ":" RetType;
+EBody. Body ::= Exp;
+-- Nel blocco/stmt deve esserci il return, ma questo lo controlla il TypeChecker.
+-- ha senso mettere un singolo statement? (che poi si può riscrivere in un blocco comunque).
+SBody. Body ::= Block;
+DArg. Arg ::= PIdent ":" TypeSpec;
 
 -- LAss
 Or. Op1 ::= "||";
 And. Op2 ::= "&&";
---Not. Op3 ::= "!";
-
 -- Tutti questi (i 4) sono non associativi.
-Less. Op4 ::= "<";
-LessEq. Op4 ::= "<=";
-Greater. Op4 ::= ">";
-GreterEq. Op4 ::= ">=";
+Less. Op3 ::= "<";
+LessEq. Op3 ::= "<=";
+Greater. Op3 ::= ">";
+GreterEq. Op3 ::= ">=";
 -- Le stringhe si può controllare che siano uguali o diverse.
-Equal. Op4 ::= "==";
-NotEq. Op4 ::= "!=";
-
+Equal. Op3 ::= "==";
+NotEq. Op3 ::= "!=";
 -- LAss.
-Plus. Op5 ::= "+";
-Minus. Op5 ::= "-";
-Prod. Op6 ::= "*";
-Div. Op6 ::= "/";
-Mod. Op6 ::= "%";
-
+Plus. Op4 ::= "+";
+Minus. Op4 ::= "-";
+Prod. Op5 ::= "*";
+Div. Op5 ::= "/";
+Mod. Op5 ::= "%";
 -- RAss.
-Pow. Op7 ::= "^"; 
--- Unario
---Neg. Op8 ::= "-";
+Pow. Op6 ::= "^"; 
 
-coercions Op 8;
+coercions Op 6;
 
 
--- Ci va EArray???
+-- Ci va per l'inizializzazione degli array.
 EArray. Exp ::= "Array" "("[Exp]")";
--- OR
+separator Exp ",";
+terminator Exp ""; 
+
+-- Lista di RExp.
 op. Exp ::= Exp Op1 Exp1;
 op. Exp1 ::= Exp1 Op2 Exp2;
 -- Diamo il permesso di mettere più negazioni.
 ENot. Exp2 ::= "!" Exp2;
+op. Exp2 ::= Exp3 Op3 Exp3;
 
-op. Exp3 ::= Exp4 Op4 Exp4;
-
+op. Exp3 ::= Exp3 Op4 Exp4;
 op. Exp4 ::= Exp4 Op5 Exp5;
-op. Exp5 ::= Exp5 Op6 Exp6;
 
-op. Exp6 ::= Exp7 Op7 Exp6;
-ENeg. Exp7 ::= "-" Exp8;
--- Dereferenziazione
-EDeref. Exp8 ::= "&" Exp8;
--- Referenziazione.
-ERef. Exp8 ::= "*" Exp8;
+op. Exp5 ::= Exp6 Op6 Exp7;
+ENeg. Exp6 ::= "-" Exp7;
 
-EInt. Exp8 ::= PInteger  ;
-EFloat. Exp8 ::= PFloat ;
-EVar. Exp8 ::= PIdent ; 
-EChar. Exp8 ::= PChar ;
-EString. Exp8 ::= PString ;
-ETrue. Exp8 ::= "true";
-EFalse. Exp8 ::= "false";
+-- Exp si riscrive in LExp, dato che le LExp identificano sempre delle variabili/indirizzi/array e per tanto possono 
+-- anche essere assegnati.
+ELExp. Exp7 ::= LExp;
+EDeref. Exp7 ::= "&" LExp;
+-- I valori costanti sono invece questi.
+EInt. Exp7 ::= PInteger  ;
+EFloat. Exp7 ::= PFloat ;
+EChar. Exp7 ::= PChar ;
+EString. Exp7 ::= PString ;
+ETrue. Exp7 ::= PTrue;
+EFalse. Exp7 ::= PFalse;
+ENull. Exp7 ::= PNull;
 
 
 
-coercions Exp 8 ; 
+coercions Exp 7 ; 
 -- LExp è qualcosa che ha un indirizzo e quindi gli possiamo assegnare un valore.
 -- RExp è un qualcosa che valutata ci da un valore.
 -- Le REXp corrispondono nel nostro Exp.
 
-internal EOp. Exp ::= Exp8 Op Exp8;
---internal UEOp. Exp ::= Op8 Exp8;
-define op e1 o e2 = EOp e1 o e2;
---define opU o e = UEOp o e;
-
-
-terminator Stm "";
-separator Stm ";";
-
-rules Type ::= "float" | "int" | "char" | "string" | "bool" | "null" ;
+internal EOp. Exp ::= Exp7 Op Exp7;
 
 Decla. Stm ::= Declaration;
+
+-- Dubbio.
 Expr. Stm ::= Exp;
 SBlock. Stm ::= Block;
 
-
-Assign. Stm ::= PIdent "=" Exp;
+Assign. Stm ::= LExp "=" Exp;
 DBlock. Block ::= "{" [Stm] "}" ;
 While. Stm ::= "while" "(" Exp ")" Stm ;
 If. Stm ::= "if" "(" Exp ")" Stm "else" Stm ;
+-- Il do è da ragionarci sopra dato che si riscrive in un blocco, bensì che è uno statement singolo in realtà.
+do. Stm ::= "do" Stm "while" "(" Exp ")";
+Return. Stm ::= PReturn ;
+ReturnExp. Stm ::= PReturn Exp ;
+
+
+
+separator Stm ";";
+separator Stm "\n";
+terminator Stm ";";
+terminator Stm "";
+
+-- Lista di LExp.
+LRef. LExp ::= "*" LExp;
+-- Da verificare se le parentesi tonde creano conflitti con le espressioni e con le precedenze definite dall'utente
+-- nella valutazione dei puntatori.
+LArr. LExp1 ::= LExp1 "(" Exp ")";
+LIdent. LExp1 ::= PIdent;
+coercions LExp 2;
+
 --internal Loc. Loc ::= "(" PInteger "," PInteger ")";
-internal ETyped. Exp ::= "[" Exp ":" Type "]" ;
+internal ETyped. Exp ::= "[" Exp ":" TypeSpec "]" ;
 -- La seconda coppia è la posizione corrispondente a dove la variabile id è stata dichiarata.
-internal EVarTyped. Exp2 ::= "[" PIdent ":" Type "," "(" PInteger "," PInteger ")" "]";
+internal EVarTyped. Exp2 ::= "[" PIdent ":" TypeSpec "," "(" PInteger "," PInteger ")" "]";
+
+
+-- Cose che non vanno bene a Sublime.
+define op e1 o e2 = EOp e1 o e2;
+define do st ex = SBlock (DBlock [st, (While ex st)]);
+position token PString ( '"' ((char - ["\"\\"]) | ('\\' ["\"\\nt"]))* '"' );
+position token PChar ('\'' ((char - ["'\\"]) | ('\\' ["'\\nt"])) '\'' );
+

@@ -3,6 +3,18 @@
 
 module AbsGramm where
 
+newtype PTrue = PTrue ((Int,Int),String)
+  deriving (Eq, Ord, Show, Read)
+
+newtype PFalse = PFalse ((Int,Int),String)
+  deriving (Eq, Ord, Show, Read)
+
+newtype PReturn = PReturn ((Int,Int),String)
+  deriving (Eq, Ord, Show, Read)
+
+newtype PNull = PNull ((Int,Int),String)
+  deriving (Eq, Ord, Show, Read)
+
 newtype PIdent = PIdent ((Int,Int),String)
   deriving (Eq, Ord, Show, Read)
 
@@ -22,29 +34,32 @@ data Program = Prog [Declaration]
   deriving (Eq, Ord, Show, Read)
 
 data TypeSpec
-    = TSimple SType | TPointer TypeSpec | TArray Exp TypeSpec
+    = TSimple SType | TPointer TypeSpec | TArray TypeSpec Exp
   deriving (Eq, Ord, Show, Read)
 
 data SType
-    = SType_float
-    | SType_int
-    | SType_char
-    | SType_string
-    | SType_bool
-    | SType_null
+    = SType_Float
+    | SType_Int
+    | SType_Char
+    | SType_String
+    | SType_Bool
+    | TypeNull
   deriving (Eq, Ord, Show, Read)
 
 data Declaration
     = DecVar PIdent TypeSpec
     | DefVar PIdent TypeSpec Exp
-    | DefArray PIdent [Exp]
-    | DefProc PIdent [Arg] Body
+    | DefProc PIdent [ParamClause] Block
+    | DefFun PIdent [ParamClause] TypeSpec Body
   deriving (Eq, Ord, Show, Read)
 
-data Body = EBody Exp | BBody Block
+data ParamClause = PArg [Arg]
   deriving (Eq, Ord, Show, Read)
 
-data Arg = DArg PIdent Type
+data Body = EBody Exp | SBody Block
+  deriving (Eq, Ord, Show, Read)
+
+data Arg = DArg PIdent TypeSpec
   deriving (Eq, Ord, Show, Read)
 
 data Op
@@ -68,38 +83,34 @@ data Exp
     = EArray [Exp]
     | ENot Exp
     | ENeg Exp
-    | EDeref Exp
-    | ERef Exp
+    | ELExp LExp
+    | EDeref LExp
     | EInt PInteger
     | EFloat PFloat
-    | EVar PIdent
     | EChar PChar
     | EString PString
-    | ETrue
-    | EFalse
+    | ETrue PTrue
+    | EFalse PFalse
+    | ENull PNull
     | EOp Exp Op Exp
-    | ETyped Exp Type
-    | EVarTyped PIdent Type PInteger PInteger
-  deriving (Eq, Ord, Show, Read)
-
-data Type
-    = Type_float
-    | Type_int
-    | Type_char
-    | Type_string
-    | Type_bool
-    | Type_null
+    | ETyped Exp TypeSpec
+    | EVarTyped PIdent TypeSpec PInteger PInteger
   deriving (Eq, Ord, Show, Read)
 
 data Stm
     = Decla Declaration
     | Expr Exp
     | SBlock Block
-    | Assign PIdent Exp
+    | Assign LExp Exp
     | While Exp Stm
     | If Exp Stm Stm
+    | Return PReturn
+    | ReturnExp PReturn Exp
   deriving (Eq, Ord, Show, Read)
 
 data Block = DBlock [Stm]
+  deriving (Eq, Ord, Show, Read)
+
+data LExp = LRef LExp | LArr LExp Exp | LIdent PIdent
   deriving (Eq, Ord, Show, Read)
 

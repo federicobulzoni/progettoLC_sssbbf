@@ -9,6 +9,18 @@ type Result = Err String
 failure :: Show a => a -> Result
 failure x = Bad $ "Undefined case: " ++ show x
 
+transPTrue :: PTrue -> Result
+transPTrue x = case x of
+  PTrue string -> failure x
+transPFalse :: PFalse -> Result
+transPFalse x = case x of
+  PFalse string -> failure x
+transPReturn :: PReturn -> Result
+transPReturn x = case x of
+  PReturn string -> failure x
+transPNull :: PNull -> Result
+transPNull x = case x of
+  PNull string -> failure x
 transPIdent :: PIdent -> Result
 transPIdent x = case x of
   PIdent string -> failure x
@@ -31,28 +43,31 @@ transTypeSpec :: TypeSpec -> Result
 transTypeSpec x = case x of
   TSimple stype -> failure x
   TPointer typespec -> failure x
-  TArray exp typespec -> failure x
+  TArray typespec exp -> failure x
 transSType :: SType -> Result
 transSType x = case x of
-  SType_float -> failure x
-  SType_int -> failure x
-  SType_char -> failure x
-  SType_string -> failure x
-  SType_bool -> failure x
-  SType_null -> failure x
+  SType_Float -> failure x
+  SType_Int -> failure x
+  SType_Char -> failure x
+  SType_String -> failure x
+  SType_Bool -> failure x
+  TypeNull -> failure x
 transDeclaration :: Declaration -> Result
 transDeclaration x = case x of
   DecVar pident typespec -> failure x
   DefVar pident typespec exp -> failure x
-  DefArray pident exps -> failure x
-  DefProc pident args body -> failure x
+  DefProc pident paramclauses block -> failure x
+  DefFun pident paramclauses typespec body -> failure x
+transParamClause :: ParamClause -> Result
+transParamClause x = case x of
+  PArg args -> failure x
 transBody :: Body -> Result
 transBody x = case x of
   EBody exp -> failure x
-  BBody block -> failure x
+  SBody block -> failure x
 transArg :: Arg -> Result
 transArg x = case x of
-  DArg pident type_ -> failure x
+  DArg pident typespec -> failure x
 transOp :: Op -> Result
 transOp x = case x of
   Or -> failure x
@@ -74,35 +89,34 @@ transExp x = case x of
   EArray exps -> failure x
   ENot exp -> failure x
   ENeg exp -> failure x
-  EDeref exp -> failure x
-  ERef exp -> failure x
+  ELExp lexp -> failure x
+  EDeref lexp -> failure x
   EInt pinteger -> failure x
   EFloat pfloat -> failure x
-  EVar pident -> failure x
   EChar pchar -> failure x
   EString pstring -> failure x
-  ETrue -> failure x
-  EFalse -> failure x
+  ETrue ptrue -> failure x
+  EFalse pfalse -> failure x
+  ENull pnull -> failure x
   EOp exp1 op exp2 -> failure x
-  ETyped exp type_ -> failure x
-  EVarTyped pident type_ pinteger1 pinteger2 -> failure x
-transType :: Type -> Result
-transType x = case x of
-  Type_float -> failure x
-  Type_int -> failure x
-  Type_char -> failure x
-  Type_string -> failure x
-  Type_bool -> failure x
-  Type_null -> failure x
+  ETyped exp typespec -> failure x
+  EVarTyped pident typespec pinteger1 pinteger2 -> failure x
 transStm :: Stm -> Result
 transStm x = case x of
   Decla declaration -> failure x
   Expr exp -> failure x
   SBlock block -> failure x
-  Assign pident exp -> failure x
+  Assign lexp exp -> failure x
   While exp stm -> failure x
   If exp stm1 stm2 -> failure x
+  Return preturn -> failure x
+  ReturnExp preturn exp -> failure x
 transBlock :: Block -> Result
 transBlock x = case x of
   DBlock stms -> failure x
+transLExp :: LExp -> Result
+transLExp x = case x of
+  LRef lexp -> failure x
+  LArr lexp exp -> failure x
+  LIdent pident -> failure x
 

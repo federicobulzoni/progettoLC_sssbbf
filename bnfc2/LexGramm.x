@@ -21,7 +21,7 @@ $i = [$l $d _ ']     -- identifier character
 $u = [. \n]          -- universal: any character
 
 @rsyms =    -- symbols and non-identifier-like reserved words
-   \; | \10 | \& | \[ | \] | \( | \) | \: | \= | \, | \| \| | \& \& | \< | \< \= | \> | \> \= | \= \= | \! \= | \+ | \- | \* | \/ | \% | \^ | \! | \{ | \}
+   \; | \10 | \* | \[ | \] | \( | \) | \: | \= | \, | \| \| | \& \& | \< | \< \= | \> | \> \= | \= \= | \! \= | \+ | \- | \/ | \% | \^ | \! | \& | \{ | \}
 
 :-
 "//" [.]* ; -- Toss single line comments
@@ -30,6 +30,14 @@ $u = [. \n]          -- universal: any character
 $white+ ;
 @rsyms
     { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }
+T r u e
+    { tok (\p s -> PT p (eitherResIdent (T_PTrue . share) s)) }
+F a l s e
+    { tok (\p s -> PT p (eitherResIdent (T_PFalse . share) s)) }
+r e t u r n
+    { tok (\p s -> PT p (eitherResIdent (T_PReturn . share) s)) }
+N u l l
+    { tok (\p s -> PT p (eitherResIdent (T_PNull . share) s)) }
 $l ($l | $d | \_)*
     { tok (\p s -> PT p (eitherResIdent (T_PIdent . share) s)) }
 $d + \. $d + | $d + \. | \. $d +
@@ -63,6 +71,10 @@ data Tok =
  | TV !String         -- identifiers
  | TD !String         -- double precision float literals
  | TC !String         -- character literals
+ | T_PTrue !String
+ | T_PFalse !String
+ | T_PReturn !String
+ | T_PNull !String
  | T_PIdent !String
  | T_PFloat !String
  | T_PInteger !String
@@ -105,6 +117,10 @@ prToken t = case t of
   PT _ (TD s)   -> s
   PT _ (TC s)   -> s
   Err _         -> "#error"
+  PT _ (T_PTrue s) -> s
+  PT _ (T_PFalse s) -> s
+  PT _ (T_PReturn s) -> s
+  PT _ (T_PNull s) -> s
   PT _ (T_PIdent s) -> s
   PT _ (T_PFloat s) -> s
   PT _ (T_PInteger s) -> s
@@ -123,7 +139,7 @@ eitherResIdent tv s = treeFind resWords
                               | s == a = t
 
 resWords :: BTree
-resWords = b ">=" 21 (b "," 11 (b "&&" 6 (b "!=" 3 (b "!" 2 (b "\n" 1 N N) N) (b "&" 5 (b "%" 4 N N) N)) (b "*" 9 (b ")" 8 (b "(" 7 N N) N) (b "+" 10 N N))) (b "<" 16 (b ":" 14 (b "/" 13 (b "-" 12 N N) N) (b ";" 15 N N)) (b "==" 19 (b "=" 18 (b "<=" 17 N N) N) (b ">" 20 N N)))) (b "if" 32 (b "char" 27 (b "]" 24 (b "[" 23 (b "Array" 22 N N) N) (b "bool" 26 (b "^" 25 N N) N)) (b "false" 30 (b "else" 29 (b "def" 28 N N) N) (b "float" 31 N N))) (b "var" 37 (b "string" 35 (b "null" 34 (b "int" 33 N N) N) (b "true" 36 N N)) (b "||" 40 (b "{" 39 (b "while" 38 N N) N) (b "}" 41 N N))))
+resWords = b ">" 20 (b "+" 10 (b "&" 5 (b "!=" 3 (b "!" 2 (b "\n" 1 N N) N) (b "%" 4 N N)) (b ")" 8 (b "(" 7 (b "&&" 6 N N) N) (b "*" 9 N N))) (b ";" 15 (b "/" 13 (b "-" 12 (b "," 11 N N) N) (b ":" 14 N N)) (b "=" 18 (b "<=" 17 (b "<" 16 N N) N) (b "==" 19 N N)))) (b "^" 30 (b "Float" 25 (b "Bool" 23 (b "Array" 22 (b ">=" 21 N N) N) (b "Char" 24 N N)) (b "[" 28 (b "String" 27 (b "Int" 26 N N) N) (b "]" 29 N N))) (b "var" 35 (b "else" 33 (b "do" 32 (b "def" 31 N N) N) (b "if" 34 N N)) (b "||" 38 (b "{" 37 (b "while" 36 N N) N) (b "}" 39 N N))))
    where b s n = let bs = id s
                   in B bs (TS bs n)
 

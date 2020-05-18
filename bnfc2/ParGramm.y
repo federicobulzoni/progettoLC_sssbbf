@@ -36,25 +36,27 @@ import ErrM
   '>' { PT _ (TS _ 20) }
   '>=' { PT _ (TS _ 21) }
   'Array' { PT _ (TS _ 22) }
-  '[' { PT _ (TS _ 23) }
-  ']' { PT _ (TS _ 24) }
-  '^' { PT _ (TS _ 25) }
-  'bool' { PT _ (TS _ 26) }
-  'char' { PT _ (TS _ 27) }
-  'def' { PT _ (TS _ 28) }
-  'else' { PT _ (TS _ 29) }
-  'false' { PT _ (TS _ 30) }
-  'float' { PT _ (TS _ 31) }
-  'if' { PT _ (TS _ 32) }
-  'int' { PT _ (TS _ 33) }
-  'null' { PT _ (TS _ 34) }
-  'string' { PT _ (TS _ 35) }
-  'true' { PT _ (TS _ 36) }
-  'var' { PT _ (TS _ 37) }
-  'while' { PT _ (TS _ 38) }
-  '{' { PT _ (TS _ 39) }
-  '||' { PT _ (TS _ 40) }
-  '}' { PT _ (TS _ 41) }
+  'Bool' { PT _ (TS _ 23) }
+  'Char' { PT _ (TS _ 24) }
+  'Float' { PT _ (TS _ 25) }
+  'Int' { PT _ (TS _ 26) }
+  'String' { PT _ (TS _ 27) }
+  '[' { PT _ (TS _ 28) }
+  ']' { PT _ (TS _ 29) }
+  '^' { PT _ (TS _ 30) }
+  'def' { PT _ (TS _ 31) }
+  'do' { PT _ (TS _ 32) }
+  'else' { PT _ (TS _ 33) }
+  'if' { PT _ (TS _ 34) }
+  'var' { PT _ (TS _ 35) }
+  'while' { PT _ (TS _ 36) }
+  '{' { PT _ (TS _ 37) }
+  '||' { PT _ (TS _ 38) }
+  '}' { PT _ (TS _ 39) }
+  L_PTrue { PT _ (T_PTrue _) }
+  L_PFalse { PT _ (T_PFalse _) }
+  L_PReturn { PT _ (T_PReturn _) }
+  L_PNull { PT _ (T_PNull _) }
   L_PIdent { PT _ (T_PIdent _) }
   L_PFloat { PT _ (T_PFloat _) }
   L_PInteger { PT _ (T_PInteger _) }
@@ -62,6 +64,18 @@ import ErrM
   L_PChar { PT _ (T_PChar _) }
 
 %%
+
+PTrue :: { PTrue}
+PTrue  : L_PTrue { PTrue (mkPosToken $1)}
+
+PFalse :: { PFalse}
+PFalse  : L_PFalse { PFalse (mkPosToken $1)}
+
+PReturn :: { PReturn}
+PReturn  : L_PReturn { PReturn (mkPosToken $1)}
+
+PNull :: { PNull}
+PNull  : L_PNull { PNull (mkPosToken $1)}
 
 PIdent :: { PIdent}
 PIdent  : L_PIdent { PIdent (mkPosToken $1)}
@@ -89,117 +103,131 @@ ListDeclaration : {- empty -} { [] }
                 | Declaration '
 ' ListDeclaration { (:) $1 $3 }
                 | {- empty -} { [] }
+                | Declaration ';' ListDeclaration { (:) $1 $3 }
+                | {- empty -} { [] }
                 | Declaration ListDeclaration { (:) $1 $2 }
 TypeSpec :: { TypeSpec }
 TypeSpec : SType { AbsGramm.TSimple $1 }
-         | '&' TypeSpec { AbsGramm.TPointer $2 }
-         | 'Array' '[' Exp ']' '(' TypeSpec ')' { AbsGramm.TArray $3 $6 }
+         | '*' TypeSpec { AbsGramm.TPointer $2 }
+         | 'Array' '[' TypeSpec ']' '(' Exp ')' { AbsGramm.TArray $3 $6 }
 SType :: { SType }
-SType : 'float' { AbsGramm.SType_float }
-      | 'int' { AbsGramm.SType_int }
-      | 'char' { AbsGramm.SType_char }
-      | 'string' { AbsGramm.SType_string }
-      | 'bool' { AbsGramm.SType_bool }
-      | 'null' { AbsGramm.SType_null }
+SType : 'Float' { AbsGramm.SType_Float }
+      | 'Int' { AbsGramm.SType_Int }
+      | 'Char' { AbsGramm.SType_Char }
+      | 'String' { AbsGramm.SType_String }
+      | 'Bool' { AbsGramm.SType_Bool }
 Declaration :: { Declaration }
 Declaration : 'var' PIdent ':' TypeSpec { AbsGramm.DecVar $2 $4 }
             | 'var' PIdent ':' TypeSpec '=' Exp { AbsGramm.DefVar $2 $4 $6 }
-            | 'var' PIdent '=' 'Array' '(' ListExp ')' { AbsGramm.DefArray $2 $6 }
-            | 'def' PIdent '(' ListArg ')' '=' Body { AbsGramm.DefProc $2 $4 $7 }
-ListExp :: { [Exp] }
-ListExp : {- empty -} { [] }
-        | Exp { (:[]) $1 }
-        | Exp ',' ListExp { (:) $1 $3 }
-        | {- empty -} { [] }
-        | Exp ListExp { (:) $1 $2 }
-Body :: { Body }
-Body : Exp { AbsGramm.EBody $1 } | Block { AbsGramm.BBody $1 }
+            | 'def' PIdent ListParamClause '=' Block { AbsGramm.DefProc $2 $3 $5 }
+            | 'def' PIdent ListParamClause ':' TypeSpec '=' Body { AbsGramm.DefFun $2 $3 $5 $7 }
+ParamClause :: { ParamClause }
+ParamClause : '(' ListArg ')' { AbsGramm.PArg $2 }
+ListParamClause :: { [ParamClause] }
+ListParamClause : ParamClause { (:[]) $1 }
+                | ParamClause ListParamClause { (:) $1 $2 }
+                | ParamClause { (:[]) $1 }
+                | ParamClause ListParamClause { (:) $1 $2 }
 ListArg :: { [Arg] }
 ListArg : {- empty -} { [] }
         | Arg { (:[]) $1 }
         | Arg ',' ListArg { (:) $1 $3 }
         | {- empty -} { [] }
         | Arg ListArg { (:) $1 $2 }
+Body :: { Body }
+Body : Exp { AbsGramm.EBody $1 } | Block { AbsGramm.SBody $1 }
 Arg :: { Arg }
-Arg : PIdent ':' Type { AbsGramm.DArg $1 $3 }
-Op :: { Op }
-Op : Op1 { $1 } | Op2 { $1 } | Op1 { $1 }
+Arg : PIdent ':' TypeSpec { AbsGramm.DArg $1 $3 }
 Op1 :: { Op }
 Op1 : '||' { AbsGramm.Or } | Op2 { $1 }
 Op2 :: { Op }
 Op2 : '&&' { AbsGramm.And } | Op3 { $1 }
-Op4 :: { Op }
-Op4 : '<' { AbsGramm.Less }
+Op3 :: { Op }
+Op3 : '<' { AbsGramm.Less }
     | '<=' { AbsGramm.LessEq }
     | '>' { AbsGramm.Greater }
     | '>=' { AbsGramm.GreterEq }
     | '==' { AbsGramm.Equal }
     | '!=' { AbsGramm.NotEq }
-    | Op5 { $1 }
+    | Op4 { $1 }
+Op4 :: { Op }
+Op4 : '+' { AbsGramm.Plus } | '-' { AbsGramm.Minus } | Op5 { $1 }
 Op5 :: { Op }
-Op5 : '+' { AbsGramm.Plus } | '-' { AbsGramm.Minus } | Op6 { $1 }
-Op6 :: { Op }
-Op6 : '*' { AbsGramm.Prod }
+Op5 : '*' { AbsGramm.Prod }
     | '/' { AbsGramm.Div }
     | '%' { AbsGramm.Mod }
-    | Op7 { $1 }
-Op7 :: { Op }
-Op7 : '^' { AbsGramm.Pow } | Op8 { $1 }
-Op3 :: { Op }
-Op3 : Op4 { $1 }
-Op8 :: { Op }
-Op8 : '(' Op ')' { $2 }
+    | Op6 { $1 }
+Op6 :: { Op }
+Op6 : '^' { AbsGramm.Pow } | '(' Op ')' { $2 }
+Op :: { Op }
+Op : Op1 { $1 }
 Exp :: { Exp }
 Exp : 'Array' '(' ListExp ')' { AbsGramm.EArray $3 }
     | Exp Op1 Exp1 { op_ $1 $2 $3 }
     | Exp1 { $1 }
+ListExp :: { [Exp] }
+ListExp : {- empty -} { [] }
+        | Exp { (:[]) $1 }
+        | Exp ',' ListExp { (:) $1 $3 }
+        | {- empty -} { [] }
+        | Exp ListExp { (:) $1 $2 }
 Exp1 :: { Exp }
 Exp1 : Exp1 Op2 Exp2 { op_ $1 $2 $3 } | Exp2 { $1 }
 Exp2 :: { Exp }
-Exp2 : '!' Exp2 { AbsGramm.ENot $2 } | Exp3 { $1 }
+Exp2 : '!' Exp2 { AbsGramm.ENot $2 }
+     | Exp3 Op3 Exp3 { op_ $1 $2 $3 }
+     | Exp3 { $1 }
 Exp3 :: { Exp }
-Exp3 : Exp4 Op4 Exp4 { op_ $1 $2 $3 } | Exp4 { $1 }
+Exp3 : Exp3 Op4 Exp4 { op_ $1 $2 $3 } | Exp4 { $1 }
 Exp4 :: { Exp }
 Exp4 : Exp4 Op5 Exp5 { op_ $1 $2 $3 } | Exp5 { $1 }
 Exp5 :: { Exp }
-Exp5 : Exp5 Op6 Exp6 { op_ $1 $2 $3 } | Exp6 { $1 }
+Exp5 : Exp6 Op6 Exp7 { op_ $1 $2 $3 } | Exp6 { $1 }
 Exp6 :: { Exp }
-Exp6 : Exp7 Op7 Exp6 { op_ $1 $2 $3 } | Exp7 { $1 }
+Exp6 : '-' Exp7 { AbsGramm.ENeg $2 } | Exp7 { $1 }
 Exp7 :: { Exp }
-Exp7 : '-' Exp8 { AbsGramm.ENeg $2 } | Exp8 { $1 }
-Exp8 :: { Exp }
-Exp8 : '&' Exp8 { AbsGramm.EDeref $2 }
-     | '*' Exp8 { AbsGramm.ERef $2 }
+Exp7 : LExp { AbsGramm.ELExp $1 }
+     | '&' LExp { AbsGramm.EDeref $2 }
      | PInteger { AbsGramm.EInt $1 }
      | PFloat { AbsGramm.EFloat $1 }
-     | PIdent { AbsGramm.EVar $1 }
      | PChar { AbsGramm.EChar $1 }
      | PString { AbsGramm.EString $1 }
-     | 'true' { AbsGramm.ETrue }
-     | 'false' { AbsGramm.EFalse }
+     | PTrue { AbsGramm.ETrue $1 }
+     | PFalse { AbsGramm.EFalse $1 }
+     | PNull { AbsGramm.ENull $1 }
      | '(' Exp ')' { $2 }
-ListStm :: { [Stm] }
-ListStm : {- empty -} { [] }
-        | Stm ListStm { (:) $1 $2 }
-        | {- empty -} { [] }
-        | Stm { (:[]) $1 }
-        | Stm ';' ListStm { (:) $1 $3 }
-Type :: { Type }
-Type : 'float' { AbsGramm.Type_float }
-     | 'int' { AbsGramm.Type_int }
-     | 'char' { AbsGramm.Type_char }
-     | 'string' { AbsGramm.Type_string }
-     | 'bool' { AbsGramm.Type_bool }
-     | 'null' { AbsGramm.Type_null }
 Stm :: { Stm }
 Stm : Declaration { AbsGramm.Decla $1 }
     | Exp { AbsGramm.Expr $1 }
     | Block { AbsGramm.SBlock $1 }
-    | PIdent '=' Exp { AbsGramm.Assign $1 $3 }
+    | LExp '=' Exp { AbsGramm.Assign $1 $3 }
     | 'while' '(' Exp ')' Stm { AbsGramm.While $3 $5 }
     | 'if' '(' Exp ')' Stm 'else' Stm { AbsGramm.If $3 $5 $7 }
+    | 'do' Stm 'while' '(' Exp ')' { do_ $2 $5 }
+    | PReturn { AbsGramm.Return $1 }
+    | PReturn Exp { AbsGramm.ReturnExp $1 $2 }
 Block :: { Block }
 Block : '{' ListStm '}' { AbsGramm.DBlock $2 }
+ListStm :: { [Stm] }
+ListStm : {- empty -} { [] }
+        | Stm { (:[]) $1 }
+        | Stm ';' ListStm { (:) $1 $3 }
+        | {- empty -} { [] }
+        | Stm { (:[]) $1 }
+        | Stm '
+' ListStm { (:) $1 $3 }
+        | {- empty -} { [] }
+        | Stm ';' ListStm { (:) $1 $3 }
+        | {- empty -} { [] }
+        | Stm ListStm { (:) $1 $2 }
+LExp :: { LExp }
+LExp : '*' LExp { AbsGramm.LRef $2 } | LExp1 { $1 }
+LExp1 :: { LExp }
+LExp1 : LExp1 '(' Exp ')' { AbsGramm.LArr $1 $3 }
+      | PIdent { AbsGramm.LIdent $1 }
+      | LExp2 { $1 }
+LExp2 :: { LExp }
+LExp2 : '(' LExp ')' { $2 }
 {
 
 returnM :: a -> Err a
@@ -218,5 +246,6 @@ happyError ts =
 
 myLexer = tokens
 op_ e1_ o_ e2_ = EOp e1_ o_ e2_
+do_ st_ ex_ = SBlock (DBlock [st_, While ex_ st_])
 }
 
