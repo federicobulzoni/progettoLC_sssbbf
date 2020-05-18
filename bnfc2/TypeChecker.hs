@@ -9,9 +9,6 @@ import PrintGramm
 import Control.Monad.Writer
 
 typeCheck :: Program -> Writer [String] Program
-
--- data Program = Prog [Decl]
-
 typeCheck (Prog decls) = do
   res <- checkDecls decls emptyEnv
   return (Prog res)
