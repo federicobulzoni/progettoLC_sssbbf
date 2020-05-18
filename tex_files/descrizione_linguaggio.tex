@@ -10,6 +10,8 @@
 \usepackage{amsthm}
 
 \title{Descrizione del linguaggio SBF}
+\date{}
+\author{}
 
 % Nome del linguaggio.
 \newcommand{\SBF}{\textbf{SBF}}
@@ -46,21 +48,22 @@
 	\hl{non serviranno tutti}
 	
 	\subsection*{Identificatori}
-	Un identificatore $\token{Ident}$ è uno dei seguenti:
-	\begin{enumerate}
-		\item una lettera o il carattere '\_' seguiti da una sequenza arbitraria di lettere, cifre e del carattere '\_';
-		\item una sequenza di uno o più operatori (ad esempio '+', ':', '?'). Il simbolo '\$' è escluso;
-		\item identificatori del primo tipo, seguiti da '\_' e da un un identificatore del secondo tipo;
-		\item una stringa arbitraria racchiusa fra back-quotes (ad esempio `def`).
-	\end{enumerate}
-	Sono escluse le parole riservate.
-	
-	\hl{Ci sarebbe la distinzione fra identificatori di costante e non.}
+%	Un identificatore $\token{Ident}$ è uno dei seguenti:
+%	\begin{enumerate}
+%		\item una lettera o il carattere '\_' seguiti da una sequenza arbitraria di lettere, cifre e del carattere '\_';
+%		\item una sequenza di uno o più operatori (ad esempio '+', ':', '?'). Il simbolo '\$' è escluso;
+%		\item identificatori del primo tipo, seguiti da '\_' e da un un identificatore del secondo tipo;
+%		\item una stringa arbitraria racchiusa fra back-quotes (ad esempio `def`).
+%	\end{enumerate}
+%	Sono escluse le parole riservate.
+%	\hl{Ci sarebbe la distinzione fra identificatori di costante e non.}
+
+	Un identificatore $\token{Ident}$ è una lettera o il carattere '\_' seguiti da una sequenza arbitraria di lettere, cifre e del carattere '\_'.
 	
 	\subsection*{Caratteri di ritorno a capo}
 	Nel linguaggio \SBF\ le istruzioni possono terminare con ';' oppure '\textbackslash n'. 
 	\begin{equation*}
-	\token{End} ::= \texttt{;}\ |\ \token{NewLine}
+	\token{Sep} ::= \texttt{;}\ |\ \token{NewLine}
 	\end{equation*}
 	
 	Il carattere di ritorno a capo '\textbackslash n' è sintatticamente significativo, e corrisponde a un token $\token{NewLine}$ quando le seguenti condizioni sono soddisfatte:
@@ -96,26 +99,83 @@
 	
 	\section{Struttura sintattica di \SBF}
 	\begin{itemize}
-	\item Un \emph{programma} è una sequenza di dichiarazioni.
+	\item Un \emph{programma} è una sequenza di dichiarazioni separate da token di separazione $\token{Sep}$.
+
 	
 	\item Una \emph{dichiarazione} ha una delle seguenti forme:
 	\begin{itemize}
-		\item \emph{Dichiarazione di variabili.} \hl{Descrizione}
-		\item \emph{Dichiarazione di funzioni/procedure.} \hl{Descrizione}
+		\item \emph{Dichiarazione di variabili e valori.}
+		\begin{align*}
+		\token{Decl} ::=\ &\texttt{val}\ \token{Ident} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\\
+		|\ &\texttt{val}\ \token{Ident} \texttt{:}\ \token{TypeSpec}\\
+		|\ &\texttt{var}\ \token{Ident} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\\
+		|\ &\texttt{var}\ \token{Ident} \texttt{:}\ \token{TypeSpec}
+		\end{align*}
+		dove
+		\begin{align*}
+		\token{TypeSpec} ::=\ &\token{SimpleType}\\
+		|\ &\texttt{\&}\ \token{TypeSpec}\\
+		|\ &\texttt{Array}\ \texttt{[}\ \token{TypeSpec}\ \texttt{]}\\
+		\token{SimpleType} ::=\ &\texttt{bool}| \texttt{char}| \texttt{integer}| \texttt{float}| \texttt{string}
+		\end{align*}
+		\item \emph{Dichiarazione di funzioni/procedure.}
+		\begin{align*}
+		\token{Decl} ::=\ & \texttt{def}\ \token{Ident}\ \token{ParamClauses} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\\
+		& \texttt{def}\ \token{Ident}\ \token{ParamClauses} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Block}
+		\end{align*}
+		L'elemento $\token{ParamClauses}$ è una sequenza, non vuota, di $\token{ParamClause}$:
+		\begin{equation*}
+		\token{ParamClause} ::=\ \texttt{(}\ \token{ListOfParameters}\ \texttt{)}
+		\end{equation*}
+		mentre $\token{ListOfParameters}$ è una sequenza, che può essere vuota, di elementi separati da virgola della forma
+		\begin{equation*}
+		\token{Parameter} ::=\ \token{Ident}\ \texttt{:}\ \token{TypeSpec}
+		\end{equation*}
+		
 	\end{itemize}
 
-	\item Un \emph{blocco} ha la forma
-	\begin{align*}
-	\token{Block} ::=\ &\texttt{\{} \token{Stmts}\ \token{Expr} \texttt{\}}\\
-	|\ & \texttt{\{} \token{Stmts} \texttt{\}}
-	\end{align*}
-	Il primo elemento $\token{Stmts}$ è una sequenza, eventualmente vuota, di istruzioni.
+	\item Un \emph{blocco} è una sequenza di istruzioni racchiuse fra parentesi graffe e separate da $\token{Sep}$.
 	
-	\item Una \emph{istruzione} ha la forma
+	\item Una \emph{istruzione} ha la forma:
 	\begin{align*}
-	\token{Stmt} ::= \ & \token{Block}\\
-	| \ & \token{Ident}\ \texttt{(} \ \token{RExprList}\ \texttt{)}
+	\token{Stmt} ::=\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
+	|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\ \texttt{else}\ \token{Stmt}\\
+	|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\ \token{Sep}\ \texttt{else}\ \token{Stmt}\\
+	|\ &\texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
+	|\ &\texttt{do}\ \token{Stmt}\ \texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\\
+	|\ &\texttt{do}\ \token{Stmt}\ \token{Sep}\ \texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\\
+	|\ &\texttt{return}\\
+	|\ &\texttt{return}\ \token{Expr}\\
+	|\ &\token{Block}\\
+	|\ &\token{LExpr}\\
+	|\ &\token{LExpr}\ \token{AssignmentOp}\ \token{Expr}\\
+	|\ &\token{Ident}\ \token{ParamClauses}
 	\end{align*}
+	
+	\item Le \emph{left expressions} permesse nel linguaggio hanno la seguente forma.
+	\begin{align*}
+	\token{LExpr} ::=\ &\token{Ident}\\
+	|\ &\token{LExpr}\ \texttt{(}\ \token{Expr}\ \texttt{)}\\
+	|\ &\texttt{*}\ \token{LExpr}\\
+	|\ &\texttt{\&}\ \token{LExpr}\\
+	|\ &\texttt{(}\ \token{LExpr}\ \texttt{)}
+	\end{align*}
+	\hl{Precedenza di puntatori e array access}
+
+	\item Le \emph{right expressions} permesse nel linguaggio hanno la seguente forma.
+	\begin{align*}
+	\token{Expr} ::=\ &\token{LExpr}\\
+	|\ &\token{Literal}\\
+	|\ &\token{Expr}\ \token{BinOp}\ \token{Expr}\\
+	|\ &\token{UnOp}\ \token{Expr}\\
+	|\ &\token{Ident}\ \token{Lists}\\
+	|\ &\texttt{(}\ \token{Expr}\ \texttt{)}
+	\end{align*}
+	\begin{align*}
+	\token{BinOp} ::=\ &\texttt{||} | \texttt{\&\&}|\texttt{+}|\texttt{-}|\texttt{*}|\texttt{/}|\texttt{\%}|\texttt{\^{}}|\texttt{==}|\texttt{!=}|\texttt{<}|\texttt{<=}|\texttt{>}|\texttt{>=}\\
+	\token{UnOp} ::=\ &\texttt{!}\ \texttt{-}
+	\end{align*}
+
 	
 	\end{itemize}
 	
