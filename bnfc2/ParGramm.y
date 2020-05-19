@@ -119,7 +119,7 @@ SType : 'Float' { AbsGramm.SType_Float }
 Declaration :: { Declaration }
 Declaration : 'var' PIdent ':' TypeSpec { AbsGramm.DecVar $2 $4 }
             | 'var' PIdent ':' TypeSpec '=' Exp { AbsGramm.DefVar $2 $4 $6 }
-            | 'def' PIdent ListParamClause '=' Block { AbsGramm.DefProc $2 $3 $5 }
+            | 'def' PIdent ListParamClause '=' Block { dproc_ $2 $3 $5 }
             | 'def' PIdent ListParamClause ':' TypeSpec '=' Body { AbsGramm.DefFun $2 $3 $5 $7 }
 ParamClause :: { ParamClause }
 ParamClause : '(' ListArg ')' { AbsGramm.PArg $2 }
@@ -247,5 +247,6 @@ happyError ts =
 myLexer = tokens
 op_ e1_ o_ e2_ = EOp e1_ o_ e2_
 do_ st_ ex_ = SBlock (DBlock [st_, While ex_ st_])
+dproc_ id_ params_ block_ = DefFun id_ params_ (TSimple TypeVoid) (SBody block_)
 }
 

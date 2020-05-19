@@ -43,13 +43,13 @@ data SType
     | SType_Char
     | SType_String
     | SType_Bool
-    | TypeNull
+    | TypeError
+    | TypeVoid
   deriving (Eq, Ord, Show, Read)
 
 data Declaration
     = DecVar PIdent TypeSpec
     | DefVar PIdent TypeSpec Exp
-    | DefProc PIdent [ParamClause] Block
     | DefFun PIdent [ParamClause] TypeSpec Body
   deriving (Eq, Ord, Show, Read)
 

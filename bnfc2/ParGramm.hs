@@ -721,7 +721,7 @@ happyReduction_31 (happy_x_5 `HappyStk`
 	case happyOut19 happy_x_3 of { (HappyWrap19 happy_var_3) -> 
 	case happyOut40 happy_x_5 of { (HappyWrap40 happy_var_5) -> 
 	happyIn17
-		 (AbsGramm.DefProc happy_var_2 happy_var_3 happy_var_5
+		 (dproc_ happy_var_2 happy_var_3 happy_var_5
 	) `HappyStk` happyRest}}}
 
 happyReduce_32 = happyReduce 7# 13# happyReduction_32
@@ -1542,6 +1542,7 @@ happyError ts =
 myLexer = tokens
 op_ e1_ o_ e2_ = EOp e1_ o_ e2_
 do_ st_ ex_ = SBlock (DBlock [st_, While ex_ st_])
+dproc_ id_ params_ block_ = DefFun id_ params_ (TSimple TypeVoid) (SBody block_)
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 -- $Id: GenericTemplate.hs,v 1.26 2005/01/14 14:47:22 simonmar Exp $
 

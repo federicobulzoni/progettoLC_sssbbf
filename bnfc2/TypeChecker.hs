@@ -4,14 +4,44 @@ module TypeChecker where
 
 import AbsGramm
 import ErrM
-import Environment
+import Environment as Env
 import PrintGramm
 import Control.Monad.Writer
 
+-- DefFun PIdent [ParamClause] TypeSpec Body
+{-
+type Env = Map.Map Ident Info
+data Info = 
+  VarInfo Loc Type
+  | FunInfo Loc Type [ParamClause]
+  deriving (Show)
+
+update :: EnvStack -> Ident -> Info -> Err EnvStack
+-}
+
+
+initialFuns :: [(Ident, Info)]
+initialFuns = [("writeInt", FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"i")) (TSimple SType_Int) ]]),
+  ("writeFloat", FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"f")) (TSimple SType_Float) ]]),
+  ("writeChar", FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"c")) (TSimple SType_Char) ]]),
+  ("writeString", FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"s")) (TSimple SType_String) ]]),
+
+  ("readInt", FunInfo (0,0) (TSimple SType_Int) [PArg []]),
+  ("readFloat", FunInfo (0,0) (TSimple SType_Float) [PArg []]),
+  ("readChar", FunInfo (0,0) (TSimple SType_Char) [PArg []]),
+  ("readString", FunInfo (0,0) (TSimple SType_String) [PArg []]) ]
+
 typeCheck :: Program -> Writer [String] Program
 typeCheck (Prog decls) = do
-  res <- checkDecls decls emptyEnv
-  return (Prog res)
+  -- deve inizializzare l'environment.
+  let x = foldM (\x (ident, info) -> Env.update x ident info) Env.emptyStack initialFuns in
+    case x of
+      Ok env -> do
+        res <- checkDecls decls env
+        return (Prog res)
+      Bad msg -> do
+        -- è impossibile.
+        error $ msg
 
 checkDecls :: [Decl] -> Env -> Writer [String] [Decl]
 checkDecls [] env = return []
@@ -42,6 +72,12 @@ checkDecl decl env = case decl of
         return (decl, env)
 
 -- OK!!!
+{-
+
+
+-}
+
+
 checkExp :: Exp -> Type -> Env -> Writer [String] Exp
 checkExp exp typ env = do
   typ' <- inferExp exp env
@@ -64,8 +100,51 @@ checkExpAux typ typ'
   | otherwise = False
 
 -- OK!!!
-inferExp :: Exp -> Env -> Writer [String] Type
+{-
+data Exp
+    = EArray [Exp]
+    | ENot Exp
+    | ENeg Exp
+    | ELExp LExp
+    | EDeref LExp
+    | EInt PInteger
+    | EFloat PFloat
+    | EChar PChar
+    | EString PString
+    | ETrue PTrue
+    | EFalse PFalse
+    | ENull PNull
+    | EOp Exp Op Exp
+    | ETyped Exp TypeSpec
+    | EVarTyped PIdent TypeSpec PInteger PInteger
+  deriving (Eq, Ord, Show, Read)
+-}
+
+
+-- (not (3+5)) -> Type_error
+-- (3+5) -> Type_Int
+inferExp :: Exp -> EnvStack -> Writer [String] Type
 inferExp exp env = case exp of
+  -- Nel caso dell'array bisogna inferire il tipo di ogni espressione in exps
+  -- e tutte devono avere lo stesso tipo.
+  -- Caso con array vuoto.
+  EArray [] -> return TypeVoid
+  -- Caso con almeno un elemento
+  EArray [exp'] -> inferExp exp' env
+  EArray (exp':exps) -> do
+    typ' <- inferExp exp' env
+    checkExp (EArray exps) typ' env
+
+  -- Il not non cambia il tipo dell'espressione a cui è applicato,
+  -- il tipo di una espressione not è dunque il tipo della espressione a cui il not è applicato.
+  ENot exp' -> checkExp exp' SType_Bool env
+    
+  --Stesso discorso del not.
+  ENeg exp' -> inferExp exp' env
+
+  -- Stesso discorso del not e del neg.
+  ELExp exp' -> inferExp exp' env
+
   EAdd exp1 exp2 -> do 
     -- Writer [String] Type
     t1 <- inferExp exp1 env
@@ -89,7 +168,10 @@ inferExp exp env = case exp of
         return Type_null
       Ok typ -> return typ
 
---Prog [DefVar (Id ((1,5),"x")) Type_int (EInt 3),DefVar (Id ((1,22),"y")) Type_int (EInt 3),DefVar (Id ((1,39),"z")) Type_int (EAdd (EVar (Id ((1,49),"x"))) (EVar (Id ((1,51),"y"))))]
+
+
+
+
 
 
 

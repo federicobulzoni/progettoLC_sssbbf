@@ -135,13 +135,13 @@ instance Print AbsGramm.SType where
     AbsGramm.SType_Char -> prPrec i 0 (concatD [doc (showString "Char")])
     AbsGramm.SType_String -> prPrec i 0 (concatD [doc (showString "String")])
     AbsGramm.SType_Bool -> prPrec i 0 (concatD [doc (showString "Bool")])
-    AbsGramm.TypeNull -> prPrec i 0 (concatD [doc (showString "Null")])
+    AbsGramm.TypeError -> prPrec i 0 (concatD [doc (showString "Error")])
+    AbsGramm.TypeVoid -> prPrec i 0 (concatD [doc (showString "Void")])
 
 instance Print AbsGramm.Declaration where
   prt i e = case e of
     AbsGramm.DecVar pident typespec -> prPrec i 0 (concatD [doc (showString "var"), prt 0 pident, doc (showString ":"), prt 0 typespec])
     AbsGramm.DefVar pident typespec exp -> prPrec i 0 (concatD [doc (showString "var"), prt 0 pident, doc (showString ":"), prt 0 typespec, doc (showString "="), prt 0 exp])
-    AbsGramm.DefProc pident paramclauses block -> prPrec i 0 (concatD [doc (showString "def"), prt 0 pident, prt 0 paramclauses, doc (showString "="), prt 0 block])
     AbsGramm.DefFun pident paramclauses typespec body -> prPrec i 0 (concatD [doc (showString "def"), prt 0 pident, prt 0 paramclauses, doc (showString ":"), prt 0 typespec, doc (showString "="), prt 0 body])
   prtList _ [] = concatD []
   prtList _ [] = concatD []

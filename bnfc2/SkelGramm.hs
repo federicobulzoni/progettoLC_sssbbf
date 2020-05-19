@@ -51,12 +51,12 @@ transSType x = case x of
   SType_Char -> failure x
   SType_String -> failure x
   SType_Bool -> failure x
-  TypeNull -> failure x
+  TypeError -> failure x
+  TypeVoid -> failure x
 transDeclaration :: Declaration -> Result
 transDeclaration x = case x of
   DecVar pident typespec -> failure x
   DefVar pident typespec exp -> failure x
-  DefProc pident paramclauses block -> failure x
   DefFun pident paramclauses typespec body -> failure x
 transParamClause :: ParamClause -> Result
 transParamClause x = case x of

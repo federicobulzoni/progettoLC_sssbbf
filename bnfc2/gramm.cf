@@ -12,10 +12,8 @@ position token PIdent ( letter (letter | digit | '_' )* );
 position token PFloat ( (digit+ '.' digit+) | (digit+ '.') | ('.' digit+));
 position token PInteger ( digit+ );
 
-
 comment "//";
 comment "/*" "*/";
-
 
 Prog. Program ::= [Declaration];
 separator Declaration ";";
@@ -36,7 +34,11 @@ TArray. TypeSpec ::= "Array" "[" TypeSpec "]" "(" Exp ")";
 
 rules SType ::= "Float" | "Int" | "Char" | "String" | "Bool";
 -- Da considerare se renderlo disponibile all'utente o tenerlo solo interno.
-internal TypeNull. SType ::= "Null";
+-- TypeError viene assegnato ogni volta che il type checker da errore al corrispondente elemento della sintassi astratta
+-- tale elemento può essere una espressione, ma anche una funzione con problemi sul tipo di ritorno ad esempio.
+internal TypeError. SType ::= "Error";
+-- TypeVoid è il tipo fittizio assegnato alle procedure e degli array vuoti.
+internal TypeVoid. SType ::= "Void";
 
 DecVar. Declaration ::= "var" PIdent ":" TypeSpec;
 DefVar. Declaration ::= "var" PIdent ":" TypeSpec "=" Exp;
@@ -54,8 +56,9 @@ DefVar. Declaration ::= "var" PIdent ":" TypeSpec "=" Exp;
 -- Non abbiamo liste di liste di argomenti, 
 -- è una nostra scelta quella di mantenere una lista,
 -- unica.
-DefProc. Declaration ::= "def" PIdent [ParamClause] "=" Block;
+dproc. Declaration ::= "def" PIdent [ParamClause] "=" Block;
 DefFun.  Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Body;
+
 PArg. ParamClause ::= "("  [Arg] ")";
 
 separator nonempty ParamClause "";
@@ -148,8 +151,6 @@ do. Stm ::= "do" Stm "while" "(" Exp ")";
 Return. Stm ::= PReturn ;
 ReturnExp. Stm ::= PReturn Exp ;
 
-
-
 separator Stm ";";
 separator Stm "\n";
 terminator Stm ";";
@@ -168,10 +169,12 @@ internal ETyped. Exp ::= "[" Exp ":" TypeSpec "]" ;
 -- La seconda coppia è la posizione corrispondente a dove la variabile id è stata dichiarata.
 internal EVarTyped. Exp2 ::= "[" PIdent ":" TypeSpec "," "(" PInteger "," PInteger ")" "]";
 
+--DefFun.  Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Body;
 
 -- Cose che non vanno bene a Sublime.
 define op e1 o e2 = EOp e1 o e2;
 define do st ex = SBlock (DBlock [st, (While ex st)]);
+define dproc id params block = DefFun id params (TSimple TypeVoid) (SBody block);
 position token PString ( '"' ((char - ["\"\\"]) | ('\\' ["\"\\nt"]))* '"' );
 position token PChar ('\'' ((char - ["'\\"]) | ('\\' ["'\\nt"])) '\'' );
 
