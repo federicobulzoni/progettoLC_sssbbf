@@ -76,10 +76,64 @@ checkDecl decl env = case decl of
 
 
 -}
+checkBlock :: DBlock -> Env -> Writer [String] DBlock
+checkBlock (DBlock stms) env = return (checkStms stms (Env.addScope env))
+
+checkStm :: Stm -> Env -> Writer [String] (Stm, Env)
+checkStm stm env = case stm of
+  While exp stm' -> do
+    -- texp è l'espressione annotata col tipo.
+    texp <- inferExp exp env
+    if checkExp texp Type_Bool
+      then
+        return (While texp (checkStm stm' env), env)
+      else
+        let (exp typ) = texp in
+          tell [printTree exp ++ " e' di tipo " ++ printTree typ' ++ ", ma il tipo aspettato e' " ++ printTree typ ++ "\n"]
+          return (While texp (checkStm stm' env))
+  Decla decl -> do
+    (decl', env') <- checkDecl decl env
+    return (Decla decl', env')
+  SBlock dblock -> return (SBlock (checkBlock dblock env), env)
+  Expr exp -> return (Expr (inferExp exp env), env)
+
+  -- Lexp ha una gestione diversa da exp?
+  -- che ci voglia inferLExp?
+  Assign lexp exp -> do
+    tlexp <- inferExp lexp env
+    texp@(ETyped exp typ) <- inferExp exp env
+    if checkExp tlexp typ
+      then
+        return (Assign tlexp texp, env) 
+      else
+        do
+          tell [printTree texp ++ " e' di tipo " ++ printTree typ ++ ", ma il tipo aspettato e' " ++ printTree typ ++ "\n"]
+
+
+  If exp stmif stmelse -> do
+    texp <- inferExp exp env
+    if 
+
+
+
+
+
+
+
+
+
+
+
+-- (Exp di tipo sconosciuto) e vuoi verificare che sia di tipo typ passato. 
+
+    -- Type_Error
+    -- Type_Int
+-- while ( 3 + 5 ) ...
 
 
 checkExp :: Exp -> Type -> Env -> Writer [String] Exp
 checkExp exp typ env = do
+  -- 
   typ' <- inferExp exp env
   if typ' == Type_null
     then
@@ -91,6 +145,7 @@ checkExp exp typ env = do
         else
           do 
             tell [printTree exp ++ " e' di tipo " ++ printTree typ' ++ ", ma il tipo aspettato e' " ++ printTree typ ++ "\n"]
+            -- Forse qua andrebbe typ.
             return (ETyped exp Type_null)
 
 
@@ -121,29 +176,41 @@ data Exp
 -}
 
 
--- (not (3+5)) -> Type_error
--- (3+5) -> Type_Int
-inferExp :: Exp -> EnvStack -> Writer [String] Type
+-- Ad inferExp gli passiamo un espressione di cui non conosciamo il tipo,
+-- e dunque ritorna tale espressione arricchita col suo tipo.
+inferExp :: Exp -> EnvStack -> Writer [String] ETyped
 inferExp exp env = case exp of
   -- Nel caso dell'array bisogna inferire il tipo di ogni espressione in exps
   -- e tutte devono avere lo stesso tipo.
   -- Caso con array vuoto.
-  EArray [] -> return TypeVoid
+  EArray [] -> return (ETyped exp TypeVoid)
   -- Caso con almeno un elemento
-  EArray [exp'] -> inferExp exp' env
+  EArray [exp'] -> do
+    texp' <- inferExp exp' env
+    let (ETyped exp' typ') = texp' in 
+      return (ETyped (EArray [texp']), typ')
+
+  return (ETyped exp (inferExp exp' env))
+  
   EArray (exp':exps) -> do
+    
+    
     typ' <- inferExp exp' env
     checkExp (EArray exps) typ' env
 
   -- Il not non cambia il tipo dell'espressione a cui è applicato,
   -- il tipo di una espressione not è dunque il tipo della espressione a cui il not è applicato.
-  ENot exp' -> checkExp exp' SType_Bool env
+  ENot exp' -> do 
+    texp <- inferExp exp' env
+
+  checkExp exp' SType_Bool env
     
   --Stesso discorso del not.
   ENeg exp' -> inferExp exp' env
 
   -- Stesso discorso del not e del neg.
   ELExp exp' -> inferExp exp' env
+
 
   EAdd exp1 exp2 -> do 
     -- Writer [String] Type

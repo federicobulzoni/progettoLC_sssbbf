@@ -142,7 +142,7 @@ instance Print AbsGramm.Declaration where
   prt i e = case e of
     AbsGramm.DecVar pident typespec -> prPrec i 0 (concatD [doc (showString "var"), prt 0 pident, doc (showString ":"), prt 0 typespec])
     AbsGramm.DefVar pident typespec exp -> prPrec i 0 (concatD [doc (showString "var"), prt 0 pident, doc (showString ":"), prt 0 typespec, doc (showString "="), prt 0 exp])
-    AbsGramm.DefFun pident paramclauses typespec body -> prPrec i 0 (concatD [doc (showString "def"), prt 0 pident, prt 0 paramclauses, doc (showString ":"), prt 0 typespec, doc (showString "="), prt 0 body])
+    AbsGramm.DefFun pident paramclauses typespec block -> prPrec i 0 (concatD [doc (showString "def"), prt 0 pident, prt 0 paramclauses, doc (showString ":"), prt 0 typespec, doc (showString "="), prt 0 block])
   prtList _ [] = concatD []
   prtList _ [] = concatD []
   prtList _ [] = concatD []
@@ -167,11 +167,6 @@ instance Print [AbsGramm.ParamClause] where
 
 instance Print [AbsGramm.Arg] where
   prt = prtList
-
-instance Print AbsGramm.Body where
-  prt i e = case e of
-    AbsGramm.EBody exp -> prPrec i 0 (concatD [prt 0 exp])
-    AbsGramm.SBody block -> prPrec i 0 (concatD [prt 0 block])
 
 instance Print AbsGramm.Arg where
   prt i e = case e of

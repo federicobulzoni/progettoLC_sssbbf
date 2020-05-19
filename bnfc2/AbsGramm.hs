@@ -50,13 +50,10 @@ data SType
 data Declaration
     = DecVar PIdent TypeSpec
     | DefVar PIdent TypeSpec Exp
-    | DefFun PIdent [ParamClause] TypeSpec Body
+    | DefFun PIdent [ParamClause] TypeSpec Block
   deriving (Eq, Ord, Show, Read)
 
 data ParamClause = PArg [Arg]
-  deriving (Eq, Ord, Show, Read)
-
-data Body = EBody Exp | SBody Block
   deriving (Eq, Ord, Show, Read)
 
 data Arg = DArg PIdent TypeSpec

@@ -57,7 +57,9 @@ DefVar. Declaration ::= "var" PIdent ":" TypeSpec "=" Exp;
 -- è una nostra scelta quella di mantenere una lista,
 -- unica.
 dproc. Declaration ::= "def" PIdent [ParamClause] "=" Block;
-DefFun.  Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Body;
+DefFun.  Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Block;
+
+defFunInLine. Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Exp;
 
 PArg. ParamClause ::= "("  [Arg] ")";
 
@@ -67,10 +69,10 @@ separator  Arg ",";
 terminator Arg "";
 
 --DefFun. Declaration ::= "def" PIdent "(" [Arg] ")" ":" RetType;
-EBody. Body ::= Exp;
+--EBody. Body ::= Exp;
 -- Nel blocco/stmt deve esserci il return, ma questo lo controlla il TypeChecker.
 -- ha senso mettere un singolo statement? (che poi si può riscrivere in un blocco comunque).
-SBody. Body ::= Block;
+--SBody. Body ::= Block;
 DArg. Arg ::= PIdent ":" TypeSpec;
 
 -- LAss
@@ -138,8 +140,6 @@ internal EOp. Exp ::= Exp7 Op Exp7;
 
 Decla. Stm ::= Declaration;
 
--- Dubbio.
-Expr. Stm ::= Exp;
 SBlock. Stm ::= Block;
 
 Assign. Stm ::= LExp "=" Exp;
@@ -174,7 +174,8 @@ internal EVarTyped. Exp2 ::= "[" PIdent ":" TypeSpec "," "(" PInteger "," PInteg
 -- Cose che non vanno bene a Sublime.
 define op e1 o e2 = EOp e1 o e2;
 define do st ex = SBlock (DBlock [st, (While ex st)]);
-define dproc id params block = DefFun id params (TSimple TypeVoid) (SBody block);
+define dproc id params block = DefFun id params (TSimple TypeVoid) (block);
+-- define defFunInLine id params typ exp = DefFun id params typ (DBlock [Expr exp]);
 position token PString ( '"' ((char - ["\"\\"]) | ('\\' ["\"\\nt"]))* '"' );
 position token PChar ('\'' ((char - ["'\\"]) | ('\\' ["'\\nt"])) '\'' );
 

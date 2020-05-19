@@ -57,14 +57,10 @@ transDeclaration :: Declaration -> Result
 transDeclaration x = case x of
   DecVar pident typespec -> failure x
   DefVar pident typespec exp -> failure x
-  DefFun pident paramclauses typespec body -> failure x
+  DefFun pident paramclauses typespec block -> failure x
 transParamClause :: ParamClause -> Result
 transParamClause x = case x of
   PArg args -> failure x
-transBody :: Body -> Result
-transBody x = case x of
-  EBody exp -> failure x
-  SBody block -> failure x
 transArg :: Arg -> Result
 transArg x = case x of
   DArg pident typespec -> failure x

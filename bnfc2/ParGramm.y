@@ -120,7 +120,8 @@ Declaration :: { Declaration }
 Declaration : 'var' PIdent ':' TypeSpec { AbsGramm.DecVar $2 $4 }
             | 'var' PIdent ':' TypeSpec '=' Exp { AbsGramm.DefVar $2 $4 $6 }
             | 'def' PIdent ListParamClause '=' Block { dproc_ $2 $3 $5 }
-            | 'def' PIdent ListParamClause ':' TypeSpec '=' Body { AbsGramm.DefFun $2 $3 $5 $7 }
+            | 'def' PIdent ListParamClause ':' TypeSpec '=' Block { AbsGramm.DefFun $2 $3 $5 $7 }
+            | 'def' PIdent ListParamClause ':' TypeSpec '=' Exp { defFunInLine_ $2 $3 $5 $7 }
 ParamClause :: { ParamClause }
 ParamClause : '(' ListArg ')' { AbsGramm.PArg $2 }
 ListParamClause :: { [ParamClause] }
@@ -134,8 +135,6 @@ ListArg : {- empty -} { [] }
         | Arg ',' ListArg { (:) $1 $3 }
         | {- empty -} { [] }
         | Arg ListArg { (:) $1 $2 }
-Body :: { Body }
-Body : Exp { AbsGramm.EBody $1 } | Block { AbsGramm.SBody $1 }
 Arg :: { Arg }
 Arg : PIdent ':' TypeSpec { AbsGramm.DArg $1 $3 }
 Op1 :: { Op }
@@ -247,6 +246,7 @@ happyError ts =
 myLexer = tokens
 op_ e1_ o_ e2_ = EOp e1_ o_ e2_
 do_ st_ ex_ = SBlock (DBlock [st_, While ex_ st_])
-dproc_ id_ params_ block_ = DefFun id_ params_ (TSimple TypeVoid) (SBody block_)
+dproc_ id_ params_ block_ = DefFun id_ params_ (TSimple TypeVoid) block_
+defFunInLine_ id_ params_ typ_ exp_ = DefFun id_ params_ typ_ (DBlock [Expr exp_])
 }
 
