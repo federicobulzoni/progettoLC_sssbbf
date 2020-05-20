@@ -51,9 +51,13 @@ data Declaration
     = DecVar PIdent TypeSpec
     | DefVar PIdent TypeSpec Exp
     | DefFun PIdent [ParamClause] TypeSpec Block
+    | DefFunInLine PIdent [ParamClause] TypeSpec Exp
   deriving (Eq, Ord, Show, Read)
 
 data ParamClause = PArg [Arg]
+  deriving (Eq, Ord, Show, Read)
+
+data Block = DBlock [Stm] | BlockTyped Block TypeSpec
   deriving (Eq, Ord, Show, Read)
 
 data Arg = DArg PIdent TypeSpec
@@ -90,24 +94,25 @@ data Exp
     | EFalse PFalse
     | ENull PNull
     | EOp Exp Op Exp
-    | ETyped Exp TypeSpec
-    | EVarTyped PIdent TypeSpec PInteger PInteger
+    | ETyped Exp TypeSpec Integer Integer
   deriving (Eq, Ord, Show, Read)
 
 data Stm
-    = Decla Declaration
-    | Expr Exp
+    = SDecl Declaration
     | SBlock Block
-    | Assign LExp Exp
-    | While Exp Stm
-    | If Exp Stm Stm
-    | Return PReturn
-    | ReturnExp PReturn Exp
+    | SAssign LExp Exp
+    | SWhile Exp Stm
+    | SIf Exp Stm Stm
+    | SReturn PReturn
+    | SReturnExp PReturn Exp
+    | StmTyped Stm TypeSpec
   deriving (Eq, Ord, Show, Read)
 
-data Block = DBlock [Stm]
-  deriving (Eq, Ord, Show, Read)
-
-data LExp = LRef LExp | LArr LExp Exp | LIdent PIdent
+data LExp
+    = LRef LExp
+    | LArr LExp Exp
+    | LIdent PIdent
+    | LExpTyped LExp TypeSpec Integer Integer
+    | LIdentTyped PIdent TypeSpec Integer Integer
   deriving (Eq, Ord, Show, Read)
 

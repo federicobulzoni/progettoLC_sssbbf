@@ -8,16 +8,27 @@ import Environment as Env
 import PrintGramm
 import Control.Monad.Writer
 
--- DefFun PIdent [ParamClause] TypeSpec Body
-{-
-type Env = Map.Map Ident Info
-data Info = 
-  VarInfo Loc Type
-  | FunInfo Loc Type [ParamClause]
-  deriving (Show)
+getLoc :: Exp -> Loc
+getLoc (ETyped _ _ loc) = loc
 
-update :: EnvStack -> Ident -> Info -> Err EnvStack
--}
+getType :: a -> TypeSpec
+getType (ETyped _ typ _) = typ
+getType (StmTyped _ typ) = typ
+getType (BlockTyped _ typ) = typ
+
+isTypeError :: Exp -> Bool
+isTypeError texp = getType texp == (SType TypeError) 
+
+isTypeVoid :: TypeSpec -> Bool
+isTypeVoid typ = typ == (SType TypeVoid)
+
+paramsToStms :: [ParamClause] -> [Stm]
+paramsToStms params = argsToStms (concat params)  
+
+
+argsToStms :: [Arg] -> [Stm]
+argsToStms [] = []
+argsToStms (arg@(DArg id typ):args) = (Decla (DecVar id typ)):(argsToStms args)
 
 
 initialFuns :: [(Ident, Info)]
@@ -31,88 +42,252 @@ initialFuns = [("writeInt", FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent
   ("readChar", FunInfo (0,0) (TSimple SType_Char) [PArg []]),
   ("readString", FunInfo (0,0) (TSimple SType_String) [PArg []]) ]
 
+-- Restituisce una lista di log ed un programma annotato.
 typeCheck :: Program -> Writer [String] Program
 typeCheck (Prog decls) = do
-  -- deve inizializzare l'environment.
+  -- inizializzazione environment.
   let x = foldM (\x (ident, info) -> Env.update x ident info) Env.emptyStack initialFuns in
     case x of
       Ok env -> do
-        res <- checkDecls decls env
-        return (Prog res)
+        tdecls <- inferDecls decls env
+        return (Prog tdecls)
       Bad msg -> do
         -- è impossibile.
         error $ msg
 
-checkDecls :: [Decl] -> Env -> Writer [String] [Decl]
-checkDecls [] env = return []
-checkDecls (decl:decls) env = do
- (decl' , env') <-  checkDecl decl env
- xs <- checkDecls decls env'
+
+-- Prende una lista di dichiarazioni del programma e la ritorna annotata.
+inferDecls :: [Decl] -> Env -> Writer [String] [Decl]
+inferDecls [] env = return []
+inferDecls (decl:decls) env = do
+ (decl' , env') <-  inferDecl decl env
+ xs <- inferDecls decls env'
  return (decl':xs)
 
-checkDecl :: Decl -> Env -> Writer [String] (Decl, Env)
-checkDecl decl env = case decl of
-  --  DecVar Id Type
-  DecVar id typ -> let x = updateVar env id typ in
-    case x of
+-- Ci sono vari pattern con casi duplicati in base ad Ok env' o Bad msg che però si differenziano di poco,
+-- andrebbero messi a posto.
+inferDecl :: Decl -> Env -> Writer [String] (Decl, Env)
+inferDecl decl env = case decl of
+  --  DecVar PIdent TypeSpec
+  DecVar (Id (loc, ident)) typ -> case update env ident (VarInfo loc typ) of
       Ok env' -> return (decl, env')
       Bad msg -> do
         tell [msg]
         return (decl, env)
   --  DefVar Id Type Exp
-  DefVar id typ exp -> let x = updateVar env id typ in
-    case x of
+  DefVar id@(Id (loc, ident)) typ exp -> case update env ident (VarInfo loc typ) of
       Ok env' -> do
         -- Teniamo il vecchio env, perchè altrimenti si potrebbe usare nella parte destra della dichiarazione
         -- la variabile che si sta istanziando.
-        texp <- checkExp exp typ env
-        return ((DefVar id typ texp), env')
+        texp <- inferExp exp env
+        -- se TypeError texp, allora è inferExp che ha già scovato gli errori 
+        -- e non dobbiamo ristamparli.
+        if isTypeError texp || checkExp texp typ
+          then
+            return ((DefVar id typ texp), env')
+          else
+            tell [printTree exp ++ "e' di tipo " ++ show (getType texp) ++ ", ma il tipo atteso e': " ++ show typ ++ ".\n"]
+            return ((DefVar id typ texp), env')
       Bad msg -> do
         tell [msg]
-        return (decl, env)
+        texp <- inferExp exp env 
+        if isTypeError texp || checkExp texp typ
+          then
+            return ((DefVar id typ texp), env)
+          else
+            tell [printTree exp ++ "e' di tipo " ++ show (getType texp) ++ ", ma il tipo atteso e': " ++ show typ ++ ".\n"]
+            return ((DefVar id typ texp), env)
 
--- OK!!!
-{-
+  DefFun id@(Id (loc, ident)) params typ block@(DBlock stms) -> case update env ident (FunInfo loc typ params) of
+    Ok env' -> do
+      -- block di suo aggiunge un nuovo scope e fa le operazioni su di esso.
+      -- quindi l'idea è di aggiungere i parametri come dichiarazioni in testa al blocco.
+      -- lock = DBlock [Stm]
+      tblock <- inferBlock (DBlock (paramsToStms params)++stms) typ env'
+      if checkBlock tblock typ 
+        then
+          return ((DefFun id params typ tblock), env')
+        else
+          -- manca un return giusto, se ce ne sono di sbagliati, inferBlock ce l'ha già detto.
+          tell ["Attesa una istruzione return all'interno della funzione " ++ show ident ++ " dichiarata in posizione " ++ show loc ++ ", ma non trovata.\n"]
+          return ((DefFun id params typ tblock), env')
+
+    Bad msg -> do
+      tell [msg]
+      tblock <- inferBlock (DBlock (paramsToStms params)++stms) typ env
+      if checkBlock tblock typ 
+        then
+          return ((DefFun id params typ tblock), env)
+        else
+          -- manca un return giusto, se ce ne sono di sbagliati, inferBlock ce l'ha già detto.
+          tell ["Attesa una istruzione return all'interno della funzione " ++ show ident ++ " dichiarata in posizione " ++ show loc ++ ", ma non trovata.\n"]
+          return ((DefFun id params typ tblock), env)
+
+  -- Zucchero sintattico manuale e via.
+  DefFunInLine id@(Id (loc, ident)) params typ exp -> inferDecl (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return") exp)])) env
 
 
--}
-checkBlock :: DBlock -> Env -> Writer [String] DBlock
-checkBlock (DBlock stms) env = return (checkStms stms (Env.addScope env))
+checkBlock :: Block -> TypeSpec -> Bool
+checkBlock (BlockTyped _ typ') typ = typ == typ'
+checkBlock _  _ = error $ "Errore interno chiamato da checkBlock().\n"
 
-checkStm :: Stm -> Env -> Writer [String] (Stm, Env)
-checkStm stm env = case stm of
-  While exp stm' -> do
+inferBlock :: Block -> TypeSpec -> Env -> Writer [String] Block
+-- typ è il tipo che ci aspettiamo che il blocco abbia.
+inferBlock (DBlock stms) typ env = do
+  tstms <- inferStms stms typ (Env.addScope env) 
+  if any (\x -> checkStm x typ) tstms
+    then
+      return (BlockTyped (DBlock tstms) typ)
+    else
+      return (BlockTyped (DBlock tstms) TypeVoid)
+
+
+inferStms :: [Stm] -> TypeSpec -> Env -> Writer [String] [Stm]
+inferStms [] typ env = []
+inferStms (stm:stms) typ env = do
+  (tstm, env') <- inferStm stm env
+  tstms <- inferStms stms env'
+  return (tstm:tstms)
+
+inferStm :: Stm -> TypeSpec -> Env -> Writer [String] (Stm, Env)
+inferStm stm typ env = case stm of
+  SWhile exp stm' -> do
     -- texp è l'espressione annotata col tipo.
     texp <- inferExp exp env
-    if checkExp texp Type_Bool
+    if isTypeError texp || checkExp texp Type_Bool
       then
-        return (While texp (checkStm stm' env), env)
+        (tstm', _) <- inferStm stm' typ env
+        return ( (StmTyped (SWhile texp tstm') (getType tstm') ) , env)
       else
-        let (exp typ) = texp in
-          tell [printTree exp ++ " e' di tipo " ++ printTree typ' ++ ", ma il tipo aspettato e' " ++ printTree typ ++ "\n"]
-          return (While texp (checkStm stm' env))
-  Decla decl -> do
-    (decl', env') <- checkDecl decl env
-    return (Decla decl', env')
-  SBlock dblock -> return (SBlock (checkBlock dblock env), env)
-  Expr exp -> return (Expr (inferExp exp env), env)
+        tell ["La condizione del while deve essere di tipo booleano, invece " 
+        ++ printTree exp ++ "in posizione " ++ show (getLoc texp) 
+        ++ " ha tipo: " ++ printTree (getType texp) ++ ".\n"
 
-  -- Lexp ha una gestione diversa da exp?
-  -- che ci voglia inferLExp?
-  Assign lexp exp -> do
-    tlexp <- inferExp lexp env
-    texp@(ETyped exp typ) <- inferExp exp env
-    if checkExp tlexp typ
-      then
-        return (Assign tlexp texp, env) 
-      else
-        do
-          tell [printTree texp ++ " e' di tipo " ++ printTree typ ++ ", ma il tipo aspettato e' " ++ printTree typ ++ "\n"]
-
-
-  If exp stmif stmelse -> do
+        (tstm', _) <- inferStm stm' typ env
+        return ( (StmTyped (SWhile texp tstm') (getType tstm')) , env )
+  SIf exp stmif stmelse -> do
     texp <- inferExp exp env
-    if 
+    if !(isTypeError texp || checkExp texp Type_Bool)
+      then
+        tell ["La condizione dell' if deve essere di tipo booleano, invece " 
+        ++ printTree exp ++ "in posizione " ++ show (getLoc texp) 
+        ++ " ha tipo: " ++ printTree (getType texp) ++ ".\n"
+
+    (tstmif, _) <- inferStm stmif typ env
+    (tstmelse, _) <- inferStm stmelse typ env
+    if checkStm tstmif typ || checkStm tstmelse typ 
+      then
+        return ( (StmTyped (SIf texp tstmif tstmelse) typ) , env)
+      else
+        return ( (StmTyped (SIf texp tstmif tstmelse) TypeVoid) , env)
+
+  SDecl decl -> do
+    (tdecl, env') <- inferDecl decl env
+    return ( (StmTyped (SDecl tdecl) TypeVoid), env' )
+
+  SBlock block -> do
+    tblock <- inferBlock block typ env
+    return ((StmTyped (SBlock tblock) (getType tblock)), env)
+
+  SAssign lexp exp -> do
+    tlexp <- inferLExp lexp env
+    texp <- inferExp exp env
+    if isTypeError tlexp || isTypeError texp || checkExp texp (getType lexp)
+      then
+        return ( (StmTyped (SAssign tlexp texp) TypeVoid), env )
+      else
+        tell ["L'espressione " ++ printTree exp ++ " in posizione " ++ show (getLoc texp)
+        ++ " ha tipo " ++ printTree (getType texp) ++ ", ma " ++ printTree lexp ++ " ha tipo " 
+        ++ printTree (getType lexp) ++ "."]
+
+        return ( (StmTyped (SAssign tlexp texp) TypeVoid), env )
+
+  SReturnExp preturn exp -> do
+    texp <- inferExp exp env
+    if isTypeError texp
+      then
+        return ((StmTyped (SReturnExp preturn texp) TypeVoid), env)
+      else
+        if checkExp texp typ
+          then
+            return ((StmTyped (SReturnExp preturn texp) typ), env)
+          else
+            if isTypeVoid typ
+              then
+                tell ["Valore di ritorno inaspettato alla posizione" ++ show (getLoc texp) ++ "."]
+              else
+                tell ["L'espressione " ++ printTree exp ++ " in posizione " ++ show (getLoc texp)
+                ++ " ha tipo " ++ printTree (getType exp) ++ ", ma il tipo di ritorno richiesto e' " ++ printTree typ ++ "."]
+            -- Dubbi.
+            return ((StmTyped (SReturnExp preturn texp) TypeVoid, env)
+
+  SReturn preturn -> do
+    if !(isTypeVoid typ)
+      then 
+        tell ["Il return in posizione " ++ show (getLoc preturn) ++ " non ha valore di ritorno, ma la funzione ha tipo "
+        ++ showTree typ ++ "."]
+    return ((StmTyped (SReturn preturn) TypeVoid), env)
+
+
+inferLExp :: LExp -> Env -> Writer [String] LExp
+inferLExp lexp env = case lexp of
+  LRef lexp' -> do
+    tlexp' <- inferLExp lexp' env
+    if isTypeError tlexp' 
+      then
+        return (LExpTyped lexp TypeError)
+      else
+        case tlexp' of
+          LExpTyped _ (TypeSpec (TypePointer typ)) -> return (LExpTyped (LRef tlexp') typ)
+          LExpTyped _ typ' -> do
+            tell ["Impossibile applicare operatore * a " ++ printTree lexp' ++ " in posizione " ++ show (getLoc tlexp') 
+            ++ " che ha tipo " ++ printTree typ' ++ "."]
+            return (LExpTyped (LRef tlexp') TypeError)
+
+  LArr lexp exp ->
+    tlexp <- inferLExp lexp env
+    texp <- inferExp exp env
+    if isTypeError tlexp || isTypeError texp
+      then
+        return (LExpTyped (LArr tlexp texp) TypeError)
+      else
+        case (tlexp , checkExp texp Type_Int) of
+          (LExpTyped _ (TypeSpec (TArray typ)), True) -> return (LExpTyped (LArr tlexp texp) typ)
+          (LExpTyped _ (TypeSpec (TArray typ)), False) -> do
+            tell ["L'indice di accesso ad un'array deve avere tipo intero, invece in posizione "
+            ++ show (getLoc texp) ++ "l'espressione " ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) ++ "."]
+
+            return (LExpTyped (LArr tlexp texp) TypeError)
+          (_, False) -> do
+            tell ["L'accesso tramite operatore [] puo' essere effettuato solo su elementi di tipo Array, mentre "
+            ++ printTree lexp ++ " ha tipo " ++ showTree (getType tlexp) ++ "."]
+            tell ["L'indice di accesso ad un'array deve avere tipo intero, invece in posizione "
+            ++ show (getLoc texp) ++ "l'espressione " ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) ++ "."]
+            
+            return (LExpTyped (LArr tlexp texp) TypeError)
+          (_, True) -> do
+            tell ["L'accesso tramite operatore [] puo' essere effettuato solo su elementi di tipo Array, mentre "
+            ++ printTree lexp ++ " ha tipo " ++ showTree (getType tlexp) ++ "."]
+            
+            return (LExpTyped (LArr tlexp texp) TypeError)
+  LIdent id@(PIdent (loc, ident)) -> let res = Env.lookup env ident in
+    case res of
+      Bad msg -> do
+        tell [msg]
+        return (LExpTyped lexp TypeError)
+      -- dloc dichiarazione loc
+      Ok (VarInfo dloc typ) -> return (LIdentTyped id typ dloc)
+      Ok (FunInfo dloc _ _) -> do
+        -- è da mettere a posto sto errore.
+        tell ["L'identificatore " ++ show ident
+        ++ "e' stato utilizzato in posizione " ++ show dloc ++ "per dichiarare una funzione."]
+
+        return (LExpTyped lexp TypeError)
+
+  
+
+
+
 
 
 
@@ -131,7 +306,7 @@ checkStm stm env = case stm of
 -- while ( 3 + 5 ) ...
 
 
-checkExp :: Exp -> Type -> Env -> Writer [String] Exp
+checkExp :: Exp -> TypeSpec -> Env -> Writer [String] Exp
 checkExp exp typ env = do
   -- 
   typ' <- inferExp exp env
@@ -149,7 +324,7 @@ checkExp exp typ env = do
             return (ETyped exp Type_null)
 
 
-checkExpAux :: Type -> Type -> Bool
+checkExpAux :: TypeSpec -> TypeSpec -> Bool
 checkExpAux typ typ'
   | typ' == typ = True
   | otherwise = False
@@ -178,29 +353,29 @@ data Exp
 
 -- Ad inferExp gli passiamo un espressione di cui non conosciamo il tipo,
 -- e dunque ritorna tale espressione arricchita col suo tipo.
+-- la posizione viene mandata su dai terminali.
 inferExp :: Exp -> EnvStack -> Writer [String] ETyped
 inferExp exp env = case exp of
   -- Nel caso dell'array bisogna inferire il tipo di ogni espressione in exps
   -- e tutte devono avere lo stesso tipo.
   -- Caso con array vuoto.
+
   EArray [] -> return (ETyped exp TypeVoid)
   -- Caso con almeno un elemento
-  EArray [exp'] -> do
-    texp' <- inferExp exp' env
-    let (ETyped exp' typ') = texp' in 
-      return (ETyped (EArray [texp']), typ')
+  --                 [ETyped]
+  EArray exps -> let texps = foldM (\x -> inferExp x env) [] exps in
 
-  return (ETyped exp (inferExp exp' env))
-  
   EArray (exp':exps) -> do
-    
-    
-    typ' <- inferExp exp' env
-    checkExp (EArray exps) typ' env
+    texp'@(ETyped _ typ) <- inferExp exp' env
+    if checkExp 
 
   -- Il not non cambia il tipo dell'espressione a cui è applicato,
   -- il tipo di una espressione not è dunque il tipo della espressione a cui il not è applicato.
-  ENot exp' -> do 
+  ENot exp' -> checkExp exp' Type_Bool env
+
+
+
+  do 
     texp <- inferExp exp' env
 
   checkExp exp' SType_Bool env
@@ -237,11 +412,6 @@ inferExp exp env = case exp of
 
 
 
-
-
-
-
-
 -- Tests:
 getEnv = do 
   env1 <- updateVar emptyEnv (Id ((1,5),"x")) Type_int
@@ -252,13 +422,13 @@ test4 :: Writer [String] (Decl, Env)
 test4 = let x = getEnv
   in
     case x of
-      Ok env -> checkDecl (DefVar (Id ((1,5),"z")) Type_int (EAdd (EVar (Id ((1,49),"y"))) (EVar (Id ((1,51),"x"))))) env
+      Ok env -> inferDecl (DefVar (Id ((1,5),"z")) Type_int (EAdd (EVar (Id ((1,49),"y"))) (EVar (Id ((1,51),"x"))))) env
       Bad _ -> error $ "ciao"
 
 test5 = let x = getEnv
   in 
     case x of
-      Ok env -> checkDecl (DefVar (Id ((1,5),"x")) Type_int (EAdd (EVar (Id ((1,49),"y"))) (EVar (Id ((1,51),"x"))))) env
+      Ok env -> inferDecl (DefVar (Id ((1,5),"x")) Type_int (EAdd (EVar (Id ((1,49),"y"))) (EVar (Id ((1,51),"x"))))) env
       Bad _ -> error $ "ciao"
 
 

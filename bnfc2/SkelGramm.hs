@@ -58,9 +58,14 @@ transDeclaration x = case x of
   DecVar pident typespec -> failure x
   DefVar pident typespec exp -> failure x
   DefFun pident paramclauses typespec block -> failure x
+  DefFunInLine pident paramclauses typespec exp -> failure x
 transParamClause :: ParamClause -> Result
 transParamClause x = case x of
   PArg args -> failure x
+transBlock :: Block -> Result
+transBlock x = case x of
+  DBlock stms -> failure x
+  BlockTyped block typespec -> failure x
 transArg :: Arg -> Result
 transArg x = case x of
   DArg pident typespec -> failure x
@@ -95,24 +100,22 @@ transExp x = case x of
   EFalse pfalse -> failure x
   ENull pnull -> failure x
   EOp exp1 op exp2 -> failure x
-  ETyped exp typespec -> failure x
-  EVarTyped pident typespec pinteger1 pinteger2 -> failure x
+  ETyped exp typespec integer1 integer2 -> failure x
 transStm :: Stm -> Result
 transStm x = case x of
-  Decla declaration -> failure x
-  Expr exp -> failure x
+  SDecl declaration -> failure x
   SBlock block -> failure x
-  Assign lexp exp -> failure x
-  While exp stm -> failure x
-  If exp stm1 stm2 -> failure x
-  Return preturn -> failure x
-  ReturnExp preturn exp -> failure x
-transBlock :: Block -> Result
-transBlock x = case x of
-  DBlock stms -> failure x
+  SAssign lexp exp -> failure x
+  SWhile exp stm -> failure x
+  SIf exp stm1 stm2 -> failure x
+  SReturn preturn -> failure x
+  SReturnExp preturn exp -> failure x
+  StmTyped stm typespec -> failure x
 transLExp :: LExp -> Result
 transLExp x = case x of
   LRef lexp -> failure x
   LArr lexp exp -> failure x
   LIdent pident -> failure x
+  LExpTyped lexp typespec integer1 integer2 -> failure x
+  LIdentTyped pident typespec integer1 integer2 -> failure x
 

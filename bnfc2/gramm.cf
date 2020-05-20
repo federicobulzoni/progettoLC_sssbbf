@@ -58,8 +58,7 @@ DefVar. Declaration ::= "var" PIdent ":" TypeSpec "=" Exp;
 -- unica.
 dproc. Declaration ::= "def" PIdent [ParamClause] "=" Block;
 DefFun.  Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Block;
-
-defFunInLine. Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Exp;
+DefFunInLine. Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Exp;
 
 PArg. ParamClause ::= "("  [Arg] ")";
 
@@ -68,6 +67,8 @@ terminator nonempty ParamClause "";
 separator  Arg ",";
 terminator Arg "";
 
+DBlock. Block ::= "{" [Stm] "}" ;
+internal BlockTyped. Block ::= "[" Block ":" TypeSpec "]"; 
 --DefFun. Declaration ::= "def" PIdent "(" [Arg] ")" ":" RetType;
 --EBody. Body ::= Exp;
 -- Nel blocco/stmt deve esserci il return, ma questo lo controlla il TypeChecker.
@@ -129,8 +130,6 @@ ETrue. Exp7 ::= PTrue;
 EFalse. Exp7 ::= PFalse;
 ENull. Exp7 ::= PNull;
 
-
-
 coercions Exp 7 ; 
 -- LExp è qualcosa che ha un indirizzo e quindi gli possiamo assegnare un valore.
 -- RExp è un qualcosa che valutata ci da un valore.
@@ -138,24 +137,23 @@ coercions Exp 7 ;
 
 internal EOp. Exp ::= Exp7 Op Exp7;
 
-Decla. Stm ::= Declaration;
+SDecl. Stm ::= Declaration;
 
 SBlock. Stm ::= Block;
-
-Assign. Stm ::= LExp "=" Exp;
-DBlock. Block ::= "{" [Stm] "}" ;
-While. Stm ::= "while" "(" Exp ")" Stm ;
-If. Stm ::= "if" "(" Exp ")" Stm "else" Stm ;
+SAssign. Stm ::= LExp "=" Exp;
+SWhile. Stm ::= "while" "(" Exp ")" Stm ;
+SIf. Stm ::= "if" "(" Exp ")" Stm "else" Stm ;
 -- Il do è da ragionarci sopra dato che si riscrive in un blocco, bensì che è uno statement singolo in realtà.
-do. Stm ::= "do" Stm "while" "(" Exp ")";
-Return. Stm ::= PReturn ;
-ReturnExp. Stm ::= PReturn Exp ;
+sdo. Stm ::= "do" Stm "while" "(" Exp ")";
+SReturn. Stm ::= PReturn ;
+SReturnExp. Stm ::= PReturn Exp ;
 
 separator Stm ";";
 separator Stm "\n";
 terminator Stm ";";
 terminator Stm "";
 
+internal StmTyped. Stm ::= "[" Stm ":" TypeSpec "]";
 -- Lista di LExp.
 LRef. LExp ::= "*" LExp;
 -- Da verificare se le parentesi tonde creano conflitti con le espressioni e con le precedenze definite dall'utente
@@ -164,18 +162,18 @@ LArr. LExp1 ::= LExp1 "(" Exp ")";
 LIdent. LExp1 ::= PIdent;
 coercions LExp 2;
 
+internal LExpTyped. LExp ::= "[" LExp ":" TypeSpec ":" "(" Integer "," Integer ")" "]";
 --internal Loc. Loc ::= "(" PInteger "," PInteger ")";
-internal ETyped. Exp ::= "[" Exp ":" TypeSpec "]" ;
+internal ETyped. Exp ::= "[" Exp ":" TypeSpec ":" "(" Integer "," Integer")" "]" ;
 -- La seconda coppia è la posizione corrispondente a dove la variabile id è stata dichiarata.
-internal EVarTyped. Exp2 ::= "[" PIdent ":" TypeSpec "," "(" PInteger "," PInteger ")" "]";
-
+internal LIdentTyped. LExp ::= "[" PIdent ":" TypeSpec ":" "(" Integer "," Integer ")" "]";
 --DefFun.  Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Body;
 
 -- Cose che non vanno bene a Sublime.
 define op e1 o e2 = EOp e1 o e2;
-define do st ex = SBlock (DBlock [st, (While ex st)]);
+define sdo st ex = SBlock (DBlock [st, (SWhile ex st)]);
 define dproc id params block = DefFun id params (TSimple TypeVoid) (block);
--- define defFunInLine id params typ exp = DefFun id params typ (DBlock [Expr exp]);
+-- define defFunInLine id params typ exp = DefFun id params typ (DBlock [SReturnExp (PReturn ( (0,0) , "return")) exp]);
 position token PString ( '"' ((char - ["\"\\"]) | ('\\' ["\"\\nt"]))* '"' );
 position token PChar ('\'' ((char - ["'\\"]) | ('\\' ["'\\nt"])) '\'' );
 

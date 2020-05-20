@@ -161,7 +161,7 @@ alex_actions = array (0 :: Int, 29)
   , (0,alex_action_13)
   ]
 
-{-# LINE 59 "LexGramm.x" #-}
+{-# LINE 60 "LexGramm.x" #-}
 
 
 tok :: (Posn -> String -> Token) -> (Posn -> String -> Token)
@@ -340,6 +340,7 @@ alex_action_10 =  tok (\p s -> PT p (eitherResIdent (T_PInteger . share) s))
 alex_action_11 =  tok (\p s -> PT p (eitherResIdent (T_PString . share) s)) 
 alex_action_12 =  tok (\p s -> PT p (eitherResIdent (T_PChar . share) s)) 
 alex_action_13 =  tok (\p s -> PT p (eitherResIdent (TV . share) s)) 
+alex_action_14 =  tok (\p s -> PT p (TI $ share s))    
 {-# LINE 1 "templates/GenericTemplate.hs" #-}
 -- -----------------------------------------------------------------------------
 -- ALEX TEMPLATE

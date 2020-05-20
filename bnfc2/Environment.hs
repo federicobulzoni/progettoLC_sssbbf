@@ -1,4 +1,4 @@
--- Env.hs
+-- Scope.hs
 -- Modulo per la gestione di un singolo environment.
 module Environment where
 
@@ -9,7 +9,7 @@ import qualified Data.Map as Map
 
 -- PIdent invece è (Loc, Ident)
 {-
-type Env = Map.Map Ident EnvEntry
+type Scope = Map.Map Ident EnvEntry
 
 
 --       DefProc PIdent [ParamClause] Block
@@ -24,7 +24,7 @@ data EnvEntry =
 
 -}
 type Ident = String
-type Env = Map.Map Ident Info
+type Scope = Map.Map Ident Info
 type Loc = (Int, Int)
 
 data Info = 
@@ -33,21 +33,21 @@ data Info =
 	deriving (Show)
 
 
-type EnvStack = [Env]
+type Env = [Scope]
 
 -- Funzioni riguardanti un singolo environment.
-emptyEnv  :: Env
-emptyEnv = Map.empty
+emptyScope  :: Scope
+emptyScope = Map.empty
 
 -- Funzioni di lookup.
 -- Maybe TypeSpec
-lookupIdent :: Env -> Ident -> Maybe Info
-lookupIdent env ident = Map.lookup ident env
+lookupIdent :: Scope -> Ident -> Maybe Info
+lookupIdent scope ident = Map.lookup ident scope
 
 -- Funzioni di update.
-updateEnv :: Env -> Ident -> Info -> Err Env
-updateEnv env ident info = case Map.lookup ident env of
-	Nothing -> return $ Map.insert ident info env
+updateEnv :: Scope -> Ident -> Info -> Err Scope
+updateEnv scope ident info = case Map.lookup ident scope of
+	Nothing -> return $ Map.insert ident info scope
 	Just (VarInfo loc1 _) -> Bad $ "identificatore" ++ ident ++
 			                   "usato in precedenza per una variabile in posizione" ++
 			                    show loc1 ++ ".\n"
@@ -56,9 +56,9 @@ updateEnv env ident info = case Map.lookup ident env of
 			                    show loc1 ++ ".\n"
 {-
 
-updateVar :: Env -> PIdent -> TypeSpec -> Err Env
-updateVar env (PIdent (loc, ident)) typ = case Map.lookup ident env of
-		Nothing -> return $ Map.insert ident (Variable loc typ) env
+updateVar :: Scope -> PIdent -> TypeSpec -> Err Scope
+updateVar scope (PIdent (loc, ident)) typ = case Map.lookup ident scope of
+		Nothing -> return $ Map.insert ident (Variable loc typ) scope
 		Just (Variable loc1 _) -> Bad $ "identificatore" ++ ident ++
 			                   "usato in precedenza per una variabile in posizione" ++
 			                    show loc1 ++ ".\n"
@@ -67,10 +67,10 @@ updateVar env (PIdent (loc, ident)) typ = case Map.lookup ident env of
 			                    show loc1 ++ ".\n"
 		
 
-updateFun :: Env -> PIdent -> TypeSpec -> [ParamClause] -> Err Env
-updateFun env id@(PIdent (loc, ident)) typ params = 
-	case Map.lookup ident env of
-		Nothing -> return $ Map.insert ident (Function loc typ params) env
+updateFun :: Scope -> PIdent -> TypeSpec -> [ParamClause] -> Err Scope
+updateFun scope id@(PIdent (loc, ident)) typ params = 
+	case Map.lookup ident scope of
+		Nothing -> return $ Map.insert ident (Function loc typ params) scope
 		Just (Variable loc1 _) -> Bad $ "identificatore" ++ ident ++
 			                   "usato in precedenza per una variabile in posizione" ++
 			                    show loc ++ ".\n"
@@ -80,59 +80,59 @@ updateFun env id@(PIdent (loc, ident)) typ params =
 
 -}
 -- Funzioni riguardanti lo stack di environment.
-emptyStack :: EnvStack
-emptyStack = [emptyEnv]
+emptyEnv :: Env
+emptyEnv = [emptyScope]
 
-addScope :: EnvStack -> EnvStack
-addScope envS = emptyEnv : envS
+addScope :: Env -> Env
+addScope env = emptyScope : env
 
 {-
-lookup :: EnvStack -> Ident -> Info -> Err Info
+lookup :: Env -> Ident -> Info -> Err Info
 lookup [] ident (VarInfo loc _) = Bad $ "variabile " ++ ident ++ " usata in posizione " ++ show loc ++ ", ma non dichiarata in precedenza.\n"
 lookup [] ident (FunInfo loc _ _) = Bad $ "funzione " ++ ident ++ " usata in posizione " ++ show loc ++ ", ma non dichiarata in precedenza.\n"
-lookup (env:stack') ident info = case lookupIdent env ident of
+lookup (scope:stack') ident info = case lookupIdent scope ident of
 	Just info -> return info
 	Nothing -> lookup stack' ident info
 -}
-lookup :: EnvStack -> PIdent -> Err Info
+lookup :: Env -> PIdent -> Err Info
 lookup [] (PIdent (loc, ident)) = Bad $ "identificatore " ++ ident ++ " usato in posizione " ++ show loc ++ ", ma non dichiarato in precedenza.\n"
-lookup (env:stack') id@(PIdent (_, ident)) = case lookupIdent env ident of
+lookup (scope:stack') id@(PIdent (_, ident)) = case lookupIdent scope ident of
 	Just info -> return info
 	Nothing -> Environment.lookup stack' id
 
 
-update :: EnvStack -> Ident -> Info -> Err EnvStack
+update :: Env -> Ident -> Info -> Err Env
 update [] _ _ = Bad $ "errore interno, non può essere che lo stack di environment sia vuoto."
-update (env:stack) ident info = case updateEnv env ident info of
+update (scope:stack) ident info = case updateEnv scope ident info of
 	Bad msg -> Bad msg
-	Ok env' -> return(env':stack)
+	Ok scope' -> return(scope':stack)
 
 {-
-lookupVarS :: EnvStack -> PIdent -> Err EnvEntry
+lookupVarS :: Env -> PIdent -> Err EnvEntry
 lookupVarS [] (PIdent (loc, ident)) = Bad $ "variabile " ++ ident ++ " usata in posizione " ++ show loc ++ ", ma non dichiarata in precedenza.\n"
-lookupVarS env:stack' id@(PIdent (loc,ident)) = case lookupId env ident of
+lookupVarS scope:stack' id@(PIdent (loc,ident)) = case lookupId scope ident of
 	Just varInfo -> return varInfo
 	Nothing -> lookupVarS stack' id
 
-lookupFunS :: EnvStack -> PIdent -> Err EnvEntry
+lookupFunS :: Env -> PIdent -> Err EnvEntry
 lookupFunS [] (PIdent (loc, ident)) = Bad $ "funzione " ++ ident ++ " usata in posizione " ++ show loc ++ ", ma non dichiarata in precedenza.\n"
-lookupFunS env:stack' id@(PIdent (loc, ident)) = case lookupId env ident of
+lookupFunS scope:stack' id@(PIdent (loc, ident)) = case lookupId scope ident of
 	Just varInfo -> return varInfo
 	Nothing -> lookupVarS stack' id
 
 -}
 {-
-updateVarS :: EnvStack -> PIdent -> TypeSpec -> Err EnvStack
+updateVarS :: Env -> PIdent -> TypeSpec -> Err Env
 updateVarS [] _ _ = Bad $ "errore interno, non può essere che lo stack di environment sia vuoto."
-updateVarS (env:stack) id typ = case updateVar env id typ of
+updateVarS (scope:stack) id typ = case updateVar scope id typ of
 	Bad msg -> Bad msg
-	Ok env' -> return (env':stack)
+	Ok scope' -> return (scope':stack)
 
-updateFunS :: EnvStack -> PIdent  -> TypeSpec -> [ParamClause] -> Err EnvStack
+updateFunS :: Env -> PIdent  -> TypeSpec -> [ParamClause] -> Err Env
 updateFunS [] _ _ _= Bad $ "errore interno, non può essere che lo stack di environment sia vuoto."
-updateFunS (env:stack) id typ params = case updateFun env id typ params of
+updateFunS (scope:stack) id typ params = case updateFun scope id typ params of
 	Bad msg -> Bad msg
-	Ok env' -> return (env':stack)
+	Ok scope' -> return (scope':stack)
 -}
 
 

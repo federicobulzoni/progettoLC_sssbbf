@@ -53,6 +53,7 @@ import ErrM
   '{' { PT _ (TS _ 37) }
   '||' { PT _ (TS _ 38) }
   '}' { PT _ (TS _ 39) }
+  L_integ  { PT _ (TI $$) }
   L_PTrue { PT _ (T_PTrue _) }
   L_PFalse { PT _ (T_PFalse _) }
   L_PReturn { PT _ (T_PReturn _) }
@@ -64,6 +65,9 @@ import ErrM
   L_PChar { PT _ (T_PChar _) }
 
 %%
+
+Integer :: { Integer }
+Integer  : L_integ  { (read ( $1)) :: Integer }
 
 PTrue :: { PTrue}
 PTrue  : L_PTrue { PTrue (mkPosToken $1)}
@@ -121,7 +125,7 @@ Declaration : 'var' PIdent ':' TypeSpec { AbsGramm.DecVar $2 $4 }
             | 'var' PIdent ':' TypeSpec '=' Exp { AbsGramm.DefVar $2 $4 $6 }
             | 'def' PIdent ListParamClause '=' Block { dproc_ $2 $3 $5 }
             | 'def' PIdent ListParamClause ':' TypeSpec '=' Block { AbsGramm.DefFun $2 $3 $5 $7 }
-            | 'def' PIdent ListParamClause ':' TypeSpec '=' Exp { defFunInLine_ $2 $3 $5 $7 }
+            | 'def' PIdent ListParamClause ':' TypeSpec '=' Exp { AbsGramm.DefFunInLine $2 $3 $5 $7 }
 ParamClause :: { ParamClause }
 ParamClause : '(' ListArg ')' { AbsGramm.PArg $2 }
 ListParamClause :: { [ParamClause] }
@@ -135,6 +139,8 @@ ListArg : {- empty -} { [] }
         | Arg ',' ListArg { (:) $1 $3 }
         | {- empty -} { [] }
         | Arg ListArg { (:) $1 $2 }
+Block :: { Block }
+Block : '{' ListStm '}' { AbsGramm.DBlock $2 }
 Arg :: { Arg }
 Arg : PIdent ':' TypeSpec { AbsGramm.DArg $1 $3 }
 Op1 :: { Op }
@@ -196,17 +202,14 @@ Exp7 : LExp { AbsGramm.ELExp $1 }
      | PNull { AbsGramm.ENull $1 }
      | '(' Exp ')' { $2 }
 Stm :: { Stm }
-Stm : Declaration { AbsGramm.Decla $1 }
-    | Exp { AbsGramm.Expr $1 }
+Stm : Declaration { AbsGramm.SDecl $1 }
     | Block { AbsGramm.SBlock $1 }
-    | LExp '=' Exp { AbsGramm.Assign $1 $3 }
-    | 'while' '(' Exp ')' Stm { AbsGramm.While $3 $5 }
-    | 'if' '(' Exp ')' Stm 'else' Stm { AbsGramm.If $3 $5 $7 }
-    | 'do' Stm 'while' '(' Exp ')' { do_ $2 $5 }
-    | PReturn { AbsGramm.Return $1 }
-    | PReturn Exp { AbsGramm.ReturnExp $1 $2 }
-Block :: { Block }
-Block : '{' ListStm '}' { AbsGramm.DBlock $2 }
+    | LExp '=' Exp { AbsGramm.SAssign $1 $3 }
+    | 'while' '(' Exp ')' Stm { AbsGramm.SWhile $3 $5 }
+    | 'if' '(' Exp ')' Stm 'else' Stm { AbsGramm.SIf $3 $5 $7 }
+    | 'do' Stm 'while' '(' Exp ')' { sdo_ $2 $5 }
+    | PReturn { AbsGramm.SReturn $1 }
+    | PReturn Exp { AbsGramm.SReturnExp $1 $2 }
 ListStm :: { [Stm] }
 ListStm : {- empty -} { [] }
         | Stm { (:[]) $1 }
@@ -245,8 +248,7 @@ happyError ts =
 
 myLexer = tokens
 op_ e1_ o_ e2_ = EOp e1_ o_ e2_
-do_ st_ ex_ = SBlock (DBlock [st_, While ex_ st_])
+sdo_ st_ ex_ = SBlock (DBlock [st_, SWhile ex_ st_])
 dproc_ id_ params_ block_ = DefFun id_ params_ (TSimple TypeVoid) block_
-defFunInLine_ id_ params_ typ_ exp_ = DefFun id_ params_ typ_ (DBlock [Expr exp_])
 }
 

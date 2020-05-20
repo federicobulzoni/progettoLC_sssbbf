@@ -21,7 +21,7 @@ $i = [$l $d _ ']     -- identifier character
 $u = [. \n]          -- universal: any character
 
 @rsyms =    -- symbols and non-identifier-like reserved words
-   \; | \10 | \* | \[ | \] | \( | \) | \: | \= | \, | \| \| | \& \& | \< | \< \= | \> | \> \= | \= \= | \! \= | \+ | \- | \/ | \% | \^ | \! | \& | \{ | \}
+   \; | \10 | \* | \[ | \] | \( | \) | \: | \= | \, | \{ | \} | \| \| | \& \& | \< | \< \= | \> | \> \= | \= \= | \! \= | \+ | \- | \/ | \% | \^ | \! | \&
 
 :-
 "//" [.]* ; -- Toss single line comments
@@ -53,7 +53,8 @@ $l $i*
     { tok (\p s -> PT p (eitherResIdent (TV . share) s)) }
 
 
-
+$d+
+    { tok (\p s -> PT p (TI $ share s))    }
 
 
 {
