@@ -98,6 +98,22 @@ inferDecl decl env = case decl of
             tell [printTree exp ++ "e' di tipo " ++ show (getType texp) ++ ", ma il tipo atteso e': " ++ show typ ++ ".\n"]
             return ((DefVar id typ texp), env)
 
+  ---------------------------------------------------------------------------------------------------------------------------------------
+  DefVar id@(Id (loc, ident)) typ exp -> case update env ident (VarInfo loc typ) of
+    Ok env' -> defVarAux
+    Bad msg -> do
+      tell [msg]
+      defVarAux
+    where defVarAux = do
+      texp <- inferExp exp env
+      if isTypeError texp || checkExp texp typ
+        then
+          return ((DefVar id typ texp), env')
+        else
+          tell [printTree exp ++ "e' di tipo " ++ show (getType texp) ++ ", ma il tipo atteso e': " ++ show typ ++ ".\n"]
+          return ((DefVar id typ texp), env')
+  ---------------------------------------------------------------------------------------------------------------------------------------
+
   DefFun id@(Id (loc, ident)) params typ block@(DBlock stms) -> case update env ident (FunInfo loc typ params) of
     Ok env' -> do
       -- block di suo aggiunge un nuovo scope e fa le operazioni su di esso.
@@ -221,6 +237,24 @@ inferStm stm typ env = case stm of
             -- Dubbi.
             return ((StmTyped (SReturnExp preturn texp) TypeVoid, env)
 
+----------------------------------------------------------------------------------------------------------------------------------------------------------
+saveLog:: String -> m ()
+saveLog log = tell [log]
+-- BRUTTA
+SReturnExp preturn exp -> do
+  texp <- inferExp exp env
+  case (isTypeError texp) of
+    True -> return ((StmTyped (SReturnExp preturn texp) TypeVoid), env)
+    False -> case ((checkExp texp typ), (isTypeVoid typ)) of
+          (True,_) -> return ((StmTyped (SReturnExp preturn texp) typ), env)
+          (False, True) -> do
+            saveLog "Valore di ritorno inaspettato alla posizione" ++ show (getLoc texp) ++ "."
+            return ((StmTyped (SReturnExp preturn texp) TypeVoid, env)
+          (False, False) -> do
+            saveLog "L'espressione " ++ printTree exp ++ " in posizione " ++ show (getLoc texp)
+              ++ " ha tipo " ++ printTree (getType exp) ++ ", ma il tipo di ritorno richiesto e' " ++ printTree typ ++ "."
+            return ((StmTyped (SReturnExp preturn texp) TypeVoid, env)
+----------------------------------------------------------------------------------------------------------------------------------------------------------
   SReturn preturn -> do
     if !(isTypeVoid typ)
       then 
