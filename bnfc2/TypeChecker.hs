@@ -11,9 +11,14 @@ import Environment as Env
 import PrintGramm
 import Control.Monad.Writer
 
+saveLog:: String -> m ()
+saveLog log = tell [log]
+
 getLoc :: Exp -> Loc
 --getLoc (ETyped _ _ loc) = loc
 getLoc (ETyped _ _ r c) = (r,c)
+getLoc (LExpTyped _ _ r c) = (r,c)
+getLoc (LIdentTyped _ _ r c) = (r,c)
 
 getType :: a -> TypeSpec
 getType (ETyped _ typ _ _) = typ
@@ -77,7 +82,7 @@ inferDecl decl env = case decl of
   DecVar (PIdent (loc, ident)) typ -> case update env ident (VarInfo loc typ) of
       Ok env' -> return (decl, env')
       Bad msg -> do
-        tell [msg]
+        saveLog msg
         return (decl, env)
   
   --  DefVar PIdent Type Exp
@@ -92,16 +97,16 @@ inferDecl decl env = case decl of
           then
             return ((DefVar id typ texp), env')
           else do
-            tell [printTree exp ++ "e' di tipo " ++ show (getType texp) ++ ", ma il tipo atteso e': " ++ show typ ++ ".\n"]
+            saveLog (printTree exp ++ "e' di tipo " ++ show (getType texp) ++ ", ma il tipo atteso e': " ++ show typ ++ ".")
             return ((DefVar id typ texp), env')
       Bad msg -> do
-        tell [msg]
+        saveLog msg
         texp <- inferExp exp env 
         if isTypeError texp || checkExp texp typ
           then
             return ((DefVar id typ texp), env)
           else do
-            tell [printTree exp ++ "e' di tipo " ++ show (getType texp) ++ ", ma il tipo atteso e': " ++ show typ ++ ".\n"]
+            saveLog (printTree exp ++ "e' di tipo " ++ show (getType texp) ++ ", ma il tipo atteso e': " ++ show typ ++ ".")
             return ((DefVar id typ texp), env)
 
 --  ---------------------------------------------------------------------------------------------------------------------------------------
@@ -109,13 +114,13 @@ inferDecl decl env = case decl of
 --    case update env ident (VarInfo loc typ) of
 --      Ok env' -> ()
 --      Bad msg -> do
---        tell [msg]
+--        saveLog msg
 --    texp <- inferExp exp env
 --    if (isTypeError texp) || (checkExp texp typ)
 --      then
 --        return ((DefVar id typ texp), env')
 --      else
---        tell [printTree exp ++ "e' di tipo " ++ show (getType texp) ++ ", ma il tipo atteso e': " ++ show typ ++ ".\n"]
+--        saveLog printTree exp ++ "e' di tipo " ++ show (getType texp) ++ ", ma il tipo atteso e': " ++ show typ ++ "."
 --        return ((DefVar id typ texp), env')
 --  ---------------------------------------------------------------------------------------------------------------------------------------
 
@@ -130,18 +135,18 @@ inferDecl decl env = case decl of
           return ((DefFun id params typ tblock), env')
         else do
           -- manca un return giusto, se ce ne sono di sbagliati, inferBlock ce l'ha già detto.
-          tell ["Attesa una istruzione return all'interno della funzione " ++ show ident ++ " dichiarata in posizione " ++ show loc ++ ", ma non trovata.\n"]
+          saveLog ("Attesa una istruzione return all'interno della funzione " ++ show ident ++ " dichiarata in posizione " ++ show loc ++ ", ma non trovata.")
           return ((DefFun id params typ tblock), env')
 
     Bad msg -> do
-      tell [msg]
+      saveLog msg
       tblock <- inferBlock (DBlock ((paramsToStms params)++stms)) typ env
       if checkBlock tblock typ 
         then
           return ((DefFun id params typ tblock), env)
         else do
           -- manca un return giusto, se ce ne sono di sbagliati, inferBlock ce l'ha già detto.
-          tell ["Attesa una istruzione return all'interno della funzione " ++ show ident ++ " dichiarata in posizione " ++ show loc ++ ", ma non trovata.\n"]
+          saveLog ("Attesa una istruzione return all'interno della funzione " ++ show ident ++ " dichiarata in posizione " ++ show loc ++ ", ma non trovata.")
           return ((DefFun id params typ tblock), env)
 
   -- Zucchero sintattico manuale e via.
@@ -182,18 +187,18 @@ inferStm stm typ env = case stm of
           return ( (StmTyped (SWhile texp tstm') (getType tstm') ) , env)
       else
         do
-          tell ["La condizione del while deve essere di tipo booleano, invece " 
+          saveLog ("La condizione del while deve essere di tipo booleano, invece " 
             ++ printTree exp ++ "in posizione " ++ show (getLoc texp) 
-            ++ " ha tipo: " ++ printTree (getType texp) ++ "."]
+            ++ " ha tipo: " ++ printTree (getType texp) ++ ".")
           (tstm', _) <- inferStm stm' typ env
           return ( (StmTyped (SWhile texp tstm') (getType tstm')) , env )
   SIf exp stmif stmelse -> do
     texp <- inferExp exp env
     if not (isTypeError texp || checkExp texp (TSimple SType_Bool))
       then
-        tell ["La condizione dell' if deve essere di tipo booleano, invece " 
+        saveLog ("La condizione dell' if deve essere di tipo booleano, invece " 
           ++ printTree exp ++ "in posizione " ++ show (getLoc texp) 
-          ++ " ha tipo: " ++ printTree (getType texp) ++ "."]
+          ++ " ha tipo: " ++ printTree (getType texp) ++ ".")
       else
         return ()
 
@@ -220,9 +225,9 @@ inferStm stm typ env = case stm of
       then
         return ( (StmTyped (SAssign tlexp texp) (TSimple TypeVoid)), env )
       else do
-        tell ["L'espressione " ++ printTree exp ++ " in posizione " ++ show (getLoc texp)
+        saveLog ("L'espressione " ++ printTree exp ++ " in posizione " ++ show (getLoc texp)
           ++ " ha tipo " ++ printTree (getType texp) ++ ", ma " ++ printTree lexp ++ " ha tipo " 
-          ++ printTree (getType lexp) ++ "."]
+          ++ printTree (getType lexp) ++ ".")
         return ( (StmTyped (SAssign tlexp texp) (TSimple TypeVoid)), env )
 
   SReturnExp preturn exp -> do
@@ -233,18 +238,18 @@ inferStm stm typ env = case stm of
 
         (True,_) -> return ((StmTyped (SReturnExp preturn texp) typ), env)
         (False, True) -> do
-          saveLog "Valore di ritorno inaspettato alla posizione" ++ show (getLoc texp) ++ "."
+          saveLog ("Valore di ritorno inaspettato alla posizione" ++ show (getLoc texp) ++ ".")
           return ((StmTyped (SReturnExp preturn texp) (TSimple TypeVoid), env))
         (False, False) -> do
-          saveLog "L'espressione " ++ printTree exp ++ " in posizione " ++ show (getLoc texp)
-            ++ " ha tipo " ++ printTree (getType exp) ++ ", ma il tipo di ritorno richiesto e' " ++ printTree typ ++ "."
+          saveLog ("L'espressione " ++ printTree exp ++ " in posizione " ++ show (getLoc texp)
+            ++ " ha tipo " ++ printTree (getType exp) ++ ", ma il tipo di ritorno richiesto e' " ++ printTree typ ++ ".")
           return ((StmTyped (SReturnExp preturn texp) (TSimple TypeVoid), env))
 
   SReturn preturn -> do
     if not (isTypeVoid typ)
       then 
-        tell ["Il return in posizione " ++ show (getLoc preturn) ++ " non ha valore di ritorno, ma la funzione ha tipo "
-          ++ printTree typ ++ "."]
+        saveLog ("Il return in posizione " ++ show (getLoc preturn) ++ " non ha valore di ritorno, ma la funzione ha tipo "
+          ++ printTree typ ++ ".")
       else
         return ()
     return ((StmTyped (SReturn preturn) (TSimple TypeVoid)), env)
@@ -268,8 +273,8 @@ inferStm stm typ env = case stm of
 --            return ((StmTyped (SReturnExp preturn texp) (TSimple TypeVoid), env)
 ----------------------------------------------------------------------------------------------------------------------------------------------------------
 
-
-
+checkStm :: Stm -> TypeSpec -> Bool
+checkStm tstm typ = (getType tstm) == typ
 
 inferLExp :: LExp -> Env -> Writer [String] LExp
 inferLExp lexp env = case lexp of
@@ -280,10 +285,10 @@ inferLExp lexp env = case lexp of
        return (LExpTyped lexp TypeError)
      else
        case tlexp' of
-         LExpTyped _ (TPointer typ) -> return (LExpTyped (LRef tlexp') typ)
-         LExpTyped _ typ' -> do
-           tell ["Impossibile applicare operatore * a " ++ printTree lexp' ++ " in posizione " ++ show (getLoc tlexp') 
-            ++ " che ha tipo " ++ printTree typ' ++ "."]
+         (LExpTyped _ (TPointer typ)) -> return (LExpTyped (LRef tlexp') typ)
+         (LExpTyped _ typ') -> do
+           saveLog ("Impossibile applicare operatore * a " ++ printTree lexp' ++ " in posizione " ++ show (getLoc tlexp') 
+            ++ " che ha tipo " ++ printTree typ' ++ ".")
            return (LExpTyped (LRef tlexp') TypeError)
 
 
@@ -294,36 +299,35 @@ inferLExp lexp env = case lexp of
      then
        return (LExpTyped (LArr tlexp texp) TypeError)
      else
-       case (tlexp , checkExp texp Type_Int) of
+       case (tlexp , checkExp texp SType_Int) of
          (LExpTyped _ (TArray typ), True) -> return (LExpTyped (LArr tlexp texp) typ)
          (LExpTyped _ (TArray typ), False) -> do
-           tell ["L'indice di accesso ad un'array deve avere tipo intero, invece in posizione "
-            ++ show (getLoc texp) ++ "l'espressione " ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) ++ "."]
-
+           saveLog ("L'indice di accesso ad un'array deve avere tipo intero, invece in posizione "
+            ++ show (getLoc texp) ++ "l'espressione " ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) ++ ".")
            return (LExpTyped (LArr tlexp texp) TypeError)
          (_, False) -> do
-           tell ["L'accesso tramite operatore [] puo' essere effettuato solo su elementi di tipo Array, mentre "
-            ++ printTree lexp ++ " ha tipo " ++ showTree (getType tlexp) ++ "."]
-           tell ["L'indice di accesso ad un'array deve avere tipo intero, invece in posizione "
-            ++ show (getLoc texp) ++ "l'espressione " ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) ++ "."]
+           saveLog ("L'accesso tramite operatore [] puo' essere effettuato solo su elementi di tipo Array, mentre "
+            ++ printTree lexp ++ " ha tipo " ++ showTree (getType tlexp) ++ ".")
+           saveLog ("L'indice di accesso ad un'array deve avere tipo intero, invece in posizione "
+            ++ show (getLoc texp) ++ "l'espressione " ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) ++ ".")
            
            return (LExpTyped (LArr tlexp texp) TypeError)
          (_, True) -> do
-           tell ["L'accesso tramite operatore [] puo' essere effettuato solo su elementi di tipo Array, mentre "
-             ++ printTree lexp ++ " ha tipo " ++ showTree (getType tlexp) ++ "."]
+           saveLog ("L'accesso tramite operatore [] puo' essere effettuato solo su elementi di tipo Array, mentre "
+             ++ printTree lexp ++ " ha tipo " ++ showTree (getType tlexp) ++ ".")
            
            return (LExpTyped (LArr tlexp texp) TypeError)
  LIdent id@(PIdent (loc, ident)) -> let res = Env.lookup env ident in
    case res of
      Bad msg -> do
-       tell [msg]
+       saveLog msg
        return (LExpTyped lexp TypeError)
      -- dloc dichiarazione loc
      Ok (VarInfo dloc typ) -> return (LIdentTyped id typ dloc)
      Ok (FunInfo dloc _ _) -> do
        -- è da mettere a posto sto errore.
-       tell ["L'identificatore " ++ show ident
-        ++ "e' stato utilizzato in posizione " ++ show dloc ++ "per dichiarare una funzione."]
+       saveLog ("L'identificatore " ++ show ident
+        ++ "e' stato utilizzato in posizione " ++ show dloc ++ "per dichiarare una funzione.")
 
        return (LExpTyped lexp TypeError)
 
@@ -335,43 +339,48 @@ inferLExp lexp env = case lexp of
 inferArrayAux :: [Exp] -> TypeSpec -> (Bool, Bool)
 inferArrayAux texps typ = ( (any (\x -> checkExp x (TSimple TypeError)) texps),(all (\x -> checkExp x typ) texps) )
 
+checkExp :: Exp -> TypeSpec -> Bool
+checkExp texp typ = (getType texp) == typ 
+
 inferExp :: Exp -> Env -> Writer [String] Exp
 inferExp exp env = case exp of
   -- Punto di vista di Bulzo: gli array di dim 0 non hanno alcuna utilità per il programmatore nel nostro linguaggio
   -- in cui non ci sono liste e non ci sono allocazioni dinamiche di memoria.
                                                                               -- posizione fittizia. Spunta da qualche parte?
-  EArray [] -> return (ETyped (exp) (TypeSpec (TArray (TSimple TypeVoid) 0) ) (0,0)  )
+  EArray [] -> return (ETyped (exp) (TArray (TSimple TypeVoid) 0) (0,0)  )
   EArray exps -> do
     texps <- mapM (\x -> inferExp x env) exps
     typ <- getType (head texps) 
     case inferArrayAux texps typ of
-      (True, _) -> return (ETyped (EArray texps) (TypeSpec (TArray (TSimple TypeError) (length texps) ) ) (getLoc (head texps)) )
-      (_, True) -> return (ETyped (EArray texps) (TypeSpec (TArray (typ) (length texps) ) ) (getLoc (head texps)) )
+      (True, _) -> return (ETyped (EArray texps) (TArray (TSimple TypeError) (length texps) ) (getLoc (head texps)) )
+      (_, True) -> return (ETyped (EArray texps) (TArray (typ) (length texps) ) (getLoc (head texps)) )
       (_ , _) -> do
         -- Da mettere un più bel messaggio di errore.
-        tell ["Inconsistenza nei valori assegnati all'array in posizione " ++ show (getLoc (head texps) ) ++ "."]
-        return (ETyped (EArray texps) (TypeSpec (TArray (TSimple TypeError) (length texps) ) ) (getLoc (head texps)) )
+        -- ETyped Exp TypeSpec Integer Integer
+        saveLog ("Inconsistenza nei valori assegnati all'array in posizione " ++ show (getLoc (head texps) ) ++ ".")
+        -- bisogna far tornare l'espressione tipata, non la lunghezza della lisa texps
+        return (ETyped (EArray texps) (TArray (TSimple TypeError) (length texps) ) (getLoc (head texps)) )
 
   ENot exp -> do
     texp <- inferExp exp env
-    if isTypeError texp || checkExp texp (TSimple Type_Bool)
+    if isTypeError texp || checkExp texp (TSimple SType_Bool)
       then
         return (ETyped (ENot texp) (getType texp) (getLoc texp))
       else 
         do
-          tell ["Operatore ! applicato alla espressione " ++ printTree exp ++ ", che ha tipo "
-            ++ printTree (getType texp) ++ ", ma era attesa di tipo " ++ printTree (TSimple Type_Bool) "."]
+          saveLog ("Operatore ! applicato alla espressione " ++ printTree exp ++ ", che ha tipo "
+            ++ printTree (getType texp) ++ ", ma era attesa di tipo " ++ printTree (TSimple SType_Bool) ++ ".")
           return ((ETyped (ENot texp) (TSimple TypeError) (getLoc texp)))
 
   ENeg exp -> do
     texp <- inferExp exp env
-    if isTypeError texp || checkExp texp (TSimple Type_Int) || checkExp texp (TSimple Type_float)
+    if isTypeError texp || checkExp texp (TSimple SType_Int) || checkExp texp (TSimple SType_Float)
       then
         return (ETyped (ENeg texp) (getType texp) (getLoc texp))
       else 
         do
-          tell ["Operatore - applicato alla espressione " ++ printTree exp ++ ", che ha tipo "
-            ++ printTree (getType texp) ++ ", ma era attesa di tipo numerico."]
+          saveLog ("Operatore - applicato alla espressione " ++ printTree exp ++ ", che ha tipo "
+            ++ printTree (getType texp) ++ ", ma era attesa di tipo numerico.")
           return ((ETyped (ENeg texp) (TSimple TypeError) (getLoc texp)))
   
   ELExp lexp -> do
@@ -382,37 +391,40 @@ inferExp exp env = case exp of
     tlexp <- inferLExp lexp env
     if isTypeError tlexp
       then
-        return (ETyped (EDeref tlexp) (TSimple Type_Error) (getLoc tlexp))
+        return (ETyped (EDeref tlexp) (TSimple TypeError) (getLoc tlexp))
       else
         return ( ETyped (EDeref tlexp) (TPointer (getType tlexp)) (getLoc tlexp) )
 
-  EInt const@(PInteger (loc, _)) ->return (ETyped (EInt const) (TSimple Type_Int) (loc) )
-  EFloat const@(PFloat (loc, _)) -> return (ETyped (EFloat const) (TSimple Type_Float) (loc) )
-  EChar const@(PChar (loc, _)) -> return (ETyped (EChar const) (TSimple Type_Char) (loc) )
-  EString const@(PString (loc, _)) -> return (ETyped (EString const) (TSimple Type_String) (loc) )
-  ETrue const@(PTrue (loc, _)) -> return (ETyped (ETrue const) (TSimple Type_Bool) (loc) )
-  EFalse const@(PFalse (loc, _)) -> return (ETyped (EFalse const) (TSimple Type_Bool) (loc) )
+  EInt const@(PInteger (loc, _)) ->return (ETyped (EInt const) (TSimple SType_Int) (loc) )
+  EFloat const@(PFloat (loc, _)) -> return (ETyped (EFloat const) (TSimple SType_Float) (loc) )
+  EChar const@(PChar (loc, _)) -> return (ETyped (EChar const) (TSimple SType_Char) (loc) )
+  EString const@(PString (loc, _)) -> return (ETyped (EString const) (TSimple SType_String) (loc) )
+  ETrue const@(PTrue (loc, _)) -> return (ETyped (ETrue const) (TSimple SType_Bool) (loc) )
+  EFalse const@(PFalse (loc, _)) -> return (ETyped (EFalse const) (TSimple SType_Bool) (loc) )
   -- Ma serve Null? Con i puntatori probabilmente si, nel caso non avrebbe TypeVoid.
-  ENull const@(PNull (loc, _)) -> return (ETyped (ENull const) (TSimple TypeVoid) (loc) )
+  ENull const@(PNull (loc, _)) -> return (ETyped (ENull const) (TSimple TypeVoid) loc )
 
-  EOp expl op expr -> inferBinOp expl op expr
+  EOp expl op expr -> inferBinOp expl op expr env
 
 
 -- Prese due espressioni ed un operatore binario ritorna la corrispondente espressione tipizzata
-inferBinOp :: Exp -> Op -> Exp -> Writer [String] Exp
-inferBinOp expl op expr = do 
+inferBinOp :: Exp -> Op -> Exp -> Env -> Writer [String] Exp
+inferBinOp expl op expr env = do 
     texpl <- inferExp expl env
     texpr <- inferExp expr env
     case ( (isConsistent (getTypeOp op) (getType texpl) (getType texpr) ) , (getType texpl) , (getType texpr) ) of
-      (_ , TSimple TypeError, _ ) -> returnBinOpError texpl op texpr 
-      (_ , _ , TSimple TypeError) -> returnBinOpError texpl op texpr 
-      (True, typl, typr) -> return (ETyped (EOp texpl op texpr) (typl) (getLoc texpl))
+      (_ , TSimple TypeError, _ ) -> return $ returnBinOpError texpl op texpr 
+      (_ , _ , TSimple TypeError) -> return $ returnBinOpError texpl op texpr 
+      (True, typl, typr) -> return (ETyped (EOp texpl op texpr) typl (getLoc texpl))
       (False, typl, typr) -> do
-        tell ["L'operatore " ++ printTree op ++ " in posizione " ++ show (getLoc texpl)
+        saveLog ("L'operatore " ++ printTree op ++ " in posizione " ++ show (getLoc texpl)
               ++ " non puo' essere applicato ad un'espressione di tipo " ++ printTree typl 
-              ++ " e un'espressione di tipo " ++ printTree typr ++ "."]
-        returnBinOpError texpl op texpr
-    where returnBinOpError texpl op texpr = return (ETyped (EOp texpl op texpr) (TSimple TypeError) (getLoc texpl) )
+              ++ " e un'espressione di tipo " ++ printTree typr ++ ".")
+        return $ returnBinOpError texpl op texpr
+      --where returnBinOpError texpl op texpr = return (ETyped (EOp texpl op texpr) (TSimple TypeError) (getLoc texpl) )
+
+returnBinOpError :: Exp -> Op -> Exp -> Exp
+returnBinOpError texpl op texpr = (ETyped (EOp texpl op texpr) (TSimple TypeError) (getLoc texpl) )
 
 isConsistent :: TypeOp -> TypeSpec -> TypeSpec -> Bool
 isConsistent NumericOp typl typr = (typl == typr) && (checkNumericTyp typl)
@@ -451,7 +463,7 @@ getTypeOp NotEq = EqOp
 ---- Tests:
 --getEnv = do 
 --  env1 <- updateVar emptyEnv (PIdent ((1,5),"x")) Type_int
---  updateVar env1 (PIdent ((1,22),"y")) Type_float
+--  updateVar env1 (PIdent ((1,22),"y")) SType_Float
 --
 --
 --test4 :: Writer [String] (Declaration, Env)
@@ -471,7 +483,7 @@ getTypeOp NotEq = EqOp
 --test3 = let x = getEnv 
 --  in
 --    case x of
---      Ok env -> checkExp (EAdd (EVar (PIdent ((1,49),"y"))) (EVar (PIdent ((1,51),"x")))) Type_float env
+--      Ok env -> checkExp (EAdd (EVar (PIdent ((1,49),"y"))) (EVar (PIdent ((1,51),"x")))) SType_Float env
 --      Bad _ -> return (ETyped  (EVar (PIdent ((1,49),"crocs"))) Type_null)
 --
 --
