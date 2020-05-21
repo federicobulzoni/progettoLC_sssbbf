@@ -83,7 +83,7 @@ And. 		Op2 ::= "&&";
 Less. 		Op3 ::= "<";
 LessEq. 	Op3 ::= "<=";
 Greater. 	Op3 ::= ">";
-GreterEq. 	Op3 ::= ">=";
+GreaterEq. 	Op3 ::= ">=";
 -- Le stringhe si può controllare che siano uguali o diverse.
 Equal. 		Op3 ::= "==";
 NotEq. 		Op3 ::= "!=";

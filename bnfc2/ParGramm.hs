@@ -907,7 +907,7 @@ happyReduction_53 happy_x_1
 happyReduce_54 = happySpecReduce_1  22# happyReduction_54
 happyReduction_54 happy_x_1
 	 =  happyIn26
-		 (AbsGramm.GreterEq
+		 (AbsGramm.GreaterEq
 	)
 
 happyReduce_55 = happySpecReduce_1  22# happyReduction_55

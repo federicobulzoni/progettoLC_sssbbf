@@ -76,7 +76,7 @@ transOp x = case x of
   Less -> failure x
   LessEq -> failure x
   Greater -> failure x
-  GreterEq -> failure x
+  GreaterEq -> failure x
   Equal -> failure x
   NotEq -> failure x
   Plus -> failure x

@@ -151,7 +151,7 @@ Op3 :: { Op }
 Op3 : '<' { AbsGramm.Less }
     | '<=' { AbsGramm.LessEq }
     | '>' { AbsGramm.Greater }
-    | '>=' { AbsGramm.GreterEq }
+    | '>=' { AbsGramm.GreaterEq }
     | '==' { AbsGramm.Equal }
     | '!=' { AbsGramm.NotEq }
     | Op4 { $1 }

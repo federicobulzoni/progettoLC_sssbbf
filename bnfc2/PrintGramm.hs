@@ -190,7 +190,7 @@ instance Print AbsGramm.Op where
     AbsGramm.Less -> prPrec i 3 (concatD [doc (showString "<")])
     AbsGramm.LessEq -> prPrec i 3 (concatD [doc (showString "<=")])
     AbsGramm.Greater -> prPrec i 3 (concatD [doc (showString ">")])
-    AbsGramm.GreterEq -> prPrec i 3 (concatD [doc (showString ">=")])
+    AbsGramm.GreaterEq -> prPrec i 3 (concatD [doc (showString ">=")])
     AbsGramm.Equal -> prPrec i 3 (concatD [doc (showString "==")])
     AbsGramm.NotEq -> prPrec i 3 (concatD [doc (showString "!=")])
     AbsGramm.Plus -> prPrec i 4 (concatD [doc (showString "+")])

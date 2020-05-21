@@ -69,7 +69,7 @@ data Op
     | Less
     | LessEq
     | Greater
-    | GreterEq
+    | GreaterEq
     | Equal
     | NotEq
     | Plus
