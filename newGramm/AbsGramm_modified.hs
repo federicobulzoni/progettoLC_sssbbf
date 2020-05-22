@@ -3,7 +3,7 @@
 
 module AbsGramm where
 
-type Loc = (Int, Int)
+type Loc = (Integer, Integer)
 type Ident = String
 
 newtype PTrue = PTrue (Loc,Ident)

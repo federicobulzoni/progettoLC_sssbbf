@@ -85,9 +85,6 @@ prPrec i j = if j < i then parenth else id
 instance Print Integer where
   prt _ x = doc (shows x)
 
-instance Print Int where
-  prt _ x = doc (shows x)
-
 instance Print Double where
   prt _ x = doc (shows x)
 
