@@ -98,6 +98,17 @@ data Exp
     | ETyped Exp TypeSpec Integer Integer
   deriving (Eq, Ord, Show, Read)
 
+data TExp
+  = Typed Exp TypeSpec Integer Integer
+  | Typed Stm ...
+  | Typed Block ...
+
+data Typizable
+  = Exp
+  | Stm
+  | Block
+
+
 data Params = ParExp [Exp]
   deriving (Eq, Ord, Show, Read)
 
