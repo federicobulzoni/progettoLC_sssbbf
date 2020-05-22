@@ -23,9 +23,9 @@ data EnvEntry =
 	deriving (Show)
 
 -}
-type Ident = String
+--type Ident = String
 type Scope = Map.Map Ident Info
-type Loc = (Int, Int)
+--type Loc = (Int, Int)
 
 data Info = 
 	VarInfo Loc TypeSpec

@@ -203,6 +203,7 @@ instance Print AbsGramm.Op where
 instance Print AbsGramm.Exp where
   prt i e = case e of
     AbsGramm.EArray exps -> prPrec i 0 (concatD [doc (showString "Array"), doc (showString "("), prt 0 exps, doc (showString ")")])
+    AbsGramm.EFunCall pident paramss -> prPrec i 0 (concatD [prt 0 pident, prt 0 paramss])
     AbsGramm.ENot exp -> prPrec i 2 (concatD [doc (showString "!"), prt 2 exp])
     AbsGramm.ENeg exp -> prPrec i 6 (concatD [doc (showString "-"), prt 7 exp])
     AbsGramm.ELExp lexp -> prPrec i 7 (concatD [prt 0 lexp])
@@ -221,6 +222,17 @@ instance Print AbsGramm.Exp where
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
   prtList _ (x:xs) = concatD [prt 0 x, prt 0 xs]
+
+instance Print AbsGramm.Params where
+  prt i e = case e of
+    AbsGramm.ParExp exps -> prPrec i 0 (concatD [doc (showString "("), prt 0 exps, doc (showString ")")])
+  prtList _ [x] = concatD [prt 0 x]
+  prtList _ [x] = concatD [prt 0 x]
+  prtList _ (x:xs) = concatD [prt 0 x, prt 0 xs]
+  prtList _ (x:xs) = concatD [prt 0 x, prt 0 xs]
+
+instance Print [AbsGramm.Params] where
+  prt = prtList
 
 instance Print [AbsGramm.Exp] where
   prt = prtList
@@ -252,7 +264,7 @@ instance Print [AbsGramm.Stm] where
 instance Print AbsGramm.LExp where
   prt i e = case e of
     AbsGramm.LRef lexp -> prPrec i 0 (concatD [doc (showString "*"), prt 0 lexp])
-    AbsGramm.LArr lexp exp -> prPrec i 1 (concatD [prt 1 lexp, doc (showString "("), prt 0 exp, doc (showString ")")])
+    AbsGramm.LArr lexp exp -> prPrec i 1 (concatD [prt 1 lexp, doc (showString "["), prt 0 exp, doc (showString "]")])
     AbsGramm.LIdent pident -> prPrec i 1 (concatD [prt 0 pident])
     AbsGramm.LExpTyped lexp typespec n1 n2 -> prPrec i 0 (concatD [doc (showString "["), prt 0 lexp, doc (showString ":"), prt 0 typespec, doc (showString ":"), doc (showString "("), prt 0 n1, doc (showString ","), prt 0 n2, doc (showString ")"), doc (showString "]")])
     AbsGramm.LIdentTyped pident typespec n1 n2 -> prPrec i 0 (concatD [doc (showString "["), prt 0 pident, doc (showString ":"), prt 0 typespec, doc (showString ":"), doc (showString "("), prt 0 n1, doc (showString ","), prt 0 n2, doc (showString ")"), doc (showString "]")])

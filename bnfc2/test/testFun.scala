@@ -1,9 +1,8 @@
 def fun (a:Int, b:Float) : Int = {
-	a + b
-
-	c + d
+	var a : Int = a + b
+	var c : Int = c + d
 }
 def proc () = {
-	c+b
+	var x : Int = c+b
 }
 def clauses (a:Int)(b:Float)(c:Array[Int](3)) : Int = c

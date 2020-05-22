@@ -82,6 +82,7 @@ data Op
 
 data Exp
     = EArray [Exp]
+    | EFunCall PIdent [Params]
     | ENot Exp
     | ENeg Exp
     | ELExp LExp
@@ -95,6 +96,9 @@ data Exp
     | ENull PNull
     | EOp Exp Op Exp
     | ETyped Exp TypeSpec Integer Integer
+  deriving (Eq, Ord, Show, Read)
+
+data Params = ParExp [Exp]
   deriving (Eq, Ord, Show, Read)
 
 data Stm

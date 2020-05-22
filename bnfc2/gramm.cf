@@ -101,6 +101,13 @@ coercions Op 6;
 
 -- Ci va per l'inizializzazione degli array.
 EArray. Exp ::= "Array" "("[Exp]")";
+EFunCall. 	Exp ::= PIdent [Params];
+
+ParExp. Params ::= "("  [Exp] ")";
+
+separator nonempty Params "";
+terminator nonempty Params ""; 
+
 separator Exp ",";
 terminator Exp ""; 
 
@@ -130,6 +137,7 @@ ETrue. 		Exp7 ::= PTrue;
 EFalse. 	Exp7 ::= PFalse;
 ENull. 		Exp7 ::= PNull;
 
+
 coercions Exp 7 ; 
 -- LExp è qualcosa che ha un indirizzo e quindi gli possiamo assegnare un valore.
 -- RExp è un qualcosa che valutata ci da un valore.
@@ -157,7 +165,7 @@ internal StmTyped. Stm ::= "[" Stm ":" TypeSpec "]";
 LRef. 	LExp ::= "*" LExp;
 -- Da verificare se le parentesi tonde creano conflitti con le espressioni e con le precedenze definite dall'utente
 -- nella valutazione dei puntatori.
-LArr. 	LExp1 ::= LExp1 "(" Exp ")";
+LArr. 	LExp1 ::= LExp1 "[" Exp "]";
 LIdent. LExp1 ::= PIdent;
 coercions LExp 2;
 

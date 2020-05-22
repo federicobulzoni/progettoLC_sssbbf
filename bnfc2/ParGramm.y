@@ -168,8 +168,16 @@ Op :: { Op }
 Op : Op1 { $1 }
 Exp :: { Exp }
 Exp : 'Array' '(' ListExp ')' { AbsGramm.EArray $3 }
+    | PIdent ListParams { AbsGramm.EFunCall $1 $2 }
     | Exp Op1 Exp1 { op_ $1 $2 $3 }
     | Exp1 { $1 }
+Params :: { Params }
+Params : '(' ListExp ')' { AbsGramm.ParExp $2 }
+ListParams :: { [Params] }
+ListParams : Params { (:[]) $1 }
+           | Params ListParams { (:) $1 $2 }
+           | Params { (:[]) $1 }
+           | Params ListParams { (:) $1 $2 }
 ListExp :: { [Exp] }
 ListExp : {- empty -} { [] }
         | Exp { (:[]) $1 }
@@ -225,7 +233,7 @@ ListStm : {- empty -} { [] }
 LExp :: { LExp }
 LExp : '*' LExp { AbsGramm.LRef $2 } | LExp1 { $1 }
 LExp1 :: { LExp }
-LExp1 : LExp1 '(' Exp ')' { AbsGramm.LArr $1 $3 }
+LExp1 : LExp1 '[' Exp ']' { AbsGramm.LArr $1 $3 }
       | PIdent { AbsGramm.LIdent $1 }
       | LExp2 { $1 }
 LExp2 :: { LExp }

@@ -88,6 +88,7 @@ transOp x = case x of
 transExp :: Exp -> Result
 transExp x = case x of
   EArray exps -> failure x
+  EFunCall pident paramss -> failure x
   ENot exp -> failure x
   ENeg exp -> failure x
   ELExp lexp -> failure x
@@ -101,6 +102,9 @@ transExp x = case x of
   ENull pnull -> failure x
   EOp exp1 op exp2 -> failure x
   ETyped exp typespec integer1 integer2 -> failure x
+transParams :: Params -> Result
+transParams x = case x of
+  ParExp exps -> failure x
 transStm :: Stm -> Result
 transStm x = case x of
   SDecl declaration -> failure x
