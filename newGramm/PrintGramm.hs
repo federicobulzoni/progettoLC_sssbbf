@@ -133,7 +133,12 @@ instance Print AbsGramm.TypeSpec where
   prt i e = case e of
     AbsGramm.TSimple stype -> prPrec i 0 (concatD [prt 0 stype])
     AbsGramm.TPointer typespec -> prPrec i 0 (concatD [doc (showString "*"), prt 0 typespec])
-    AbsGramm.TArray typespec exp -> prPrec i 0 (concatD [doc (showString "Array"), doc (showString "["), prt 0 typespec, doc (showString "]"), doc (showString "("), prt 0 exp, doc (showString ")")])
+    AbsGramm.TArray typespec pinteger -> prPrec i 0 (concatD [doc (showString "Array"), doc (showString "["), prt 0 typespec, doc (showString "]"), doc (showString "("), prt 0 pinteger, doc (showString ")")])
+
+instance Print [AbsGramm.TypeSpec] where
+  prt = prtList
+instance Print [[AbsGramm.TypeSpec]] where
+  prt i e = concatD (map (\x -> concatD [doc (showString "("), prt 0 x, doc (showString ")") ] ) e )
 
 instance Print AbsGramm.SType where
   prt i e = case e of
@@ -247,4 +252,4 @@ instance Print AbsGramm.LExp where
     AbsGramm.LRef lexp -> prPrec i 0 (concatD [doc (showString "*"), prt 1 lexp])
     AbsGramm.LArr lexp exp -> prPrec i 1 (concatD [prt 1 lexp, doc (showString "["), prt 0 exp, doc (showString "]")])
     AbsGramm.LIdent pident -> prPrec i 1 (concatD [prt 0 pident])
-    AbsGramm.LExpTyped lexp typespec loc -> prPrec i 0 (concatD [doc (showString "["), prt 0 lexp, doc (showString ":"), prt 0 typespec, doc (showString ":"), prt 0 loc, doc (showString "]")])
+    AbsGramm.LExpTyped lexp typespec loc dloc -> prPrec i 0 (concatD [doc (showString "["), prt 0 lexp, doc (showString ":"), prt 0 typespec, doc (showString ":"), prt 0 loc, doc (showString ":"), prt 0 dloc, doc (showString "]")])

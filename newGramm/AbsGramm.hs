@@ -37,8 +37,14 @@ data Program = Prog [Declaration]
   deriving (Eq, Ord, Show, Read)
 
 data TypeSpec
-    = TSimple SType | TPointer TypeSpec | TArray TypeSpec Exp
-  deriving (Eq, Ord, Show, Read)
+    = TSimple SType | TPointer TypeSpec | TArray TypeSpec PInteger 
+  deriving (Ord, Show, Read)
+
+instance Eq TypeSpec where
+  (==) (TSimple typ1) (TSimple typ2) = typ1 == typ2 
+  (==) (TPointer typ1) (TPointer typ2) = typ1 == typ2
+  (==) (TArray typ1 (PInteger (_,ident1))) (TArray typ2 (PInteger (_,ident2))) = ident1 == ident2 && typ1 == typ2
+  (==) _ _ = False
 
 data SType
     = SType_Float
@@ -120,7 +126,7 @@ data LExp
     = LRef LExp
     | LArr LExp Exp
     | LIdent PIdent
-    | LExpTyped LExp TypeSpec Loc
+    | LExpTyped LExp TypeSpec Loc Loc
   deriving (Eq, Ord, Show, Read)
 
 class Typed a where
@@ -165,9 +171,9 @@ instance Typed Stm where
 -- LExpTyped LExp TypeSpec Integer Integer
 -- LIdentTyped PIdent TypeSpec Integer Integer
 instance Typed LExp where
-    getType (LExpTyped _ typ _ ) = typ
+    getType (LExpTyped _ typ _ _) = typ
     --getType (LIdentTyped _ typ _) = typ
-    getLoc (LExpTyped _ _ loc) = loc
+    getLoc (LExpTyped _ _ loc _) = loc
     -- Locazione di dichiarazione in questo caso.
     --getLoc (LIdentTyped _ _ loc) = loc
     isTypeError tlexp = getType tlexp == (TSimple TypeError)

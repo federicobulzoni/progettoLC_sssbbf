@@ -15,7 +15,8 @@ separator Declaration "";
 
 TSimple. TypeSpec ::= SType;
 TPointer. TypeSpec ::= "*" TypeSpec;
-TArray. TypeSpec ::= "Array" "[" TypeSpec "]" "(" Exp ")";
+TArray. TypeSpec ::= "Array" "[" TypeSpec "]" "(" PInteger ")";
+
 
 rules SType ::= "Float" | "Int" | "Char" | "String" | "Bool";
 internal TypeError. SType ::= "Error";
@@ -115,9 +116,10 @@ LIdent. LExp1 ::= PIdent;
 
 coercions LExp 1; 
 
--- Qui la coppia di interi è la posizione in cui l'identificatore è stato dichiarato.
--- La posizione dell'identificatore nel codice è invece associata al corrispondente PIdent.
-internal LExpTyped. LExp ::= "[" LExp ":" TypeSpec ":" "(" Integer "," Integer ")" "]";
+-- La prima coppia di interi è come da convenzione, la posizione dell'identificatore.
+-- la seconda coppia di interi è la posizione in cui l'identificatore riferito è stato dichiarato.
+internal LExpTyped. LExp ::= "[" LExp ":" TypeSpec ":" "(" Integer "," Integer ")" ":" "(" Integer ":" Integer ")" "]";
+
 define op e1 o e2 = EOp e1 o e2;
 define decVar id typ  = DefVar id typ DummyExp ;
 define dproc id params block = DefFun id params (TSimple TypeVoid) (block);

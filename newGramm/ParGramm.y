@@ -132,7 +132,7 @@ ListDeclaration : {- empty -} { [] }
 TypeSpec :: { TypeSpec }
 TypeSpec : SType { AbsGramm.TSimple $1 }
          | '*' TypeSpec { AbsGramm.TPointer $2 }
-         | 'Array' '[' TypeSpec ']' '(' Exp ')' { AbsGramm.TArray $3 $6 }
+         | 'Array' '[' TypeSpec ']' '(' PInteger ')' { AbsGramm.TArray $3 $6 }
 SType :: { SType }
 SType : 'Float' { AbsGramm.SType_Float }
       | 'Int' { AbsGramm.SType_Int }

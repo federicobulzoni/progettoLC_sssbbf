@@ -67,7 +67,7 @@ Grammar
 	ListDeclaration -> ListDeclaration Declaration     (43)
 	TypeSpec -> SType                                  (44)
 	TypeSpec -> '*' TypeSpec                           (45)
-	TypeSpec -> 'Array' '[' TypeSpec ']' '(' Exp ')'   (46)
+	TypeSpec -> 'Array' '[' TypeSpec ']' '(' PInteger ')'   (46)
 	SType -> 'Float'                                   (47)
 	SType -> 'Int'                                     (48)
 	SType -> 'Char'                                    (49)
@@ -3219,7 +3219,7 @@ State 140
 
 State 141
 
-	TypeSpec -> 'Array' . '[' TypeSpec ']' '(' Exp ')'    (rule 46)
+	TypeSpec -> 'Array' . '[' TypeSpec ']' '(' PInteger ')'    (rule 46)
 
 	'['            shift, and enter state 146
 
@@ -3264,7 +3264,7 @@ State 145
 
 State 146
 
-	TypeSpec -> 'Array' '[' . TypeSpec ']' '(' Exp ')'    (rule 46)
+	TypeSpec -> 'Array' '[' . TypeSpec ']' '(' PInteger ')'    (rule 46)
 
 	'*'            shift, and enter state 140
 	'Array'        shift, and enter state 141
@@ -4909,14 +4909,14 @@ State 208
 
 State 209
 
-	TypeSpec -> 'Array' '[' TypeSpec . ']' '(' Exp ')'    (rule 46)
+	TypeSpec -> 'Array' '[' TypeSpec . ']' '(' PInteger ')'    (rule 46)
 
 	']'            shift, and enter state 210
 
 
 State 210
 
-	TypeSpec -> 'Array' '[' TypeSpec ']' . '(' Exp ')'    (rule 46)
+	TypeSpec -> 'Array' '[' TypeSpec ']' . '(' PInteger ')'    (rule 46)
 
 	'('            shift, and enter state 227
 
@@ -5288,70 +5288,18 @@ State 226
 
 State 227
 
-	TypeSpec -> 'Array' '[' TypeSpec ']' '(' . Exp ')'    (rule 46)
+	TypeSpec -> 'Array' '[' TypeSpec ']' '(' . PInteger ')'    (rule 46)
 
-	'!'            shift, and enter state 71
-	'&'            shift, and enter state 50
-	'('            shift, and enter state 51
-	'*'            shift, and enter state 39
-	'-'            shift, and enter state 62
-	'Array'        shift, and enter state 52
-	L_PTrue        shift, and enter state 53
-	L_PFalse       shift, and enter state 54
-	L_PNull        shift, and enter state 55
-	L_PIdent       shift, and enter state 36
-	L_PFloat       shift, and enter state 56
 	L_PInteger     shift, and enter state 57
-	L_PString      shift, and enter state 58
-	L_PChar        shift, and enter state 59
 
-	PTrue          goto state 40
-	PFalse         goto state 41
-	PNull          goto state 42
-	PIdent         goto state 43
-	PFloat         goto state 44
-	PInteger       goto state 45
-	PString        goto state 46
-	PChar          goto state 47
-	Exp            goto state 228
-	Exp1           goto state 102
-	Exp2           goto state 73
-	Exp3           goto state 70
-	Exp4           goto state 68
-	Exp5           goto state 66
-	Exp6           goto state 64
-	Exp7           goto state 61
-	LExp           goto state 49
-	LExp1          goto state 38
+	PInteger       goto state 228
 
 State 228
 
-	TypeSpec -> 'Array' '[' TypeSpec ']' '(' Exp . ')'    (rule 46)
-	Exp -> Exp . Op Exp1                                (rule 57)
+	TypeSpec -> 'Array' '[' TypeSpec ']' '(' PInteger . ')'    (rule 46)
 
-	'!='           shift, and enter state 88
-	'%'            shift, and enter state 79
-	'&&'           shift, and enter state 96
-	'('            shift, and enter state 75
 	')'            shift, and enter state 238
-	'*'            shift, and enter state 80
-	'+'            shift, and enter state 84
-	'-'            shift, and enter state 85
-	'/'            shift, and enter state 81
-	'<'            shift, and enter state 89
-	'<='           shift, and enter state 90
-	'=='           shift, and enter state 91
-	'>'            shift, and enter state 92
-	'>='           shift, and enter state 93
-	'^'            shift, and enter state 76
-	'||'           shift, and enter state 99
 
-	Op             goto state 148
-	Op1            goto state 98
-	Op2            goto state 95
-	Op3            goto state 87
-	Op4            goto state 83
-	Op5            goto state 78
 
 State 229
 
@@ -5574,7 +5522,7 @@ State 237
 
 State 238
 
-	TypeSpec -> 'Array' '[' TypeSpec ']' '(' Exp ')' .    (rule 46)
+	TypeSpec -> 'Array' '[' TypeSpec ']' '(' PInteger ')' .    (rule 46)
 
 	')'            reduce using rule 46
 	','            reduce using rule 46

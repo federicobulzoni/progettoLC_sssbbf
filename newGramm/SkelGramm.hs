@@ -43,7 +43,7 @@ transTypeSpec :: TypeSpec -> Result
 transTypeSpec x = case x of
   TSimple stype -> failure x
   TPointer typespec -> failure x
-  TArray typespec exp -> failure x
+  TArray typespec pinteger -> failure x
 transSType :: SType -> Result
 transSType x = case x of
   SType_Float -> failure x
@@ -118,5 +118,5 @@ transLExp x = case x of
   LRef lexp -> failure x
   LArr lexp exp -> failure x
   LIdent pident -> failure x
-  LExpTyped lexp typespec loc -> failure x
+  LExpTyped lexp typespec integer1 integer2 integer3 integer4 -> failure x
 
