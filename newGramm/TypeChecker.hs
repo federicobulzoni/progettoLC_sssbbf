@@ -34,15 +34,16 @@ argsToStms (arg@(DArg id typ):args) = (SDecl (DefVar id typ DummyExp)):(argsToSt
 
 
 initialFuns :: [(Ident, Info)]
-initialFuns = [("writeInt", FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"i")) (TSimple SType_Int) ]]),
-  ("writeFloat", FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"f")) (TSimple SType_Float) ]]),
-  ("writeChar", FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"c")) (TSimple SType_Char) ]]),
+initialFuns = [
+  ("writeInt",    FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"i")) (TSimple SType_Int) ]]),
+  ("writeFloat",  FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"f")) (TSimple SType_Float) ]]),
+  ("writeChar",   FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"c")) (TSimple SType_Char) ]]),
   ("writeString", FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"s")) (TSimple SType_String) ]]),
 
-  ("readInt", FunInfo (0,0) (TSimple SType_Int) [PArg []]),
-  ("readFloat", FunInfo (0,0) (TSimple SType_Float) [PArg []]),
-  ("readChar", FunInfo (0,0) (TSimple SType_Char) [PArg []]),
-  ("readString", FunInfo (0,0) (TSimple SType_String) [PArg []]) ]
+  ("readInt",     FunInfo (0,0) (TSimple SType_Int)    [PArg []]),
+  ("readFloat",   FunInfo (0,0) (TSimple SType_Float)  [PArg []]),
+  ("readChar",    FunInfo (0,0) (TSimple SType_Char)   [PArg []]),
+  ("readString",  FunInfo (0,0) (TSimple SType_String) [PArg []]) ]
 
 -- Restituisce una lista di log ed un programma annotato.
 typeCheck :: Program -> Writer [String] Program
@@ -78,68 +79,86 @@ inferDecl decl env = case decl of
   --      return (decl, env)
   
   --  DefVar PIdent Type Exp
+  --DefVar id@(PIdent (loc, ident)) typ exp -> case update env ident (VarInfo loc typ) of
+  --    Ok env' -> do
+  --      -- Teniamo il vecchio env, perchè altrimenti si potrebbe usare nella parte destra della dichiarazione
+  --      -- la variabile che si sta istanziando.
+  --      texp <- inferExp exp env
+  --      -- se (TSimple TypeError) texp, allora è inferExp che ha già scovato gli errori 
+  --      -- e non dobbiamo ristamparli.
+  --      if isTypeError texp || isDummy exp || checkExp texp typ
+  --        then
+  --          return ((DefVar id typ texp), env')
+  --        else do
+  --          saveLog ("Errore in posizione: " ++ printTree loc ++ ", " ++ printTree exp ++ "e' di tipo " ++ printTree (getType texp) ++ ", ma il tipo atteso e': " ++ printTree typ ++ ".")
+  --          return ((DefVar id typ texp), env')
+  --    Bad msg -> do
+  --      saveLog msg
+  --      texp <- inferExp exp env 
+  --      if isTypeError texp || isDummy exp ||checkExp texp typ 
+  --        then
+  --          return ((DefVar id typ texp), env)
+  --        else do
+  --          saveLog ("Errore in posizione: " ++ printTree loc ++ ", " ++ printTree exp ++ "e' di tipo " ++ printTree (getType texp) ++ ", ma il tipo atteso e': " ++ printTree typ ++ ".")
+  --          return ((DefVar id typ texp), env)
+
+-------------------------------------------------------------------------------------------------------------------------------------------
   DefVar id@(PIdent (loc, ident)) typ exp -> case update env ident (VarInfo loc typ) of
-      Ok env' -> do
-        -- Teniamo il vecchio env, perchè altrimenti si potrebbe usare nella parte destra della dichiarazione
-        -- la variabile che si sta istanziando.
-        texp <- inferExp exp env
-        -- se (TSimple TypeError) texp, allora è inferExp che ha già scovato gli errori 
-        -- e non dobbiamo ristamparli.
-        if isTypeError texp || isDummy exp || checkExp texp typ
-          then
-            return ((DefVar id typ texp), env')
-          else do
-            saveLog ("Errore in posizione: " ++ printTree loc ++ ", " ++ printTree exp ++ "e' di tipo " ++ printTree (getType texp) ++ ", ma il tipo atteso e': " ++ printTree typ ++ ".")
-            return ((DefVar id typ texp), env')
-      Bad msg -> do
-        saveLog msg
-        texp <- inferExp exp env 
-        if isTypeError texp || isDummy exp ||checkExp texp typ 
-          then
-            return ((DefVar id typ texp), env)
-          else do
-            saveLog ("Errore in posizione: " ++ printTree loc ++ ", " ++ printTree exp ++ "e' di tipo " ++ printTree (getType texp) ++ ", ma il tipo atteso e': " ++ printTree typ ++ ".")
-            return ((DefVar id typ texp), env)
-
---  ---------------------------------------------------------------------------------------------------------------------------------------
---  DefVar id@(PIdent (loc, ident)) typ exp -> do
---    case update env ident (VarInfo loc typ) of
---      Ok env' -> ()
---      Bad msg -> do
---        saveLog msg
---    texp <- inferExp exp env
---    if (isTypeError texp) || (checkExp texp typ)
---      then
---        return ((DefVar id typ texp), env')
---      else
---        saveLog printTree exp ++ "e' di tipo " ++ show (getType texp) ++ ", ma il tipo atteso e': " ++ show typ ++ "."
---        return ((DefVar id typ texp), env')
---  ---------------------------------------------------------------------------------------------------------------------------------------
-
-  DefFun id@(PIdent (loc, ident)) params typ block@(DBlock stms) -> case update env ident (FunInfo loc typ params) of
-    Ok env' -> do
-      -- block di suo aggiunge un nuovo scope e fa le operazioni su di esso.
-      -- quindi l'idea è di aggiungere i parametri come dichiarazioni in testa al blocco.
-      -- lock = DBlock [Stm]
-      tblock <- inferBlock (DBlock ((paramsToStms params)++stms)) typ env'
-      if checkBlock tblock typ 
-        then
-          return ((DefFun id params typ tblock), env')
-        else do
-          -- manca un return giusto, se ce ne sono di sbagliati, inferBlock ce l'ha già detto.
-          saveLog ("Attesa una istruzione return all'interno della funzione " ++ printTree ident ++ " dichiarata in posizione " ++ printTree loc ++ ", ma non trovata.")
-          return ((DefFun id params typ tblock), env')
-
+    Ok env' -> defVarAux env'
     Bad msg -> do
       saveLog msg
-      tblock <- inferBlock (DBlock ((paramsToStms params)++stms)) typ env
-      if checkBlock tblock typ 
-        then
-          return ((DefFun id params typ tblock), env)
-        else do
-          -- manca un return giusto, se ce ne sono di sbagliati, inferBlock ce l'ha già detto.
-          saveLog ("Attesa una istruzione return all'interno della funzione " ++ printTree ident ++ " dichiarata in posizione " ++ printTree loc ++ ", ma non trovata.")
-          return ((DefFun id params typ tblock), env)
+      defVarAux env
+    where
+      defVarAux e = do
+        texp <- inferExp exp env
+        case isTypeError texp || isDummy exp ||checkExp texp typ of
+          True -> return ((DefVar id typ texp), e)
+          False -> do
+            saveLog ("Errore in posizione: " ++ printTree loc ++ ", " ++ printTree exp ++ "e' di tipo " ++ printTree (getType texp) ++ ", ma il tipo atteso e': " ++ printTree typ ++ ".")
+            return ((DefVar id typ texp), e)
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+  --DefFun id@(PIdent (loc, ident)) params typ block@(DBlock stms) -> case update env ident (FunInfo loc typ params) of
+  --  Ok env' -> do
+  --    -- block di suo aggiunge un nuovo scope e fa le operazioni su di esso.
+  --    -- quindi l'idea è di aggiungere i parametri come dichiarazioni in testa al blocco.
+  --    -- lock = DBlock [Stm]
+  --    tblock <- inferBlock (DBlock ((paramsToStms params)++stms)) typ env'
+  --    if checkBlock tblock typ 
+  --      then
+  --        return ((DefFun id params typ tblock), env')
+  --      else do
+  --        -- manca un return giusto, se ce ne sono di sbagliati, inferBlock ce l'ha già detto.
+  --        saveLog ("Attesa una istruzione return all'interno della funzione " ++ printTree ident ++ " dichiarata in posizione " ++ printTree loc ++ ", ma non trovata.")
+  --        return ((DefFun id params typ tblock), env')
+--
+  --  Bad msg -> do
+  --    saveLog msg
+  --    tblock <- inferBlock (DBlock ((paramsToStms params)++stms)) typ env
+  --    if checkBlock tblock typ 
+  --      then
+  --        return ((DefFun id params typ tblock), env)
+  --      else do
+  --        -- manca un return giusto, se ce ne sono di sbagliati, inferBlock ce l'ha già detto.
+  --        saveLog ("Attesa una istruzione return all'interno della funzione " ++ printTree ident ++ " dichiarata in posizione " ++ printTree loc ++ ", ma non trovata.")
+  --        return ((DefFun id params typ tblock), env)
+
+-------------------------------------------------------------------------------------------------------------------------------------------
+  DefFun id@(PIdent (loc, ident)) params typ block@(DBlock stms) -> case update env ident (FunInfo loc typ params) of
+    Ok env' -> defFunAux env'
+    Bad msg -> do
+      saveLog msg
+      defFunAux env
+    where 
+      defFunAux e = do
+        tblock <- inferBlock (DBlock ((paramsToStms params)++stms)) typ e
+        case (checkBlock tblock typ) of
+          True -> return ((DefFun id params typ tblock), e)
+          False -> do
+            saveLog ("Attesa una istruzione return all'interno della funzione " ++ printTree ident ++ " dichiarata in posizione " ++ printTree loc ++ ", ma non trovata.")
+            return ((DefFun id params typ tblock), e)
+-------------------------------------------------------------------------------------------------------------------------------------------
+
 
   -- Zucchero sintattico manuale e via.
   DefFunInLine id@(PIdent (loc, ident)) params typ exp -> inferDecl (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) exp])) env
@@ -153,13 +172,10 @@ inferBlock :: Block -> TypeSpec -> Env -> Writer [String] Block
 -- typ è il tipo che ci aspettiamo che il blocco abbia.
 inferBlock (DBlock stms) typ env = do
   tstms <- inferStms stms typ (Env.addScope env) 
-  if any (\x -> checkStm x typ) tstms
-    then
-      return (BlockTyped (DBlock tstms) typ (getLoc (head tstms)))
-    else
-      return (BlockTyped (DBlock tstms) (TSimple TypeVoid) (getLoc (head tstms))) 
-
-
+  case any (\x -> checkStm x typ) tstms of
+    True ->  return (BlockTyped (DBlock tstms) typ (getLoc (head tstms)))
+    False -> return (BlockTyped (DBlock tstms) (TSimple TypeVoid) (getLoc (head tstms))) 
+      
 inferStms :: [Stm] -> TypeSpec -> Env -> Writer [String] [Stm]
 inferStms [] typ env = return []
 inferStms (stm:stms) typ env = do
@@ -173,34 +189,28 @@ inferStm stm typ env = case stm of
     -- texp è l'espressione annotata col tipo.
     texp <- inferExp exp env
     if isTypeError texp || checkExp texp (TSimple SType_Bool)
-      then 
-        do
-          (tstm', _) <- inferStm stm' typ env
-          return ( (StmTyped (SWhile texp tstm') (getType tstm') (getLoc texp) ) , env)
-      else
-        do
-          saveLog ("La condizione del while deve essere di tipo booleano, invece " 
-            ++ printTree exp ++ "in posizione " ++ printTree (getLoc texp) 
-            ++ " ha tipo: " ++ printTree (getType texp) ++ ".")
-          (tstm', _) <- inferStm stm' typ env
-          return ( (StmTyped (SWhile texp tstm') (getType tstm') (getLoc texp)) , env )
+      then do
+        (tstm', _) <- inferStm stm' typ env
+        return ( (StmTyped (SWhile texp tstm') (getType tstm') (getLoc texp) ) , env)
+      else do
+        saveLog ("La condizione del while deve essere di tipo booleano, invece " ++ printTree exp 
+          ++ "in posizione " ++ printTree (getLoc texp) ++ " ha tipo: " ++ printTree (getType texp) ++ ".")
+        (tstm', _) <- inferStm stm' typ env
+        return ( (StmTyped (SWhile texp tstm') (getType tstm') (getLoc texp)) , env )
+  
   SIfElse exp stmif stmelse -> do
     texp <- inferExp exp env
     if not (isTypeError texp || checkExp texp (TSimple SType_Bool))
-      then
-        saveLog ("La condizione dell' if deve essere di tipo booleano, invece " 
-          ++ printTree exp ++ "in posizione " ++ printTree (getLoc texp) 
-          ++ " ha tipo: " ++ printTree (getType texp) ++ ".")
-      else
-        return ()
+      then 
+        saveLog ("La condizione dell' if deve essere di tipo booleano, invece " ++ printTree exp 
+          ++ "in posizione " ++ printTree (getLoc texp) ++ " ha tipo: " ++ printTree (getType texp) ++ ".")
+      else return ()
 
     (tstmif, _) <- inferStm stmif typ env
     (tstmelse, _) <- inferStm stmelse typ env
     if checkStm tstmif typ || checkStm tstmelse typ 
-      then
-        return ( (StmTyped (SIfElse texp tstmif tstmelse) typ (getLoc texp)) , env)
-      else
-        return ( (StmTyped (SIfElse texp tstmif tstmelse) (TSimple TypeVoid) (getLoc texp) ) , env)
+      then return ( (StmTyped (SIfElse texp tstmif tstmelse) typ (getLoc texp)) , env)
+      else return ( (StmTyped (SIfElse texp tstmif tstmelse) (TSimple TypeVoid) (getLoc texp) ) , env)
 
   SDecl decl -> do
     (tdecl, env') <- inferDecl decl env
@@ -214,8 +224,7 @@ inferStm stm typ env = case stm of
     tlexp <- inferLExp lexp env
     texp <- inferExp exp env
     if isTypeError tlexp || isTypeError texp || checkExp texp (getType lexp)
-      then
-        return ( (StmTyped (SAssign tlexp texp) (TSimple TypeVoid) (getLoc tlexp)), env )
+      then return ( (StmTyped (SAssign tlexp texp) (TSimple TypeVoid) (getLoc tlexp)), env )
       else do
         saveLog ("L'espressione " ++ printTree exp ++ " in posizione " ++ printTree (getLoc texp)
           ++ " ha tipo " ++ printTree (getType texp) ++ ", ma " ++ printTree lexp ++ " ha tipo " 
@@ -272,26 +281,21 @@ inferStm stm typ env = case stm of
         Ok (FunInfo dloc typ paramclauses) -> 
           let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
             if any (isTypeError) (concat tparams)
-              then
-                 return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc) , env )
+              then return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc) , env )
               else
                 if typ_args == typ_params 
                   then
                     if isTypeVoid typ
-                      then
-                        return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) typ loc), env )
-                      else
-                        do
-                          saveLog ("Errore in posizione " ++ printTree loc ++ " il valore di ritorno della funzione "
-                            ++ printTree ident ++ " non e' stato assegnato a nessuna variabile.")
-                          return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeVoid) loc), env )
-                  else
-                    do
-                      saveLog ("Errore in posizione " ++ printTree loc ++ " nella chiamata alla funzione "
-
-                        ++ printTree ident ++ " la firma della funzione e': " ++ printTree typ_args 
-                        ++ " mentre i parametri passati sono di tipo: " ++ printTree typ_params ++ ".")
-                      return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc), env )
+                      then return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) typ loc), env )
+                      else do
+                        saveLog ("Errore in posizione " ++ printTree loc ++ " il valore di ritorno della funzione "
+                          ++ printTree ident ++ " non e' stato assegnato a nessuna variabile.")
+                        return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeVoid) loc), env )
+                  else do
+                    saveLog ("Errore in posizione " ++ printTree loc ++ " nella chiamata alla funzione "
+                      ++ printTree ident ++ " la firma della funzione e': " ++ printTree typ_args 
+                      ++ " mentre i parametri passati sono di tipo: " ++ printTree typ_params ++ ".")
+                    return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc), env )
 
 
 
@@ -307,8 +311,7 @@ inferLExp lexp env = case lexp of
  LRef lexp' -> do
    tlexp' <- inferLExp lexp' env
    if isTypeError tlexp' 
-     then
-       return (LExpTyped (LRef tlexp') (TSimple TypeError) (getLoc tlexp') (getDLoc tlexp') )
+     then return (LExpTyped (LRef tlexp') (TSimple TypeError) (getLoc tlexp') (getDLoc tlexp') )
      else
        case tlexp' of
          (LExpTyped _ (TPointer typ) loc dloc) -> return (LExpTyped (LRef tlexp') typ loc dloc)
@@ -412,40 +415,33 @@ inferExp exp env = case exp of
         Ok (FunInfo dloc typ paramclauses) ->
           let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
             if any (isTypeError) (concat tparams)
-              then
-                 return (ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc)
+              then return (ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc)
               else
                 if typ_args == typ_params 
-                  then
-                    return (ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) typ loc)
-                  else
-                    do
-                      saveLog ("Errore in posizione " ++ printTree loc ++ " nella chiamata alla funzione "
-                        ++ printTree ident ++ " la firma della funzione e': " ++ printTree (mapM (\x -> printTree x) typ_args) ++ ":" ++ printTree typ
-                        ++ " mentre i parametri passati sono di tipo: " ++ printTree (mapM (\x -> printTree x) typ_params) ++ ".")
-                      return (ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc)
+                  then return (ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) typ loc)
+                  else do
+                    saveLog ("Errore in posizione " ++ printTree loc ++ " nella chiamata alla funzione "
+                      ++ printTree ident ++ " la firma della funzione e': " ++ printTree (mapM (\x -> printTree x) typ_args) ++ ":" ++ printTree typ
+                      ++ " mentre i parametri passati sono di tipo: " ++ printTree (mapM (\x -> printTree x) typ_params) ++ ".")
+                    return (ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc)
 
   ENot exp -> do
     texp <- inferExp exp env
     if isTypeError texp || checkExp texp (TSimple SType_Bool)
-      then
-        return (ETyped (ENot texp) (getType texp) (getLoc texp))
-      else 
-        do
-          saveLog ("Operatore ! applicato alla espressione " ++ printTree exp ++ ", che ha tipo "
-            ++ printTree (getType texp) ++ ", ma era attesa di tipo " ++ printTree (TSimple SType_Bool) ++ ".")
-          return ((ETyped (ENot texp) (TSimple TypeError) (getLoc texp)))
+      then return (ETyped (ENot texp) (getType texp) (getLoc texp))
+      else do
+        saveLog ("Operatore ! applicato alla espressione " ++ printTree exp ++ ", che ha tipo "
+          ++ printTree (getType texp) ++ ", ma era attesa di tipo " ++ printTree (TSimple SType_Bool) ++ ".")
+        return ((ETyped (ENot texp) (TSimple TypeError) (getLoc texp)))
 
   ENeg exp -> do
     texp <- inferExp exp env
     if isTypeError texp || checkExp texp (TSimple SType_Int) || checkExp texp (TSimple SType_Float)
-      then
-        return (ETyped (ENeg texp) (getType texp) (getLoc texp))
-      else 
-        do
-          saveLog ("Operatore - applicato alla espressione " ++ printTree exp ++ ", che ha tipo "
-            ++ printTree (getType texp) ++ ", ma era attesa di tipo numerico.")
-          return ((ETyped (ENeg texp) (TSimple TypeError) (getLoc texp)))
+      then return (ETyped (ENeg texp) (getType texp) (getLoc texp))
+      else do
+        saveLog ("Operatore - applicato alla espressione " ++ printTree exp ++ ", che ha tipo "
+          ++ printTree (getType texp) ++ ", ma era attesa di tipo numerico.")
+        return ((ETyped (ENeg texp) (TSimple TypeError) (getLoc texp)))
   
   ELExp lexp -> do
     tlexp <- inferLExp lexp env
@@ -454,17 +450,15 @@ inferExp exp env = case exp of
   EDeref lexp -> do
     tlexp <- inferLExp lexp env
     if isTypeError tlexp
-      then
-        return (ETyped (EDeref tlexp) (TSimple TypeError) (getLoc tlexp))
-      else
-        return ( ETyped (EDeref tlexp) (TPointer (getType tlexp)) (getLoc tlexp) )
+      then return (ETyped (EDeref tlexp) (TSimple TypeError) (getLoc tlexp))
+      else return ( ETyped (EDeref tlexp) (TPointer (getType tlexp)) (getLoc tlexp) )
 
-  EInt const@(PInteger (loc, _)) ->return (ETyped (EInt const) (TSimple SType_Int) (loc) )
-  EFloat const@(PFloat (loc, _)) -> return (ETyped (EFloat const) (TSimple SType_Float) (loc) )
-  EChar const@(PChar (loc, _)) -> return (ETyped (EChar const) (TSimple SType_Char) (loc) )
-  EString const@(PString (loc, _)) -> return (ETyped (EString const) (TSimple SType_String) (loc) )
-  ETrue const@(PTrue (loc, _)) -> return (ETyped (ETrue const) (TSimple SType_Bool) (loc) )
-  EFalse const@(PFalse (loc, _)) -> return (ETyped (EFalse const) (TSimple SType_Bool) (loc) )
+  EInt    const@(PInteger (loc, _)) -> return (ETyped (EInt const) (TSimple SType_Int) (loc) )
+  EFloat  const@(PFloat (loc, _))   -> return (ETyped (EFloat const) (TSimple SType_Float) (loc) )
+  EChar   const@(PChar (loc, _))    -> return (ETyped (EChar const) (TSimple SType_Char) (loc) )
+  EString const@(PString (loc, _))  -> return (ETyped (EString const) (TSimple SType_String) (loc) )
+  ETrue   const@(PTrue (loc, _))    -> return (ETyped (ETrue const) (TSimple SType_Bool) (loc) )
+  EFalse  const@(PFalse (loc, _))   -> return (ETyped (EFalse const) (TSimple SType_Bool) (loc) )
   -- Ma serve Null? Con i puntatori probabilmente si, nel caso non avrebbe TypeVoid.
   ENull const@(PNull (loc, _)) -> return (ETyped (ENull const) (TSimple TypeVoid) loc )
 
@@ -480,21 +474,18 @@ inferBinOp expl op expr env = do
     case ((getTypeOp op), (getType texpl), (getType texpr) ) of
       (_ , TSimple TypeError, _ ) -> return (ETyped (EOp texpl op texpr) (TSimple TypeError) (getLoc texpl) )
       (_ , _ , TSimple TypeError) -> return (ETyped (EOp texpl op texpr) (TSimple TypeError) (getLoc texpl) )
-      (EqOp, typl, typr) -> if isConsistent EqOp typl typr
-        then
-          return (ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl))
-        else
-          returnBinOpError texpl op texpr
-      (RelOp, typl, typr) -> if isConsistent RelOp typl typr
-        then
-          return (ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl))
-        else
-          returnBinOpError texpl op texpr
-      (_, typl, typr) -> if isConsistent (getTypeOp op) typl typr
-        then
-          return (ETyped (EOp texpl op texpr) typl (getLoc texpl))
-        else
-          returnBinOpError texpl op texpr
+      (EqOp, typl, typr) ->
+        if isConsistent EqOp typl typr
+          then return (ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl))
+          else returnBinOpError texpl op texpr
+      (RelOp, typl, typr) ->
+        if isConsistent RelOp typl typr
+          then return (ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl))
+          else returnBinOpError texpl op texpr
+      (_, typl, typr) ->
+        if isConsistent (getTypeOp op) typl typr
+          then return (ETyped (EOp texpl op texpr) typl (getLoc texpl))
+          else returnBinOpError texpl op texpr
 
 returnBinOpError :: Exp -> Op -> Exp -> Writer [String] Exp
 returnBinOpError texpl op texpr = do
@@ -506,8 +497,8 @@ returnBinOpError texpl op texpr = do
 isConsistent :: TypeOp -> TypeSpec -> TypeSpec -> Bool
 isConsistent NumericOp typl typr = (typl == typr) && (checkNumericTyp typl)
 isConsistent BooleanOp typl typr = (typl == typr) && (checkBooleanTyp typl)
-isConsistent EqOp typl typr = (typl == typr)
-isConsistent RelOp typl typr = (typl == typr) && (checkNumericTyp typl)
+isConsistent EqOp typl typr      = (typl == typr)
+isConsistent RelOp typl typr     = (typl == typr) && (checkNumericTyp typl)
 
 checkNumericTyp :: TypeSpec  -> Bool
 checkNumericTyp typ = ( (typ == (TSimple SType_Int) )|| (typ == (TSimple SType_Float)) )
@@ -519,20 +510,20 @@ checkBooleanTyp _ = False
 
 data TypeOp = NumericOp | BooleanOp | EqOp | RelOp
 getTypeOp :: Op -> TypeOp
-getTypeOp Plus = NumericOp
-getTypeOp Minus = NumericOp
-getTypeOp Prod = NumericOp
-getTypeOp Div = NumericOp
-getTypeOp Mod = NumericOp
-getTypeOp Pow = NumericOp
-getTypeOp Or = BooleanOp
-getTypeOp And = BooleanOp
-getTypeOp Less = RelOp
-getTypeOp Greater = RelOp
-getTypeOp LessEq = RelOp
+getTypeOp Plus      = NumericOp
+getTypeOp Minus     = NumericOp
+getTypeOp Prod      = NumericOp
+getTypeOp Div       = NumericOp
+getTypeOp Mod       = NumericOp
+getTypeOp Pow       = NumericOp
+getTypeOp Or        = BooleanOp
+getTypeOp And       = BooleanOp
+getTypeOp Less      = RelOp
+getTypeOp Greater   = RelOp
+getTypeOp LessEq    = RelOp
 getTypeOp GreaterEq = RelOp
-getTypeOp Equal = EqOp
-getTypeOp NotEq = EqOp
+getTypeOp Equal     = EqOp
+getTypeOp NotEq     = EqOp
  
 
 
