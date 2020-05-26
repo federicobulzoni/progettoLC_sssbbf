@@ -118,5 +118,5 @@ transLExp x = case x of
   LRef lexp -> failure x
   LArr lexp exp -> failure x
   LIdent pident -> failure x
-  LExpTyped lexp typespec integer1 integer2 integer3 integer4 -> failure x
+  LExpTyped lexp typespec loc1 loc2 -> failure x
 
