@@ -41,21 +41,21 @@ run v p s = let ts = myLLexer s in case p ts of
                           showTree v tree
                           let (annotatedTree, logs) = runWriter $ typeCheck $ tree
                           case (logs) of
-                            [] -> printTypeCheckingSuccess annotatedTree
+                            [] -> printTypeCheckSuccess annotatedTree
                             _ -> do
                               putStrLn "\n[Lista errori type checker]\n\n"
-                              printTypeCheckingErrors logs 0
-                              printTypeCheckingSuccess annotatedTree
+                              printTypeCheckErrors logs 0
+                              printTypeCheckSuccess annotatedTree
                           exitSuccess
 
-printTypeCheckingErrors :: [String] -> Int -> IO()
-printTypeCheckingErrors [] index = putStrLn ""
-printTypeCheckingErrors (log:logs) index = do
+printTypeCheckErrors :: [String] -> Int -> IO()
+printTypeCheckErrors [] index = putStrLn ""
+printTypeCheckErrors (log:logs) index = do
   putStrLn $ show index ++ ") " ++ log
-  printTypeCheckingErrors logs (index+1)
+  printTypeCheckErrors logs (index+1)
 
-printTypeCheckingSuccess :: Program -> IO()
-printTypeCheckingSuccess prog = do
+printTypeCheckSuccess :: Program -> IO()
+printTypeCheckSuccess prog = do
   putStrLn "\n[Albero tipato]\n\n"
   putStrV 2 $ show prog
 
