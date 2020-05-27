@@ -1,10 +1,8 @@
 module ThreeAddressCode where
 
 import AbsTAC
+import AbsGramm
 import Control.Monad.State.Lazy
-
--- Questo sarà in un altro file e molto più complesso.
-data TAC = String
 
 -- Copiato da "Usare una monade con stream del codice nello stato"
 -- Va modificato per il problema della dichiarazione di funzioni all'interno di altre funzioni.
@@ -16,14 +14,14 @@ out instr = do
     put (k, instr : revcode )
     return ()
 
-newtemp :: MyMon Addr
-newtemp = do
+newTemp :: MyMon Addr
+newTemp = do
     (k, revcode ) <- get
     put (k+1, revcode )
     return $ Temp k
 
 genTAC :: Program -> [TAC]
-genTAC e = reverse $ snd $ execState ( genExp initEnv e) (0 ,[])
+genTAC prog = reverse $ snd $ execState ( genProg prog ) (0 ,[])
 
 genProg :: Program -> MyMon ()
 genProg (Prog decls) = genDecls decls
@@ -48,14 +46,14 @@ convertOperation Mod    (TSimple SType_Int)     = ModInt
 convertOperation Mod    (TSimple SType_Float)   = ModFloat
 convertOperation Pow    (TSimple SType_Int)     = PowInt
 convertOperation Pow    (TSimple SType_Float)   = PowFloat
-convertOperation Or _        = Or
-convertOperation And _       = And
-convertOperation Equal _     = Equal
-convertOperation NotEq _     = NotEqual
-convertOperation Less _      = Less
-convertOperation LessEq _    = LessEq
-convertOperation Greater _   = Greater
-convertOperation GreaterEq _ = GreaterEq
+convertOperation AbsGramm.Or _        = AbsTAC.Or
+convertOperation AbsGramm.And _       = AbsTAC.And
+convertOperation AbsGramm.Equal _     = AbsTAC.Equal
+convertOperation AbsGramm.NotEq _     = AbsTAC.NotEqual
+convertOperation AbsGramm.Less _      = AbsTAC.Less
+convertOperation AbsGramm.LessEq _    = AbsTAC.LessEq
+convertOperation AbsGramm.Greater _   = AbsTAC.Greater
+convertOperation AbsGramm.GreaterEq _ = AbsTAC.GreaterEq
 
 -- la locazione è quella di dichiarazione
 getAddress :: Ident -> Loc -> Addr
@@ -63,13 +61,13 @@ getAddress ident dloc = Var ident dloc
 
 genDecl :: Declaration -> MyMon ()
 genDecl decl = case decl of
-    DefVar id@(PIdent (loc, ident)) typ texp@(ETyped exp _ etyp) -> let addrId = getAddress ident dloc in
+    DefVar id@(PIdent (dloc, ident)) typ texp@(ETyped exp etyp _) -> let addrId = getAddress ident dloc in
         case exp of
             -- 3 + ( 4 + 6 )
             EOp e1 op e2 -> do
                 addrE1 <- genExp e1
                 addrE2 <- genExp e2
-                out $ (AssignBinOp (convertOperation op) addrId addrE1 addrE2 )
+                out $ (AssignBinOp (convertOperation op typ) addrId addrE1 addrE2 )
                 return ()
             ENeg e1 -> do
                 addrE1 <- genExp e1
@@ -78,6 +76,10 @@ genDecl decl = case decl of
             ENot e1 -> do
                 addrE1 <- genExp e1
                 out $ (AssignUnOp Not addrId addrE1)
+                return ()
+            _ -> do
+                addrTExp <- genExp texp
+                out $ (Assign addrId addrTExp)
                 return ()
 
 
@@ -110,7 +112,7 @@ genLexp (LExpTyped lexp _ _ dloc) = case lexp of
         addrLexp' <- genLexp lexp'
         out $ (AssignFromPointer addrTemp addrLexp')
         return addrTemp
-    LArr lexp' exp = do
+    LArr lexp' exp -> do
         addrTemp <- newTemp
         addrLexp' <- genLexp lexp'
         addrExp <- genExp exp
@@ -127,26 +129,28 @@ genLexp (LExpTyped lexp _ _ dloc) = case lexp of
 
 genExp :: Exp -> MyMon Addr
 genExp (ETyped exp typ loc) = case exp of
-    EInt (PInteger (loc,ident)) -> LitInt $ read ident :: Int
-    EFloat (PFloat (loc,ident)) -> LitFloat $ read ident :: Float
-    EChar (PChar (loc,ident)) -> LitChar $ read ident :: Char
-    EString (PString (loc, ident)) -> LitString ident
-    ETrue _ -> LitBool 1
-    EFalse _ -> LitBool 0
-    ENull _ -> Null
-    DummyExp -> Null
+    EInt (PInteger (loc,ident)) -> return $ LitInt ( read ident :: Int )
+    EFloat (PFloat (loc,ident)) -> return $ LitFloat ( read ident :: Float )
+    EChar (PChar (loc,ident)) -> return $ LitChar ( read ident :: Char )
+    EString (PString (loc, ident)) -> return $ LitString ident
+    ETrue _ -> return $ LitBool 1
+    EFalse _ -> return $ LitBool 0
+    ENull _ -> return $ Null
+    DummyExp -> return $ Null
 
     EOp e1 op e2 -> do
         addrE1 <- genExp e1
         addrE2 <- genExp e2
         addrTemp <- newTemp
-        out $ (AssignBinOp (convertOperation op) addrTemp addrE1 addrE2)
+        -- Qua tip = tipo di exp, non e1.
+        out $ (AssignBinOp (convertOperation op typ) addrTemp addrE1 addrE2)
         return addrTemp
 
     ENeg e1 -> do
         addrE1 <- genExp e1
         addrTemp <- newTemp
-        out $ (AssignUnOp (if (etyp == TSimple SType_Int) then NegInt else NegFloat) addrTemp addrE1)
+        -- Qua tip = tipo di exp, non e1.
+        out $ (AssignUnOp (if (typ == TSimple SType_Int) then NegInt else NegFloat) addrTemp addrE1)
         return addrTemp
 
     ENot e1 -> do
@@ -169,6 +173,8 @@ genExp (ETyped exp typ loc) = case exp of
     -- a[2] = 13
     -- andrebbe generato un indirizzo temporaneo (indirizzo base dell'array)
     -- poi bisogna fare: base + i (posizione) * (sizeofType typ) = arrVals i
+    {-
     EArray exps -> do
         arrVals <- mapM (genExp) exps
         addrTemp <- newTemp
+    -}

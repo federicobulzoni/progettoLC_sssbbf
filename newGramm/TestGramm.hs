@@ -12,6 +12,8 @@ import ParGramm
 import SkelGramm
 import PrintGramm
 import AbsGramm
+import AbsTAC
+import ThreeAddressCode
 import TypeChecker
 import Control.Monad.Writer
 
@@ -41,7 +43,10 @@ run v p s = let ts = myLLexer s in case p ts of
                           showTree v tree
                           let (annotatedTree, logs) = runWriter $ typeCheck $ tree
                           case (logs) of
-                            [] -> printTypeCheckSuccess annotatedTree
+                            [] -> do
+                              printTypeCheckSuccess annotatedTree
+                              let code = genTAC annotatedTree
+                              printTAC code
                             _ -> do
                               putStrLn "\n[Lista errori type checker]\n\n"
                               printTypeCheckErrors logs 0
@@ -58,6 +63,11 @@ printTypeCheckSuccess :: Program -> IO()
 printTypeCheckSuccess prog = do
   putStrLn "\n[Albero tipato]\n\n"
   putStrV 2 $ show prog
+
+printTAC :: [TAC] -> IO()
+printTAC code = do
+  putStrLn "\n[Three Address Code]\n\n"
+  putStrV 2 $ show code
 
 showTree :: Int -> Program -> IO ()
 showTree v tree

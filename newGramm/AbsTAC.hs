@@ -1,4 +1,4 @@
-module ABSTAc where
+module AbsTAC where
 
 import AbsGramm
 
