@@ -1,6 +1,9 @@
 def fun()() = {
 	var variable : Char;
-	while (variable > "ciao") variable = 'a';
+	while (variable == 'c'){
+
+		variable = 'a';
+	}
 }
 /*
 Non va bene, il type system dà questo errore:
