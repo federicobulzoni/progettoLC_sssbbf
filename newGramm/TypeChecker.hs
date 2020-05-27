@@ -507,7 +507,7 @@ checkBooleanTyp :: TypeSpec -> Bool
 checkBooleanTyp (TSimple SType_Bool) = True
 checkBooleanTyp _ = False
 
-
+-- controllare che operazione mod di possa fare tra Float
 data TypeOp = NumericOp | BooleanOp | EqOp | RelOp
 getTypeOp :: Op -> TypeOp
 getTypeOp Plus      = NumericOp

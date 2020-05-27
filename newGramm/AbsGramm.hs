@@ -105,6 +105,7 @@ data Stm
 data Params = ParExp [Exp]
   deriving (Eq, Ord, Show, Read)
 
+-- cambiare NotEq in NotEqual
 data Op
     = Or
     | And
