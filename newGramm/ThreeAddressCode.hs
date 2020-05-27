@@ -22,8 +22,8 @@ newtemp = do
     put (k+1, revcode )
     return $ int2AddrTempName k
 
-genCode :: Expr -> [TAC]
-genCode e = reverse $ snd $ execState ( genExp initEnv e) (0 ,[])
+genTAC :: Program -> [TAC]
+genTAC e = reverse $ snd $ execState ( genExp initEnv e) (0 ,[])
 
 -- Non credo serva l'environment
 genExp :: Env -> Expr -> MyMon Addr
