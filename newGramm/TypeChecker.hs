@@ -170,6 +170,7 @@ checkBlock _  _ = error $ "Errore interno chiamato da checkBlock().\n"
 
 inferBlock :: Block -> TypeSpec -> Env -> Writer [String] Block
 -- typ è il tipo che ci aspettiamo che il blocco abbia.
+inferBlock (DBlock []) typ env = return (BlockTyped (DBlock []) (TSimple TypeVoid) (0,0))
 inferBlock (DBlock stms) typ env = do
   tstms <- inferStms stms typ (Env.addScope env) 
   case any (\x -> checkStm x typ) tstms of
@@ -223,12 +224,12 @@ inferStm stm typ env = case stm of
   SAssign lexp exp -> do
     tlexp <- inferLExp lexp env
     texp <- inferExp exp env
-    if isTypeError tlexp || isTypeError texp || checkExp texp (getType lexp)
+    if isTypeError tlexp || isTypeError texp || checkExp texp (getType tlexp)
       then return ( (StmTyped (SAssign tlexp texp) (TSimple TypeVoid) (getLoc tlexp)), env )
       else do
         saveLog ("Errore (" ++ printTree (getLoc texp) ++ "): l'espressione " ++ printTree exp ++" ha tipo " ++ printTree (getType texp) ++ ", ma " 
           ++ printTree lexp ++ " ha tipo " 
-          ++ printTree (getType lexp) ++ ".")
+          ++ printTree (getType tlexp) ++ ".")
         return ( (StmTyped (SAssign tlexp texp) (TSimple TypeVoid) (getLoc tlexp) ), env )
 
   SReturnExp preturn@(PReturn (loc, id)) exp -> do
