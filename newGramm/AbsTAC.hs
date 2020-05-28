@@ -16,7 +16,11 @@ data Addr
     | Null
   deriving (Eq, Ord, Show, Read)
 
-type Label = String
+data Label 
+  = LabStm Int
+  | LabFun Ident Loc
+  deriving (Eq, Ord, Show, Read)
+
 
 data BinOp 
     = PlusInt
@@ -61,11 +65,19 @@ data TAC
     | AssignFromPointer Addr Addr
     -- *x = y
     | AssignToPointer Addr Addr
+    -- x = f()
+    | AssignFromFunction Addr Label Int 
 
     | Goto Label
     | IfBool Addr Label
     | IfRel BinOp Addr Addr Label
     | IfFalse Addr Label
 
-    | Label Label
+    | Lab Label
+
+    | ReturnVoid
+    | ReturnAddr Addr
+    | Param Addr
+    | Call Addr Int
+
   deriving (Eq, Ord, Show, Read)

@@ -16,7 +16,7 @@ import AbsTAC
 import ThreeAddressCode
 import TypeChecker
 import Control.Monad.Writer
-
+import PrintTAC
 
 import ErrM
 
@@ -46,10 +46,13 @@ run v p s = let ts = myLLexer s in case p ts of
                             [] -> do
                               printTypeCheckSuccess annotatedTree
                               let code = genTAC annotatedTree
+                              putStrLn "\n[Three Address Code]\n\n"
                               printTAC code
+                              putStrLn "\n[TAC]\n\n"
+                              printTAC2 code
                             _ -> do
                               putStrLn "\n[Lista errori type checker]\n\n"
-                              printTypeCheckErrors logs 0
+                              printTypeCheckErrors logs 0   
                               printTypeCheckSuccess annotatedTree
                           exitSuccess
 
@@ -65,9 +68,10 @@ printTypeCheckSuccess prog = do
   putStrV 2 $ show prog
 
 printTAC :: [TAC] -> IO()
-printTAC code = do
-  putStrLn "\n[Three Address Code]\n\n"
-  putStrV 2 $ show code
+printTAC [] = putStrLn ""
+printTAC (c:code) = do
+  putStrLn $ show c 
+  printTAC code
 
 showTree :: Int -> Program -> IO ()
 showTree v tree

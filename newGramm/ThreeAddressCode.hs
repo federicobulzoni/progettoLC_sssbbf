@@ -4,27 +4,62 @@ import AbsTAC
 import AbsGramm
 import Control.Monad.State.Lazy
 
+------------------------------------------------------------
+-- TODO:
+--  * sistemare scope globale
+------------------------------------------------------------
+
+
 -- Copiato da "Usare una monade con stream del codice nello stato"
 -- Va modificato per il problema della dichiarazione di funzioni all'interno di altre funzioni.
-type MyMon a = State (Int, [TAC]) a
+type MyMon a = State (
+    Int,      -- temporanei
+    Int,      -- label
+    [TAC],    -- codice
+    [[TAC]])  -- funzioni
+    a
 
 out :: TAC -> MyMon ()
 out instr = do
-    (k, revcode ) <- get
-    put (k, instr : revcode )
+    (k, l, revcode, funs) <- get
+    put (k, l, revcode, (instr : (head funs)) : (tail funs))
     return ()
+
+pushCurrentStream :: MyMon ()
+pushCurrentStream = do
+    (k, l, revcode, funs) <- get
+    put (k, l,  (head funs) ++ revcode, tail funs)
+    return ()
+
+createStream :: MyMon ()
+createStream = do
+    (k, l, revcode, funs) <- get
+    put (k,l, revcode, [] : funs)
+    return ()
+
 
 newTemp :: MyMon Addr
 newTemp = do
-    (k, revcode ) <- get
-    put (k+1, revcode )
+    (k, l, revcode, funs) <- get
+    put (k+1, l, revcode, funs)
     return $ Temp k
 
+newLabel :: MyMon Label
+newLabel = do
+    (k, l , revcode, funs) <- get
+    put (k, l+1, revcode, funs)
+    return $ LabStm l
+
+getTACCode :: (Int, Int, [TAC], [[TAC]]) -> [TAC]
+getTACCode (k, l, code, _) = code
+
 genTAC :: Program -> [TAC]
-genTAC prog = reverse $ snd $ execState ( genProg prog ) (0 ,[])
+genTAC prog = reverse $ getTACCode $ execState ( genProg prog ) (0, 0 ,[], [[]])
 
 genProg :: Program -> MyMon ()
-genProg (Prog decls) = genDecls decls
+genProg (Prog decls) = do
+    genDecls decls
+    pushCurrentStream
 
 genDecls :: [Declaration] -> MyMon ()
 genDecls [] = return ()
@@ -55,51 +90,63 @@ convertOperation AbsGramm.LessEq _    = AbsTAC.LessEq
 convertOperation AbsGramm.Greater _   = AbsTAC.Greater
 convertOperation AbsGramm.GreaterEq _ = AbsTAC.GreaterEq
 
+genParams :: [Params] -> MyMon ()
+genParams [] = return ()
+genParams (param:params) = do
+    genParamAux param
+    genParams params
+
+genParamAux :: Params -> MyMon ()
+genParamAux (ParExp []) = return ()
+genParamAux (ParExp (exp:exps)) = do
+    addrExp <- genExp exp
+    out $ (Param addrExp)
+    genParamAux (ParExp exps)
+
+genExpAssign :: Addr -> Exp -> MyMon ()
+genExpAssign addr texp@(ETyped exp typ loc) = case exp of 
+    EOp e1 op e2 -> do
+        addrE1 <- genExp e1
+        addrE2 <- genExp e2
+        out $ (AssignBinOp (convertOperation op typ) addr addrE1 addrE2 )
+        return ()
+    ENeg e1 -> do
+        addrE1 <- genExp e1
+        out $ (AssignUnOp (if (typ == TSimple SType_Int) then NegInt else NegFloat) addr addrE1)
+        return ()
+    ENot e1 -> do
+        addrE1 <- genExp e1
+        out $ (AssignUnOp Not addr addrE1)
+        return ()
+    
+    EFunCall id@(PIdent (_,ident)) params -> do
+        genParams params
+        out $ AssignFromFunction addr (getLabel ident loc) (sum (map (\(ParExp x) -> length x) params))
+        return ()
+    _ -> do
+        addrTExp <- genExp texp
+        out $ (Assign addr addrTExp)
+        return ()
+
+
 -- la locazione è quella di dichiarazione
 getAddress :: Ident -> Loc -> Addr
 getAddress ident dloc = Var ident dloc
 
+getLabel :: Ident -> Loc -> Label
+getLabel ident dloc = LabFun ident dloc
+
 genDecl :: Declaration -> MyMon ()
 genDecl decl = case decl of
-    DefVar id@(PIdent (dloc, ident)) typ texp@(ETyped exp etyp _) -> let addrId = getAddress ident dloc in
-        case exp of
-            -- 3 + ( 4 + 6 )
-            EOp e1 op e2 -> do
-                addrE1 <- genExp e1
-                addrE2 <- genExp e2
-                out $ (AssignBinOp (convertOperation op typ) addrId addrE1 addrE2 )
-                return ()
-            ENeg e1 -> do
-                addrE1 <- genExp e1
-                out $ (AssignUnOp (if (etyp == TSimple SType_Int) then NegInt else NegFloat) addrId addrE1)
-                return ()
-            ENot e1 -> do
-                addrE1 <- genExp e1
-                out $ (AssignUnOp Not addrId addrE1)
-                return ()
-            _ -> do
-                addrTExp <- genExp texp
-                out $ (Assign addrId addrTExp)
-                return ()
-
-
---genDecl decl = case decl of
---    DefVar id@(PIdent (loc, ident)) typ texp@(ETyped exp _ etyp) -> genExp exp (getAddress id typ)
-
---genExp :: Exp -> Addr -> MyMon ()
---genExp exp addr = case exp of
---    EInt (PInteger (loc,ident)) -> LitInt $ read ident :: Int
---    EFloat (PFloat (loc,ident)) -> LitFloat $ read ident :: Float
---    EChar (PChar (loc,ident)) -> LitChar $ read ident :: Char
---    EString (PString (loc, ident)) -> LitString ident
---    ETrue _ -> LitBool 1
---    EFalse _ -> LitBool 0
---    ENull _ -> Null
---    DummyExp -> Null
---    -- 3 + 5
---    EOp e1 op e2 -> do
-
-
+    DefVar id@(PIdent (dloc, ident)) typ texp -> let addrId = getAddress ident dloc in
+        genExpAssign addrId texp
+    DefFun id@(PIdent (dloc, ident)) _ typ block@(BlockTyped (DBlock stms) _ _) -> do
+        createStream
+        out $ (Lab (getLabel ident dloc))
+        genBlock block
+        out $ (ReturnVoid)
+        pushCurrentStream
+        return ()
 
 genLexp :: LExp -> MyMon Addr
 -- LRef LExp
@@ -119,16 +166,14 @@ genLexp (LExpTyped lexp _ _ dloc) = case lexp of
         out $ (AssignFromArray addrTemp addrLexp' addrExp)
         return addrTemp
 
---a[i]
---lexp' = a[i] exp = j
---lexp'' = a exp = i
---a@(1,2)
---i@(4,4)
---AssignFromArray t1 a@(1,2) i@(4,4)
---AssignFromArray t2 t1 j@(4,5)
+-- a = Array(11,12,14)
+aux :: Addr -> Addr -> Int -> MyMon ()
+aux base x i = do 
+    out $ (AssignToArray base (LitInt i) x) 
+    return ()
 
 genExp :: Exp -> MyMon Addr
-genExp (ETyped exp typ loc) = case exp of
+genExp texp@(ETyped exp typ loc) = case exp of
     EInt (PInteger (loc,ident)) -> return $ LitInt ( read ident :: Int )
     EFloat (PFloat (loc,ident)) -> return $ LitFloat ( read ident :: Float )
     EChar (PChar (loc,ident)) -> return $ LitChar ( read ident :: Char )
@@ -137,44 +182,177 @@ genExp (ETyped exp typ loc) = case exp of
     EFalse _ -> return $ LitBool 0
     ENull _ -> return $ Null
     DummyExp -> return $ Null
-
-    EOp e1 op e2 -> do
-        addrE1 <- genExp e1
-        addrE2 <- genExp e2
-        addrTemp <- newTemp
-        -- Qua tip = tipo di exp, non e1.
-        out $ (AssignBinOp (convertOperation op typ) addrTemp addrE1 addrE2)
-        return addrTemp
-
-    ENeg e1 -> do
-        addrE1 <- genExp e1
-        addrTemp <- newTemp
-        -- Qua tip = tipo di exp, non e1.
-        out $ (AssignUnOp (if (typ == TSimple SType_Int) then NegInt else NegFloat) addrTemp addrE1)
-        return addrTemp
-
-    ENot e1 -> do
-        addrE1 <- genExp e1
-        addrTemp <- newTemp
-        out $ (AssignUnOp Not addrTemp addrE1)
-        return addrTemp
-
-    ELExp lexp' -> genLexp lexp'
-
+    
     EDeref lexp' -> do
         addrTemp <- newTemp 
         addrLexp' <- genLexp lexp'
         out $ (AssignFromRef addrTemp addrLexp')
         return addrTemp
-
-    -- a = Array(11,12,13)
-    -- a[0] = 11
-    -- a[1] = 12
-    -- a[2] = 13
-    -- andrebbe generato un indirizzo temporaneo (indirizzo base dell'array)
-    -- poi bisogna fare: base + i (posizione) * (sizeofType typ) = arrVals i
-    {-
+    
     EArray exps -> do
         arrVals <- mapM (genExp) exps
         addrTemp <- newTemp
-    -}
+        -- aggiungere la base + dimensione data dal tipo
+        zipWithM (\x i -> aux addrTemp x i) arrVals [0..((length exps)-1)]
+        return addrTemp
+
+    ELExp lexp' -> genLexp lexp'
+
+   
+
+    _ -> do
+        addrTemp <- newTemp
+        genExpAssign addrTemp texp
+        return addrTemp
+
+    --EOp e1 op e2 -> do
+    --    addrE1 <- genExp e1
+    --    addrE2 <- genExp e2
+    --    addrTemp <- newTemp
+    --    -- Qua tip = tipo di exp, non e1.
+    --    out $ (AssignBinOp (convertOperation op typ) addrTemp addrE1 addrE2)
+    --    return addrTemp
+--
+    --ENeg e1 -> do
+    --    addrE1 <- genExp e1
+    --    addrTemp <- newTemp
+    --    -- Qua tip = tipo di exp, non e1.
+    --    out $ (AssignUnOp (if (typ == TSimple SType_Int) then NegInt else NegFloat) addrTemp addrE1)
+    --    return addrTemp
+--
+    --ENot e1 -> do
+    --    addrE1 <- genExp e1
+    --    addrTemp <- newTemp
+    --    out $ (AssignUnOp Not addrTemp addrE1)
+    --    return addrTemp
+
+    
+
+
+
+genBlock :: Block -> MyMon ()
+genBlock (BlockTyped (DBlock stms) typ _) = genStms stms
+
+genStms :: [Stm] -> MyMon ()
+genStms [] = return ()
+genStms (stm:stms) = do
+    genStm stm
+    genStms stms
+
+
+convertToOppositeOp :: Op -> BinOp
+convertToOppositeOp AbsGramm.Equal = AbsTAC.NotEqual
+convertToOppositeOp AbsGramm.NotEq = AbsTAC.Equal
+convertToOppositeOp AbsGramm.Less = AbsTAC.GreaterEq
+convertToOppositeOp AbsGramm.LessEq = AbsTAC.Greater
+convertToOppositeOp AbsGramm.Greater = AbsTAC.LessEq
+convertToOppositeOp AbsGramm.GreaterEq = AbsTAC.Less
+
+
+genStm :: Stm -> MyMon ()
+genStm (StmTyped stm typ _) = case stm of
+    SDecl decl -> genDecl decl
+    SBlock block -> genBlock block
+    SAssign lexp texp -> do
+        addrLexp <- genLexp lexp
+        genExpAssign addrLexp texp
+
+    -- LABEL while
+    -- ifFalse (cond) labelFalse
+    -- stmts
+    -- goto while
+    -- LABEL labelFalse
+
+    SWhile texp@(ETyped exp _ _) tstm -> do
+        labelWhile <- newLabel
+        labelFalse <- newLabel
+        out $ (Lab labelWhile)
+        case exp of
+            EOp e1 op e2 -> do
+                addrE1 <- genExp e1
+                addrE2 <- genExp e2
+                out $ (IfRel (convertToOppositeOp op) addrE1 addrE2 labelFalse)
+            _ -> do
+                addrExp <- genExp texp
+                out $ (IfFalse addrExp labelFalse)
+        genStm tstm
+        out $ (Goto labelWhile)
+        out $ (Lab labelFalse)
+        return ()
+
+
+    -- IfElse (conf) labelElse
+    -- stmtif
+    -- goto next
+    -- LABEL else
+    -- smtselse
+    -- LABEL nect
+    SIfElse texp@(ETyped exp _ _) tstm_if tstm_else -> do
+        labelElse <- newLabel
+        labelNext <- newLabel
+        case exp of
+            EOp e1 op e2 -> do
+                addrE1 <- genExp e1
+                addrE2 <- genExp e2
+                out $ (IfRel (convertToOppositeOp op) addrE1 addrE2 labelElse)
+            _ -> do
+                addrExp <- genExp texp
+                out $ (IfFalse addrExp labelElse)
+        genStm tstm_if
+        out $ (Goto labelNext)
+        out $ (Lab labelElse)
+        genStm tstm_else
+        out $ (Lab labelNext)
+        return ()
+
+    
+    SReturn preturn -> out $ (ReturnVoid)
+    SReturnExp  preturn texp -> do
+        addrTexp <- genExp texp
+        out $ (ReturnAddr addrTexp)
+        return ()
+
+
+{-
+def f1(){
+    x = 3;
+    y = 9;
+
+    def f2(){
+        f1();
+        if(x == 3) 
+            print(ciao)
+    }
+
+    z = 3;
+}
+
+-}
+
+
+{-
+
+Assign z@(272,5) 2
+Assign y@(264,5) 9
+Assign x@(263,5) 3
+LABEL f1@(242,5)
+        
+LABEL f2@(266,10)        
+Call f1@(262,5)        
+IFElse
+
+param 3
+x@(10,12) = CALL f@(1,2) 1
+
+X = f(3)
+        
+        
+-}
+
+
+
+-- a = b + c * 3
+-- d = b + c * 3
+-- t1 = b+c
+-- a = t1
+-- b = t1

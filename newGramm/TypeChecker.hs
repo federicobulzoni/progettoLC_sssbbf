@@ -6,6 +6,10 @@ module TypeChecker where
   -- controllare l'uso di array vuoti, e la posizione a loro assegnata di default.
   -- pensare alla compatibilita String + String. 
   -- controllare la grammatica e aggiungere le locazioni a tutti i typed che non ce l'hanno.
+  -- controllare che la locazione negli statement serva veramente (sembra servire solo nella chiamata di funzione)
+  -- ci serve la posizione di dichiarazione di tutto ciò che viene dichiarato (identificatori: var, fun) --> serve nel tac per identificare gli id
+  -- l'unica cosa che necessita della locazione sono le espressioni --> stampa errori
+
 import AbsGramm
 import ErrM
 import Environment as Env
@@ -275,28 +279,28 @@ inferStm stm typ env = case stm of
          -- è da mettere a posto sto errore.
          saveLog ("Errore (" ++ printTree loc ++ "): l'identificatore " ++ printTree ident
           ++ "e' stato utilizzato in posizione " ++ printTree dloc ++ "per dichiarare una variabile.")
-         return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc) , env )
+         return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc) , env )
         Bad msg -> do
           saveLog msg
           return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc), env )
         Ok (FunInfo dloc typ paramclauses) -> 
           let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
             if any (isTypeError) (concat tparams)
-              then return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc) , env )
+              then return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc) , env )
               else
                 if typ_args == typ_params 
                   then
                     if isTypeVoid typ
-                      then return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) typ loc), env )
+                      then return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) typ dloc), env )
                       else do
                         saveLog ("Errore (" ++ printTree loc ++ "): il valore di ritorno della funzione "
                           ++ printTree ident ++ " non e' stato assegnato a nessuna variabile.")
-                        return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeVoid) loc), env )
+                        return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeVoid) dloc), env )
                   else do
                     saveLog ("Errore (" ++ printTree loc ++ "): nella chiamata alla funzione "
                       ++ printTree ident ++ " la firma della funzione e': " ++ printTree typ_args 
                       ++ " mentre i parametri passati sono di tipo: " ++ printTree typ_params ++ ".")
-                    return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc), env )
+                    return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc), env )
 
 
 
