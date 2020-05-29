@@ -56,9 +56,25 @@ transSType x = case x of
 transDeclaration :: Declaration -> Result
 transDeclaration x = case x of
   DefVar pident typespec exp -> failure x
-  DecVar pident typespec -> failure x
   DefFun pident paramclauses typespec block -> failure x
   DefFunInLine pident paramclauses typespec exp -> failure x
+transExp :: Exp -> Result
+transExp x = case x of
+  DummyExp -> failure x
+  ENot exp -> failure x
+  ENeg exp -> failure x
+  ELExp lexp -> failure x
+  EDeref lexp -> failure x
+  EInt pinteger -> failure x
+  EFloat pfloat -> failure x
+  EChar pchar -> failure x
+  EString pstring -> failure x
+  ETrue ptrue -> failure x
+  EFalse pfalse -> failure x
+  ENull pnull -> failure x
+  EArray exps -> failure x
+  EFunCall pident paramss -> failure x
+  EOp exp1 op exp2 -> failure x
 transParamClause :: ParamClause -> Result
 transParamClause x = case x of
   PArg args -> failure x
@@ -97,22 +113,6 @@ transOp x = case x of
   Div -> failure x
   Mod -> failure x
   Pow -> failure x
-transExp :: Exp -> Result
-transExp x = case x of
-  ENot exp -> failure x
-  ENeg exp -> failure x
-  ELExp lexp -> failure x
-  EDeref lexp -> failure x
-  EInt pinteger -> failure x
-  EFloat pfloat -> failure x
-  EChar pchar -> failure x
-  EString pstring -> failure x
-  ETrue ptrue -> failure x
-  EFalse pfalse -> failure x
-  ENull pnull -> failure x
-  EArray exps -> failure x
-  EFunCall pident paramss -> failure x
-  EOp exp1 op exp2 -> failure x
 transLExp :: LExp -> Result
 transLExp x = case x of
   LRef lexp -> failure x

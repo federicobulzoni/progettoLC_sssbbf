@@ -36,8 +36,6 @@ separator Arg ",";
 
 DArg. Arg ::= PIdent ":" TypeSpec;
 DBlock. Block ::= "{" [Stm] "}";
-
-internal BlockTyped. Block ::= "[" Block ":" TypeSpec ":" "(" Integer "," Integer ")" "]";
 separator Stm "";
 
 SDecl.      Stm ::= Declaration;
@@ -52,8 +50,6 @@ sdo. 		Stm ::= "do" Stm "while" "(" Exp ")" ";";
 SReturn. 	Stm ::= PReturn ";";
 SReturnExp. Stm ::= PReturn Exp ";" ;
 SProcCall.  Stm ::= PIdent [Params] ";";
-
-internal StmTyped. Stm :: = "[" Stm ":" TypeSpec ":" "(" Integer "," Integer ")" "]";
 
 ParExp. Params ::= "(" [Exp] ")";
 separator nonempty Params "";

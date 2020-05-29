@@ -1,5 +1,5 @@
-var x : Array[*Int](3) = Array(11,12,13);
-var y : Int = x[1];
+var x : Array[Int](3) = Array(11,12,13);
+var y : Int;
 
 def foo () = {
     y= 4;
@@ -9,7 +9,6 @@ def foo () = {
 }
 
 var h : Float;
-var k : Array[*Int](4);
 
 def bar() : Int = {
     var x : Int = 3 + 4 * 5;

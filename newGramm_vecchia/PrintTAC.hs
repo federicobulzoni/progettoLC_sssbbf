@@ -5,9 +5,8 @@ import AbsGramm
 import Control.Monad.State.Lazy
 
 printTAC2 :: [TAC] -> IO ()
-printTAC2 [] = putStrLn "\n"
 printTAC2 (istr:istrs) = do
-    printTACInstruction istr
+    printTACIstruction istr
     printTAC2 istrs
 
 buildBinOpr :: BinOp -> String
@@ -55,8 +54,8 @@ buildLabel label = case label of
     LabStm n              -> id "l" ++ show n
     LabFun ident (r,c)       ->  ident ++ "@(" ++ show r ++ "," ++ show c ++ ")"
 
-printTACInstruction :: TAC -> IO ()
-printTACInstruction istr = case istr of
+printTACIstruction :: TAC -> IO ()
+printTACIstruction istr = case istr of
     AssignBinOp op addr1 addr2 addr3 -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ buildAddr addr2 ++ " " ++ buildBinOpr op ++ " " ++ buildAddr addr3
     
     AssignUnOp op addr1 addr2 -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ buildUnOpr op ++ " " ++ buildAddr addr2
@@ -77,13 +76,13 @@ printTACInstruction istr = case istr of
 
     Goto label -> putStrLn $ "goto " ++ buildLabel label
     
-    IfBool addr1 label -> putStrLn $ "IfBool " ++ buildAddr addr1 ++ " goto " ++  buildLabel label
+    IfBool addr1 label -> putStrLn $ "IfFalse " ++ buildAddr addr1 ++ " goto " ++  buildLabel label
 
-    IfRel op addr1 addr2 label -> putStrLn $ "IfRel " ++ buildAddr addr1 ++ buildBinOpr op ++ buildAddr addr2 ++ " goto " ++ buildLabel label
+    IfRel op addr1 addr2 label -> putStrLn $ "IfFalse " ++ buildAddr addr1 ++ buildBinOpr op ++ buildAddr addr2 ++ " goto " ++ buildLabel label
 
-    IfFalse addr1 label -> putStrLn $ "IfFalse " ++ buildAddr addr1 ++ " goto " ++ buildLabel label
+    IfBool addr1 label -> putStrLn $ "IfFalse " ++ buildAddr addr1 ++ " goto " ++ buildLabel label
 
-    Lab label -> putStrLn $ "\nlabel " ++  buildLabel label
+    Lab label -> putStrLn $ "\n---------\n" ++ "label " ++  buildLabel label
     
     ReturnVoid -> putStrLn $ "ReturnVoid" ++ "\n---------"
 

@@ -37,7 +37,7 @@ data Program = Prog [Declaration]
   deriving (Eq, Ord, Show, Read)
 
 data TypeSpec
-    = TSimple SType | TPointer TypeSpec | TArray TypeSpec PInteger
+    = TSimple SType | TPointer TypeSpec | TArray TypeSpec PInteger 
   deriving (Ord, Show, Read)
 
 instance Eq TypeSpec where
@@ -61,6 +61,24 @@ data Declaration
     | DecVar PIdent TypeSpec
     | DefFun PIdent [ParamClause] TypeSpec Block
     | DefFunInLine PIdent [ParamClause] TypeSpec Exp
+  deriving (Eq, Ord, Show, Read)
+
+data Exp
+    = ENot Exp
+    | ENeg Exp
+    | ELExp LExp
+    | EDeref LExp
+    | EInt PInteger
+    | EFloat PFloat
+    | EChar PChar
+    | EString PString
+    | ETrue PTrue
+    | EFalse PFalse
+    | ENull PNull
+    | EArray [Exp]
+    | EFunCall PIdent [Params]
+    | EOp Exp Op Exp
+    | ETyped Exp TypeSpec Loc
   deriving (Eq, Ord, Show, Read)
 
 data ParamClause = PArg [Arg]
@@ -87,6 +105,7 @@ data Stm
 data Params = ParExp [Exp]
   deriving (Eq, Ord, Show, Read)
 
+-- cambiare NotEq in NotEqual
 data Op
     = Or
     | And
@@ -104,31 +123,12 @@ data Op
     | Pow
   deriving (Eq, Ord, Show, Read)
 
-data Exp
-    = ENot Exp
-    | ENeg Exp
-    | ELExp LExp
-    | EDeref LExp
-    | EInt PInteger
-    | EFloat PFloat
-    | EChar PChar
-    | EString PString
-    | ETrue PTrue
-    | EFalse PFalse
-    | ENull PNull
-    | EArray [Exp]
-    | EFunCall PIdent [Params]
-    | EOp Exp Op Exp
-    | ETyped Exp TypeSpec Loc
-  deriving (Eq, Ord, Show, Read)
-
 data LExp
     = LRef LExp
     | LArr LExp Exp
     | LIdent PIdent
     | LExpTyped LExp TypeSpec Loc Loc
   deriving (Eq, Ord, Show, Read)
-
 
 class Typed a where
   getType :: a -> TypeSpec
@@ -144,7 +144,6 @@ instance Typed Declaration where
 
   --getLoc  (DecVar (PIdent (loc, _)) typ ) = loc
   getLoc  (DefVar (PIdent (loc, _)) typ _) = loc
-  getLoc  (DecVar (PIdent (loc, _)) typ) = loc
   getLoc  (DefFun (PIdent (loc, _)) _ typ _) = loc
   getLoc  (DefFunInLine (PIdent (loc, _)) _ typ _) = loc
 
@@ -179,4 +178,3 @@ instance Typed LExp where
     -- Locazione di dichiarazione in questo caso.
     --getLoc (LIdentTyped _ _ loc) = loc
     isTypeError tlexp = getType tlexp == (TSimple TypeError)
-  

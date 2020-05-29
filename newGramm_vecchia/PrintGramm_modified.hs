@@ -128,17 +128,12 @@ instance Print [AbsGramm.Declaration] where
 
 instance Print AbsGramm.Loc where
   prt i (line, column) =  (concatD [doc (showString "("), prt 0 line, doc (showString ","), prt 0 column, doc (showString ")")])
-
+    
 instance Print AbsGramm.TypeSpec where
   prt i e = case e of
     AbsGramm.TSimple stype -> prPrec i 0 (concatD [prt 0 stype])
     AbsGramm.TPointer typespec -> prPrec i 0 (concatD [doc (showString "*"), prt 0 typespec])
     AbsGramm.TArray typespec pinteger -> prPrec i 0 (concatD [doc (showString "Array"), doc (showString "["), prt 0 typespec, doc (showString "]"), doc (showString "("), prt 0 pinteger, doc (showString ")")])
-
-instance Print [AbsGramm.TypeSpec] where
-  prt = prtList
-instance Print [[AbsGramm.TypeSpec]] where
-  prt i e = concatD (map (\x -> concatD [doc (showString "("), prt 0 x, doc (showString ")") ] ) e )
 
 instance Print AbsGramm.SType where
   prt i e = case e of
@@ -153,7 +148,6 @@ instance Print AbsGramm.SType where
 instance Print AbsGramm.Declaration where
   prt i e = case e of
     AbsGramm.DefVar pident typespec exp -> prPrec i 0 (concatD [doc (showString "var"), prt 0 pident, doc (showString ":"), prt 0 typespec, doc (showString "="), prt 0 exp, doc (showString ";")])
-    AbsGramm.DecVar pident typespec -> prPrec i 0 (concatD [doc (showString "var"), prt 0 pident, doc (showString ":"), prt 0 typespec, doc (showString ";")])
     AbsGramm.DefFun pident paramclauses typespec block -> prPrec i 0 (concatD [doc (showString "def"), prt 0 pident, prt 0 paramclauses, doc (showString ":"), prt 0 typespec, doc (showString "="), prt 0 block])
     AbsGramm.DefFunInLine pident paramclauses typespec exp -> prPrec i 0 (concatD [doc (showString "def"), prt 0 pident, prt 0 paramclauses, doc (showString ":"), prt 0 typespec, doc (showString "="), prt 0 exp])
   prtList _ [] = concatD []
@@ -161,6 +155,7 @@ instance Print AbsGramm.Declaration where
 
 instance Print AbsGramm.Exp where
   prt i e = case e of
+    AbsGramm.DummyExp -> prPrec i 0 (concatD [doc (showString "dummy")])
     AbsGramm.ENot exp -> prPrec i 2 (concatD [doc (showString "!"), prt 2 exp])
     AbsGramm.ENeg exp -> prPrec i 6 (concatD [doc (showString "-"), prt 7 exp])
     AbsGramm.ELExp lexp -> prPrec i 7 (concatD [prt 0 lexp])
@@ -178,6 +173,7 @@ instance Print AbsGramm.Exp where
   prtList _ [] = concatD []
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, doc (showString ","), prt 0 xs]
+
 instance Print [AbsGramm.ParamClause] where
   prt = prtList
 
@@ -245,8 +241,6 @@ instance Print AbsGramm.Op where
     AbsGramm.Div -> prPrec i 4 (concatD [doc (showString "/")])
     AbsGramm.Mod -> prPrec i 4 (concatD [doc (showString "%")])
     AbsGramm.Pow -> prPrec i 5 (concatD [doc (showString "^")])
-
-
 
 instance Print AbsGramm.LExp where
   prt i e = case e of

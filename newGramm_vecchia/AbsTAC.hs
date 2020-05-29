@@ -19,7 +19,6 @@ data Addr
 data Label 
   = LabStm Int
   | LabFun Ident Loc
-  | Fall
   deriving (Eq, Ord, Show, Read)
 
 

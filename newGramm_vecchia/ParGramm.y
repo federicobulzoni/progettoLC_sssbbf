@@ -13,6 +13,7 @@ import ErrM
 %name pTypeSpec TypeSpec
 %name pSType SType
 %name pDeclaration Declaration
+%name pExp Exp
 %name pListParamClause ListParamClause
 %name pParamClause ParamClause
 %name pListArg ListArg
@@ -29,7 +30,6 @@ import ErrM
 %name pOp3 Op3
 %name pOp4 Op4
 %name pOp5 Op5
-%name pExp Exp
 %name pExp1 Exp1
 %name pExp2 Exp2
 %name pExp3 Exp3
@@ -141,10 +141,12 @@ SType : 'Float' { AbsGramm.SType_Float }
       | 'Bool' { AbsGramm.SType_Bool }
 Declaration :: { Declaration }
 Declaration : 'var' PIdent ':' TypeSpec '=' Exp ';' { AbsGramm.DefVar $2 $4 $6 }
-            | 'var' PIdent ':' TypeSpec ';' { AbsGramm.DecVar $2 $4 }
+            | 'var' PIdent ':' TypeSpec ';' { decVar_ $2 $4 }
             | 'def' PIdent ListParamClause ':' TypeSpec '=' Block { AbsGramm.DefFun $2 $3 $5 $7 }
             | 'def' PIdent ListParamClause ':' TypeSpec '=' Exp { AbsGramm.DefFunInLine $2 $3 $5 $7 }
             | 'def' PIdent ListParamClause '=' Block { dproc_ $2 $3 $5 }
+Exp :: { Exp }
+Exp : Exp Op Exp1 { op_ $1 $2 $3 } | Exp1 { $1 }
 ListParamClause :: { [ParamClause] }
 ListParamClause : ParamClause { (:[]) $1 }
                 | ParamClause ListParamClause { (:) $1 $2 }
@@ -200,8 +202,6 @@ Op4 : '*' { AbsGramm.Prod }
     | Op5 { $1 }
 Op5 :: { Op }
 Op5 : '^' { AbsGramm.Pow } | '(' Op ')' { $2 }
-Exp :: { Exp }
-Exp : Exp Op Exp1 { op_ $1 $2 $3 } | Exp1 { $1 }
 Exp1 :: { Exp }
 Exp1 : Exp1 Op1 Exp2 { op_ $1 $2 $3 } | Exp2 { $1 }
 Exp2 :: { Exp }
@@ -253,6 +253,7 @@ happyError ts =
 
 myLexer = tokens
 op_ e1_ o_ e2_ = EOp e1_ o_ e2_
+decVar_ id_ typ_ = DefVar id_ typ_ DummyExp
 dproc_ id_ params_ block_ = DefFun id_ params_ (TSimple TypeVoid) block_
 sdo_ st_ ex_ = SBlock (DBlock [st_, SWhile ex_ st_])
 sif_ exp_ stm_ = SIfElse exp_ stm_ (SBlock (DBlock []))

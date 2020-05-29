@@ -95,6 +95,8 @@ All other symbols are terminals.
   |  |  **|**  | ``def`` //PIdent// //[ParamClause]// ``:`` //TypeSpec// ``=`` //Block//
   |  |  **|**  | ``def`` //PIdent// //[ParamClause]// ``:`` //TypeSpec// ``=`` //Exp//
   |  |  **|**  | ``def`` //PIdent// //[ParamClause]// ``=`` //Block//
+  | //Exp// | -> | //Exp// //Op// //Exp1//
+  |  |  **|**  | //Exp1//
   | //[ParamClause]// | -> | //ParamClause//
   |  |  **|**  | //ParamClause// //[ParamClause]//
   | //ParamClause// | -> | ``(`` //[Arg]// ``)``
@@ -141,8 +143,6 @@ All other symbols are terminals.
   |  |  **|**  | //Op5//
   | //Op5// | -> | ``^``
   |  |  **|**  | ``(`` //Op// ``)``
-  | //Exp// | -> | //Exp// //Op// //Exp1//
-  |  |  **|**  | //Exp1//
   | //Exp1// | -> | //Exp1// //Op1// //Exp2//
   |  |  **|**  | //Exp2//
   | //Exp2// | -> | ``!`` //Exp2//
