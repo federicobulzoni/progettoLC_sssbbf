@@ -22,7 +22,10 @@ type MyMon a = State (
 out :: TAC -> MyMon ()
 out instr = do
     (k, l, revcode, funs) <- get
-    put (k, l, revcode, (instr : (head funs)) : (tail funs))
+    if length funs == 1 
+        then put (k, l, instr : revcode, funs)
+        else put (k, l, revcode, (instr : (head funs)) : (tail funs))
+    
     return ()
 
 pushCurrentStream :: MyMon ()

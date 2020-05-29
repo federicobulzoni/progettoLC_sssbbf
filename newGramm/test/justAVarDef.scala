@@ -10,10 +10,13 @@ def foo () = {
     }
 }
 
+var h : Float;
+
 def bar() : Int = {
     var x : Int = 3 + 4 * 5;
     def bar2(k : Int) : Float = {
-        return 3.4;
+        if( 3 < 4+4)
+            return 3.4;
     }
     var b : Float = bar2(3+3);
     return 1;
