@@ -1,6 +1,11 @@
-* mettere tipi tac                     SB
-* sistemare layout stampa tac          SB/SS
-* guardare todo in typechecker         SS/SB/BF
-* fate tanti test                      BF
-* sistemare errori in file separato    SS
-* pulizia codice                       SS/BF
+Cose da fare:
+    [] mettere tipi tac                     SB
+    [] sistemare layout stampa tac          SB/SS
+    [] guardare todo in typechecker         SS/SB/BF
+    [] fate tanti test                      BF
+    [X] sistemare errori in file separato    SS
+    [] pulizia codice                       SS/BF
+
+Errori da risolvere:
+    [] Se dichiaro all'interno di una funzione, una funzione con lo stesso nome, non da errore @critical 
+    [] Funzioni di base non gestite dal TAC

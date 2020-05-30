@@ -15,10 +15,11 @@ import ErrM
 import Environment as Env
 import PrintGramm
 import Control.Monad.Writer
+import Errors
 
-saveLog:: String -> Writer [String] ()
-saveLog log = do 
-  tell [log]
+saveLog:: TCError -> Writer [String] ()
+saveLog err = do 
+  tell [getError err]
   return ()
 
 isTypeVoid :: TypeSpec -> Bool
@@ -110,7 +111,7 @@ inferDecl decl env = case decl of
   DefVar id@(PIdent (loc, ident)) typ exp -> case update env ident (VarInfo loc typ) of
     Ok env' -> defVarAux env'
     Bad msg -> do
-      saveLog msg
+      saveLog $ EnvErrorWithLoc loc msg
       defVarAux env
     where
       defVarAux e = do
@@ -118,13 +119,13 @@ inferDecl decl env = case decl of
         case isTypeError texp || checkExp texp typ of
           True -> return ((DefVar id typ texp), e)
           False -> do
-            saveLog ("Errore (" ++ printTree loc ++ "): " ++ printTree exp ++ " e' di tipo " ++ printTree (getType texp) ++ ", ma il tipo atteso e' " ++ printTree typ ++ ".")
+            saveLog $ WrongExpType loc exp texp typ
             return ((DefVar id typ texp), e)
 -------------------------------------------------------------------------------------------------------------------------------------------
   DecVar id@(PIdent (loc, ident)) typ -> case update env ident (VarInfo loc typ) of
       Ok env' -> return ((DecVar id typ), env')
       Bad msg -> do
-        saveLog msg
+        saveLog $ EnvErrorWithLoc loc msg
         return ((DecVar id typ), env)
 
   --DefFun id@(PIdent (loc, ident)) params typ block@(DBlock stms) -> case update env ident (FunInfo loc typ params) of
@@ -156,7 +157,7 @@ inferDecl decl env = case decl of
   DefFun id@(PIdent (loc, ident)) params typ block@(DBlock stms) -> case update env ident (FunInfo loc typ params) of
     Ok env' -> defFunAux env'
     Bad msg -> do
-      saveLog msg
+      saveLog $ EnvErrorWithLoc loc msg
       defFunAux env
     where 
       defFunAux e = do
@@ -164,7 +165,7 @@ inferDecl decl env = case decl of
         case (checkBlock tblock typ) of
           True -> return ((DefFun id params typ tblock), e)
           False -> do
-            saveLog ("Errore (" ++ printTree loc  ++ "): attesa un'istruzione return all'interno della funzione " ++ printTree ident ++ ", ma non trovata.")
+            saveLog $ MissingReturn loc ident
             return ((DefFun id params typ tblock), e)
 -------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -203,8 +204,7 @@ inferStm stm typ env = case stm of
         (tstm', _) <- inferStm stm' typ env
         return ( (StmTyped (SWhile texp tstm') (getType tstm') (getLoc texp) ) , env)
       else do
-        saveLog ("Errore (" ++ printTree (getLoc texp) ++ "): la condizione del while deve essere di tipo booleano, invece " ++ printTree exp 
-          ++ " ha tipo " ++ printTree (getType texp) ++ ".")
+        saveLog $ WrongWhileCondition (getLoc texp) exp texp
         (tstm', _) <- inferStm stm' typ env
         return ( (StmTyped (SWhile texp tstm') (getType tstm') (getLoc texp)) , env )
   
@@ -212,8 +212,7 @@ inferStm stm typ env = case stm of
     texp <- inferExp exp env
     if not (isTypeError texp || checkExp texp (TSimple SType_Bool))
       then 
-        saveLog ("Errore ("++ printTree (getLoc texp) ++ "): la condizione dell' if deve essere di tipo booleano, invece " ++ printTree exp 
-          ++ " ha tipo " ++ printTree (getType texp) ++ ".")
+        saveLog $ WrongIfCondition (getLoc texp) exp texp
       else return ()
 
     (tstmif, _) <- inferStm stmif typ env
@@ -236,9 +235,7 @@ inferStm stm typ env = case stm of
     if isTypeError tlexp || isTypeError texp || checkExp texp (getType tlexp)
       then return ( (StmTyped (SAssign tlexp texp) (TSimple TypeVoid) (getLoc tlexp)), env )
       else do
-        saveLog ("Errore (" ++ printTree (getLoc texp) ++ "): l'espressione " ++ printTree exp ++" ha tipo " ++ printTree (getType texp) ++ ", ma " 
-          ++ printTree lexp ++ " ha tipo " 
-          ++ printTree (getType tlexp) ++ ".")
+        saveLog $ WrongExpAssignType (getLoc texp) exp texp tlexp lexp
         return ( (StmTyped (SAssign tlexp texp) (TSimple TypeVoid) (getLoc tlexp) ), env )
 
   SReturnExp preturn@(PReturn (loc, id)) exp -> do
@@ -249,18 +246,16 @@ inferStm stm typ env = case stm of
 
         (True,_) -> return ((StmTyped (SReturnExp preturn texp) typ loc), env)
         (False, True) -> do
-          saveLog ("Errore (" ++ printTree (getLoc texp) ++ "): valore di ritorno inaspettato.")
+          saveLog $ UnexpectedReturn (getLoc texp) 
           return ((StmTyped (SReturnExp preturn texp) (TSimple TypeVoid) loc, env))
         (False, False) -> do
-          saveLog ("Errore (" ++ printTree (getLoc texp) ++ "): l'espressione " ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) 
-            ++ ", ma il tipo atteso e' " ++ printTree typ ++ ".")
+          saveLog $ WrongExpType (getLoc texp) exp texp typ
           return ((StmTyped (SReturnExp preturn texp) (TSimple TypeVoid) loc, env))
 
   SReturn preturn@(PReturn (loc, _))-> do
     if not (isTypeVoid typ)
       then 
-        saveLog ("Errore ("++ printTree loc ++"): l'operazione return non ha valore di ritorno, ma la funzione ha tipo "
-          ++ printTree typ ++ ".")
+        saveLog $ WrongReturnValue loc typ
       else
         return ()
     return ((StmTyped (SReturn preturn) (TSimple TypeVoid) loc), env)
@@ -282,11 +277,10 @@ inferStm stm typ env = case stm of
       case Env.lookup env id of
         Ok (VarInfo dloc _) -> do
          -- è da mettere a posto sto errore.
-         saveLog ("Errore (" ++ printTree loc ++ "): l'identificatore " ++ printTree ident
-          ++ "e' stato utilizzato in posizione " ++ printTree dloc ++ "per dichiarare una variabile.")
+         saveLog $ DuplicateVariable loc ident dloc
          return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc) , env )
         Bad msg -> do
-          saveLog msg
+          saveLog $ EnvError msg
           return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc), env )
         Ok (FunInfo dloc typ paramclauses) -> 
           let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
@@ -298,13 +292,10 @@ inferStm stm typ env = case stm of
                     if isTypeVoid typ
                       then return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) typ dloc), env )
                       else do
-                        saveLog ("Errore (" ++ printTree loc ++ "): il valore di ritorno della funzione "
-                          ++ printTree ident ++ " non e' stato assegnato a nessuna variabile.")
+                        saveLog $ MissingAssignVariable loc ident
                         return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeVoid) dloc), env )
                   else do
-                    saveLog ("Errore (" ++ printTree loc ++ "): nella chiamata alla funzione "
-                      ++ printTree ident ++ " la firma della funzione e': " ++ printTree typ_args 
-                      ++ " mentre i parametri passati sono di tipo: " ++ printTree typ_params ++ ".")
+                    saveLog $ WrongProcParams loc ident typ_args typ_params
                     return ( (StmTyped (SProcCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc), env )
 
 
@@ -326,7 +317,7 @@ inferLExp lexp env = case lexp of
        case tlexp' of
          (LExpTyped _ (TPointer typ) loc dloc) -> return (LExpTyped (LRef tlexp') typ loc dloc)
          (LExpTyped _ typ' loc dloc) -> do
-           saveLog ("Errore (" ++ printTree loc ++ "): impossibile applicare operatore * a " ++ printTree lexp' ++ " che ha tipo " ++ printTree typ' ++ ".")
+           saveLog $ WrongPointerApplication loc lexp' typ'
            return (LExpTyped (LRef tlexp') (TSimple TypeError) loc dloc)
 
  LArr lexp exp -> do
@@ -339,33 +330,25 @@ inferLExp lexp env = case lexp of
        case (tlexp , checkExp texp (TSimple SType_Int)) of
          (LExpTyped _ (TArray typ _) loc dloc, True) -> return (LExpTyped (LArr tlexp texp) typ loc dloc)
          (LExpTyped _ (TArray typ _) loc dloc, False) -> do
-           saveLog ("Errore (" ++ printTree loc ++ "): l'indice di accesso ad un'array deve avere tipo intero, ma l'espressione " 
-            ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) ++ ".")
+           saveLog $ WrongArrayIndex loc exp texp
            return (LExpTyped (LArr tlexp texp) (TSimple TypeError) loc dloc)
          (_, False) -> do
-           saveLog ("Errore (" ++ printTree (getLoc texp) ++ "): l'accesso tramite operatore [] puo' essere effettuato solo su elementi di tipo Array, mentre "
-            ++ printTree lexp ++ " ha tipo " ++ printTree (getType tlexp) ++ ".")
-           saveLog ("Errore (" ++ printTree (getLoc texp) ++ "): l'indice di accesso ad un'array deve avere tipo intero, ma l'espressione " 
-            ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) ++ ".")
-           
+           saveLog $ WrongArrayAccess (getLoc texp) lexp ((getType tlexp))
+           saveLog $ WrongArrayIndex (getLoc texp) exp texp
            return (LExpTyped (LArr tlexp texp) (TSimple TypeError) (getLoc tlexp) (getDLoc tlexp))
          (_, True) -> do
-           saveLog ("Errore (" ++ printTree (getLoc texp) ++ "): l'accesso tramite operatore [] puo' essere effettuato solo su elementi di tipo Array, mentre "
-            ++ printTree lexp ++ " ha tipo " ++ printTree (getType tlexp) ++ ".")
-           
+           saveLog $ WrongArrayAccess (getLoc texp) lexp (getType tlexp)
            return (LExpTyped (LArr tlexp texp) (TSimple TypeError) (getLoc tlexp) (getDLoc tlexp))
  LIdent id@(PIdent (loc, ident)) -> let res = Env.lookup env id in
    case res of
      Bad msg -> do
-       saveLog msg
+       saveLog $ EnvError msg
        return (LExpTyped lexp (TSimple TypeError) loc (0,0))
      -- dloc dichiarazione loc
      Ok (VarInfo dloc typ) -> return (LExpTyped (LIdent id) typ loc dloc)
      Ok (FunInfo dloc _ _) -> do
        -- è da mettere a posto sto errore.
-       saveLog ( "Errore (" ++ printTree loc ++ "): l'identificatore " ++ printTree ident
-        ++ "e' stato utilizzato in posizione " ++ printTree dloc ++ "per dichiarare una funzione.")
-
+       saveLog $ DuplicateFunction loc ident dloc
        return (LExpTyped lexp (TSimple TypeError) loc dloc)
 
 
@@ -394,7 +377,7 @@ inferExp exp env = case exp of
       (_ , _) -> do
         -- Da mettere un più bel messaggio di errore.
         -- ETyped Exp TypeSpec Integer Integer
-        saveLog ("Errore(" ++ printTree (getLoc (head texps) ) ++ "): inconsistenza nei valori assegnati all'array in posizione.")
+        saveLog $ ArrayInconsistency (getLoc (head texps))
         -- bisogna far tornare l'espressione tipata, non la lunghezza della lisa texps
         return (ETyped (EArray texps) (TSimple TypeError) (getLoc (head texps)) )
 
@@ -415,11 +398,10 @@ inferExp exp env = case exp of
       case Env.lookup env id of
         Ok (VarInfo dloc _) -> do
          -- è da mettere a posto sto errore.
-         saveLog ("Errore (): l'identificatore " ++ printTree ident
-          ++ "e' stato utilizzato in posizione " ++ printTree dloc ++ "per dichiarare una variabile.")
+         saveLog $ DuplicateVariable loc ident dloc
          return (ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc)
         Bad msg -> do
-          saveLog msg
+          saveLog $ EnvError msg
           return (ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc)
         Ok (FunInfo dloc typ paramclauses) ->
           let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
@@ -429,9 +411,7 @@ inferExp exp env = case exp of
                 if typ_args == typ_params 
                   then return (ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) typ dloc)
                   else do
-                    saveLog ("Errore (" ++ printTree loc ++ "): nella chiamata alla funzione "
-                      ++ printTree ident ++ " la firma della funzione e': " ++ printTree (mapM (\x -> printTree x) typ_args) ++ ":" ++ printTree typ
-                      ++ " mentre i parametri passati sono di tipo: " ++ printTree (mapM (\x -> printTree x) typ_params) ++ ".")
+                    saveLog $ WrongFunctionParams loc ident typ_args typ_params typ
                     return (ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc)
 
   ENot exp -> do
@@ -439,8 +419,7 @@ inferExp exp env = case exp of
     if isTypeError texp || checkExp texp (TSimple SType_Bool)
       then return (ETyped (ENot texp) (getType texp) (getLoc texp))
       else do
-        saveLog ("Errore (" ++ printTree (getLoc texp) ++ "): operatore ! applicato alla espressione " ++ printTree exp ++ ", che ha tipo "
-          ++ printTree (getType texp) ++ ", ma era attesa di tipo " ++ printTree (TSimple SType_Bool) ++ ".")
+        saveLog $ WrongNotApplication (getLoc texp) exp texp
         return ((ETyped (ENot texp) (TSimple TypeError) (getLoc texp)))
 
   ENeg exp -> do
@@ -448,8 +427,7 @@ inferExp exp env = case exp of
     if isTypeError texp || checkExp texp (TSimple SType_Int) || checkExp texp (TSimple SType_Float)
       then return (ETyped (ENeg texp) (getType texp) (getLoc texp))
       else do
-        saveLog ("Errore (" ++ printTree (getLoc texp) ++ "): operatore - applicato alla espressione " ++ printTree exp ++ ", che ha tipo "
-          ++ printTree (getType texp) ++ ", ma era attesa di tipo numerico.")
+        saveLog $ WrongNegApplication (getLoc texp) exp texp
         return ((ETyped (ENeg texp) (TSimple TypeError) (getLoc texp)))
   
   ELExp lexp -> do
@@ -498,9 +476,7 @@ inferBinOp expl op expr env = do
 
 returnBinOpError :: Exp -> Op -> Exp -> Writer [String] Exp
 returnBinOpError texpl op texpr = do
-  saveLog ("Errore (" ++ printTree (getLoc texpl) ++ "): l'operatore " ++ printTree op ++ " non puo' essere applicato ad un'espressione di tipo " 
-    ++ printTree (getType texpl) 
-    ++ " e un'espressione di tipo " ++ printTree (getType texpr)  ++ ".")
+  saveLog $ WrongOpApplication (getLoc texpl) op texpl texpr
   return (ETyped (EOp texpl op texpr) (TSimple TypeError) (getLoc texpl) )
 
 isConsistent :: TypeOp -> TypeSpec -> TypeSpec -> Bool
@@ -533,51 +509,3 @@ getTypeOp LessEq    = RelOp
 getTypeOp GreaterEq = RelOp
 getTypeOp Equal     = EqOp
 getTypeOp NotEq     = EqOp
- 
-
-
---
----- Tests:
---getEnv = do 
---  env1 <- updateVar emptyEnv (PIdent ((1,5),"x")) Type_int
---  updateVar env1 (PIdent ((1,22),"y")) SType_Float
---
---
---test4 :: Writer [String] (Declaration, Env)
---test4 = let x = getEnv
---  in
---    case x of
---      Ok env -> inferDecl (DefVar (PIdent ((1,5),"z")) Type_int (EAdd (EVar (PIdent ((1,49),"y"))) (EVar (PIdent ((1,51),"x"))))) env
---      Bad _ -> error $ "ciao"
---
---test5 = let x = getEnv
---  in 
---    case x of
---      Ok env -> inferDecl (DefVar (PIdent ((1,5),"x")) Type_int (EAdd (EVar (PIdent ((1,49),"y"))) (EVar (PIdent ((1,51),"x"))))) env
---      Bad _ -> error $ "ciao"
---
---
---test3 = let x = getEnv 
---  in
---    case x of
---      Ok env -> checkExp (EAdd (EVar (PIdent ((1,49),"y"))) (EVar (PIdent ((1,51),"x")))) SType_Float env
---      Bad _ -> return (ETyped  (EVar (PIdent ((1,49),"crocs"))) Type_null)
---
---
---
---test2 = let x = getEnv
---  --updateVar (updateVar emptyEnv (PIdent ((1,5),"x")) Type_int) (PIdent ((1,22),"y")) Type_int
---  in 
---    case x of
---      Ok env -> inferExp (EAdd (EVar (PIdent ((1,49),"x"))) (EVar (PIdent ((1,51),"y")))) env
---      Bad msg -> return Type_int
---
---test = let x = updateVar emptyEnv (PIdent ((3,5), "y")) Type_int in
---  case x of
---    Ok env -> inferExp (EVar (PIdent ((1,2), "x"))) env
---    Bad msg -> return Type_int
-----updateVar emptyEnv (PIdent ((3,5), "x")) Type_int >>= inferExp (EVar (PIdent ((1,2), "x")))
---
---    
-
-

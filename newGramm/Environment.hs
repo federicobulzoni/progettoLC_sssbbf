@@ -6,6 +6,7 @@ import ErrM
 import Control.Monad
 import AbsGramm
 import qualified Data.Map as Map
+import Errors
 
 -- PIdent invece è (Loc, Ident)
 {-
@@ -48,12 +49,10 @@ lookupIdent scope ident = Map.lookup ident scope
 updateEnv :: Scope -> Ident -> Info -> Err Scope
 updateEnv scope ident info = case Map.lookup ident scope of
     Nothing -> return $ Map.insert ident info scope
-    Just (VarInfo loc1 _) -> Bad $ "identificatore" ++ ident ++
-                               "usato in precedenza per una variabile in posizione" ++
-                                show loc1 ++ ".\n"
-    Just (FunInfo loc1 _ _) -> Bad $ "identificatore" ++ ident ++
-                               "usato in precedenza per una funzione in posizione" ++
-                                show loc1 ++ ".\n"
+    Just (VarInfo loc1 _) -> Bad $ "identificatore " ++ ident ++
+                               " usato in precedenza per una variabile in posizione " ++ show loc1
+    Just (FunInfo loc1 _ _) -> Bad $ "identificatore " ++ ident ++
+                                " usato in precedenza per una funzione in posizione " ++ show loc1
 {-
 
 updateVar :: Scope -> PIdent -> TypeSpec -> Err Scope
@@ -95,7 +94,7 @@ lookup (scope:stack') ident info = case lookupIdent scope ident of
     Nothing -> lookup stack' ident info
 -}
 lookup :: Env -> PIdent -> Err Info
-lookup [] (PIdent (loc, ident)) = Bad $ "identificatore " ++ ident ++ " usato in posizione " ++ show loc ++ ", ma non dichiarato in precedenza.\n"
+lookup [] (PIdent (loc, ident)) = Bad $ "Error(" ++ show loc ++ "): identificatore " ++ ident ++ " usato, ma non dichiarato in precedenza.\n"
 lookup (scope:stack') id@(PIdent (_, ident)) = case lookupIdent scope ident of
     Just info -> return info
     Nothing -> Environment.lookup stack' id
