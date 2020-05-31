@@ -5,6 +5,8 @@ Cose da fare:
     [] fate tanti test                      BF
     [X] sistemare errori in file separato    SS
     [] pulizia codice                       SS/BF
+    [] se c'è una funzione "main" top level va messa all'inizio del tac.
+    [X] se l'istruzione precedente è un return, non aggiungere il return alla fine della funzione.
 
 Errori da risolvere:
     [] Se dichiaro all'interno di una funzione, una funzione con lo stesso nome, non da errore @critical 

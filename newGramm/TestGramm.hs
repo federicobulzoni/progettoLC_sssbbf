@@ -67,11 +67,13 @@ printTypeCheckSuccess prog = do
   putStrLn "\n[Albero tipato]\n\n"
   putStrV 2 $ show prog
 
+{-
 printTAC :: [TAC] -> IO()
 printTAC [] = putStrLn ""
 printTAC (c:code) = do
   putStrLn $ show c 
   printTAC code
+-}
 
 showTree :: Int -> Program -> IO ()
 showTree v tree

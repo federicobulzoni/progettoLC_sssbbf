@@ -1,14 +1,89 @@
 module PrintTAC where
 
 import AbsTAC
-import AbsGramm
-import Control.Monad.State.Lazy
 
-printTAC2 :: [TAC] -> IO ()
-printTAC2 [] = putStrLn "\n"
-printTAC2 (istr:istrs) = do
-    printTACInstruction istr
-    printTAC2 istrs
+-- (Minimum) width of the column containing labels.
+columnWidth :: Int
+columnWidth = 20
+
+-- Entrypoint. Called by TestGramm.
+printTAC :: [TAC] -> IO ()
+printTAC [] = return ()
+printTAC [Lab label] = putStrLn $ buildLabel label
+printTAC ((Lab label1):(Lab label2):xs) = do
+    putStrLn $ buildInstrLabel label1
+    printTAC $ (Lab label2):xs
+printTAC ((Lab label):x:xs)
+    | length stringLabel < columnWidth = do 
+        putStr $ padStringLabel stringLabel
+        putStrLn $ buildTACInstruction x
+        printTAC xs
+    | otherwise = do
+        putStrLn $ stringLabel
+        printTAC (x:xs)
+    where stringLabel = buildInstrLabel label
+printTAC (x:xs) = do
+    putStr $ padStringLabel ""
+    putStrLn $ buildTACInstruction x
+    printTAC xs
+
+-- Convert TAC instruction to string. Does not receive labels.
+buildTACInstruction :: TAC -> String
+buildTACInstruction istr = case istr of
+    -- TODO: Type?
+    AssignBinOp op addr1 addr2 addr3 -> 
+        buildAddr addr1 ++ " = " ++ buildAddr addr2 ++ " " ++ buildBinOpr op ++ " " ++ buildAddr addr3
+
+    -- TODO: Type?
+    AssignUnOp op addr1 addr2 -> 
+        buildAddr addr1 ++ " = " ++ buildUnOpr op ++ " " ++ buildAddr addr2
+
+    -- TODO: Type?
+    Assign addr1 addr2 -> 
+        buildAddr addr1 ++ " = " ++ buildAddr addr2
+
+    AssignFromArray addr1 addr2 addr3 -> 
+        buildAddr addr1 ++ " = " ++  buildAddr addr2 ++ "[" ++ buildAddr addr3 ++ "]"
+
+    AssignToArray addr1 addr2 addr3 -> 
+        buildAddr addr1 ++ "[" ++ buildAddr addr2 ++ "]" ++ " = " ++ buildAddr addr3 
+
+    AssignFromRef addr1 addr2 -> 
+        buildAddr addr1 ++ " = " ++ "&" ++ buildAddr addr2
+
+    AssignFromPointer addr1 addr2 -> 
+        buildAddr addr1 ++ " = " ++ "*" ++ buildAddr addr2
+
+    AssignToPointer addr1 addr2 -> 
+        "*" ++ buildAddr addr1 ++ " = " ++ buildAddr addr2
+
+    -- TODO: Type?
+    AssignFromFunction addr1 label  n -> 
+        buildAddr addr1 ++ " = " ++ "call " ++ buildLabel label ++ " , n = " ++ show n
+
+    Goto label -> 
+        "goto " ++ buildLabel label
+    
+    IfBool addr1 label -> 
+        "if " ++ buildAddr addr1 ++ " goto " ++  buildLabel label
+
+    IfRel op addr1 addr2 label -> 
+        "if " ++ buildAddr addr1 ++ " " ++ buildBinOpr op ++ " " ++ buildAddr addr2 ++ " goto " ++ buildLabel label
+
+    IfFalse addr1 label -> 
+        "ifFalse " ++ buildAddr addr1 ++ " goto " ++ buildLabel label
+    
+    ReturnVoid -> 
+        "return"
+
+    ReturnAddr addr1 -> 
+        "return " ++ buildAddr addr1
+
+    Param addr1 -> 
+        "param " ++ buildAddr addr1
+
+
+
 
 buildBinOpr :: BinOp -> String
 buildBinOpr op = case op of
@@ -54,6 +129,21 @@ buildLabel :: Label -> String
 buildLabel label = case label of
     LabStm n              -> id "l" ++ show n
     LabFun ident (r,c)       ->  ident ++ "@(" ++ show r ++ "," ++ show c ++ ")"
+
+buildInstrLabel :: Label -> String
+buildInstrLabel label = (buildLabel label) ++ ":" 
+
+padStringLabel :: String -> String
+padStringLabel x = x ++ concat ( replicate (max 1 (columnWidth - length x)) " " )
+
+
+-- TODO: qua sotto non serve.
+printTAC2 :: [TAC] -> IO ()
+printTAC2 [] = putStrLn "\n"
+printTAC2 (istr:istrs) = do
+    printTACInstruction istr
+    printTAC2 istrs
+
 
 printTACInstruction :: TAC -> IO ()
 printTACInstruction istr = case istr of
