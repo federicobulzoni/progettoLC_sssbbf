@@ -1,10 +1,14 @@
 module PrintTAC where
 
 import AbsTAC
+import Data.List
 
 -- (Minimum) width of the column containing labels.
 columnWidth :: Int
-columnWidth = 20
+columnWidth = 16
+
+colorMagenta :: String -> String
+colorMagenta x = "\x1b[35m" ++  x ++ "\x1b[37;1m"
 
 -- Entrypoint. Called by TestGramm.
 printTAC :: [TAC] -> IO ()
@@ -29,38 +33,34 @@ printTAC (x:xs) = do
 
 -- Convert TAC instruction to string. Does not receive labels.
 buildTACInstruction :: TAC -> String
-buildTACInstruction istr = case istr of
-    -- TODO: Type?
-    AssignBinOp op addr1 addr2 addr3 -> 
-        buildAddr addr1 ++ " = " ++ buildAddr addr2 ++ " " ++ buildBinOpr op ++ " " ++ buildAddr addr3
+buildTACInstruction instr = case instr of
+    AssignBinOp addr1 addr2 op addr3 typ -> 
+        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,buildAddr addr2,buildBinOpr op,buildAddr addr3]
 
-    -- TODO: Type?
-    AssignUnOp op addr1 addr2 -> 
-        buildAddr addr1 ++ " = " ++ buildUnOpr op ++ " " ++ buildAddr addr2
+    AssignUnOp addr1 op addr2 typ ->
+        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,buildUnOpr op,buildAddr addr2]
 
-    -- TODO: Type?
-    Assign addr1 addr2 -> 
-        buildAddr addr1 ++ " = " ++ buildAddr addr2
+    Assign addr1 addr2 typ ->
+        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,buildAddr addr2]
+        
+    AssignFromArray addr1 addr2 addr3 typ ->
+        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,buildAddr addr2,"[",buildAddr addr3,"]"]
 
-    AssignFromArray addr1 addr2 addr3 -> 
-        buildAddr addr1 ++ " = " ++  buildAddr addr2 ++ "[" ++ buildAddr addr3 ++ "]"
+    AssignToArray addr1 addr2 addr3 typ ->
+        intercalate " " [buildAddr addr1,"[",buildAddr addr2,"]","=",buildColAssignType typ,buildAddr addr3]
 
-    AssignToArray addr1 addr2 addr3 -> 
-        buildAddr addr1 ++ "[" ++ buildAddr addr2 ++ "]" ++ " = " ++ buildAddr addr3 
-
-    AssignFromRef addr1 addr2 -> 
-        buildAddr addr1 ++ " = " ++ "&" ++ buildAddr addr2
-
-    AssignFromPointer addr1 addr2 -> 
-        buildAddr addr1 ++ " = " ++ "*" ++ buildAddr addr2
-
-    AssignToPointer addr1 addr2 -> 
-        "*" ++ buildAddr addr1 ++ " = " ++ buildAddr addr2
-
-    -- TODO: Type?
-    AssignFromFunction addr1 label  n -> 
-        buildAddr addr1 ++ " = " ++ "call " ++ buildLabel label ++ " , n = " ++ show n
-
+    AssignFromRef addr1 addr2 typ ->
+        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,"&",buildAddr addr2]
+        
+    AssignFromPointer addr1 addr2 typ ->
+        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,"*",buildAddr addr2] 
+        
+    AssignToPointer addr1 addr2 typ ->
+        intercalate " " ["*",buildAddr addr1,"=",buildColAssignType typ,buildAddr addr2] 
+        
+    AssignFromFunction addr1 label n typ ->
+        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,"fcall",buildLabel label,",",show n] 
+        
     Goto label -> 
         "goto " ++ buildLabel label
     
@@ -125,6 +125,17 @@ buildAddr addr = case addr of
     LitBool n         -> show n
     LitNull           -> "Null"
 
+buildAssignType :: TACType -> String
+buildAssignType TACInt = "int"
+buildAssignType TACFloat = "float"
+buildAssignType TACChar = "char"  
+buildAssignType TACString = "string"
+buildAssignType TACBool = "bool"
+buildAssignType TACAddr = "addr"
+
+buildColAssignType :: TACType -> String
+buildColAssignType t = colorMagenta $ buildAssignType t 
+
 buildLabel :: Label -> String
 buildLabel label = case label of
     LabStm n              -> id "l" ++ show n
@@ -147,23 +158,23 @@ printTAC2 (istr:istrs) = do
 
 printTACInstruction :: TAC -> IO ()
 printTACInstruction istr = case istr of
-    AssignBinOp op addr1 addr2 addr3 -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ buildAddr addr2 ++ " " ++ buildBinOpr op ++ " " ++ buildAddr addr3
+    AssignBinOp addr1 addr2 op addr3 typ -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ buildAddr addr2 ++ " " ++ buildBinOpr op ++ " " ++ buildAddr addr3
     
-    AssignUnOp op addr1 addr2 -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ buildUnOpr op ++ " " ++ buildAddr addr2
+    AssignUnOp addr1 op addr2 typ -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ buildUnOpr op ++ " " ++ buildAddr addr2
     
-    Assign addr1 addr2 -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ buildAddr addr2
+    Assign addr1 addr2 typ -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ buildAddr addr2
 
-    AssignFromArray addr1 addr2 addr3 -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++  buildAddr addr2 ++ "[" ++ buildAddr addr3 ++ "]"
+    AssignFromArray addr1 addr2 addr3 typ -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++  buildAddr addr2 ++ "[" ++ buildAddr addr3 ++ "]"
 
-    AssignToArray addr1 addr2 addr3 -> putStrLn $ buildAddr addr1 ++ "[" ++ buildAddr addr2 ++ "]" ++ "\t=\t" ++ buildAddr addr3 
+    AssignToArray addr1 addr2 addr3 typ -> putStrLn $ buildAddr addr1 ++ "[" ++ buildAddr addr2 ++ "]" ++ "\t=\t" ++ buildAddr addr3 
 
-    AssignFromRef addr1 addr2 -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ "&" ++ buildAddr addr2
+    AssignFromRef addr1 addr2 typ -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ "&" ++ buildAddr addr2
 
-    AssignFromPointer addr1 addr2 -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ "*" ++ buildAddr addr2
+    AssignFromPointer addr1 addr2 typ -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ "*" ++ buildAddr addr2
 
-    AssignToPointer addr1 addr2 -> putStrLn $ "*" ++ buildAddr addr1 ++ "\t=\t" ++ buildAddr addr2
+    AssignToPointer addr1 addr2 typ -> putStrLn $ "*" ++ buildAddr addr1 ++ "\t=\t" ++ buildAddr addr2
 
-    AssignFromFunction addr1 label  n-> putStrLn $  buildAddr addr1 ++ "\t=\t" ++ "call " ++ buildLabel label ++ ", n = " ++ show n
+    AssignFromFunction addr1 label  n typ-> putStrLn $  buildAddr addr1 ++ "\t=\t" ++ "call " ++ buildLabel label ++ ", n = " ++ show n
 
     Goto label -> putStrLn $ "goto " ++ buildLabel label
     

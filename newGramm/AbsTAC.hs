@@ -52,33 +52,30 @@ data UnOp
     | Not
   deriving (Eq, Ord, Show, Read)
 
+data TACType = TACInt | TACFloat | TACChar | TACBool | TACString | TACAddr
+    deriving (Eq, Ord, Show, Read)
+
 data TAC
-    = AssignBinOp BinOp Addr Addr Addr
-    | AssignUnOp UnOp Addr Addr
-    | Assign Addr Addr
-    -- x = y[z]
-    | AssignFromArray Addr Addr Addr
-    -- y[z] = x
-    | AssignToArray Addr Addr Addr
-    -- x = &y
-    | AssignFromRef Addr Addr
-    -- x = *y
-    | AssignFromPointer Addr Addr
-    -- *x = y
-    | AssignToPointer Addr Addr
-    -- x = f()
-    | AssignFromFunction Addr Label Int 
+    = AssignBinOp Addr Addr BinOp Addr TACType     -- x = y op z
+    | AssignUnOp Addr UnOp Addr TACType            -- x = op y
+    | Assign Addr Addr TACType                     -- x = y
+    | AssignFromArray Addr Addr Addr TACType       -- x = y[z]
+    | AssignToArray Addr Addr Addr TACType         -- y[z] = x
+    | AssignFromRef Addr Addr TACType              -- x = &y
+    | AssignFromPointer Addr Addr TACType          -- x = *y
+    | AssignToPointer Addr Addr TACType            -- *x = y
+    | AssignFromFunction Addr Label Int TACType    -- x = fcall f , n
 
-    | Goto Label
-    | IfBool Addr Label
-    | IfRel BinOp Addr Addr Label
-    | IfFalse Addr Label
+    | Goto Label                                    -- goto l
+    | IfBool Addr Label                             -- if x goto l
+    | IfRel BinOp Addr Addr Label                   -- if x rel y goto l
+    | IfFalse Addr Label                            -- ifFalse x goto l
 
-    | Lab Label
+    | Lab Label                                     -- l:
 
-    | ReturnVoid
-    | ReturnAddr Addr
-    | Param Addr
-    | Call Addr Int
+    | ReturnVoid                                    -- return
+    | ReturnAddr Addr                               -- return x
+    | Param Addr                                    -- param x
+    | Call Addr Int                                 -- call f , n
 
   deriving (Eq, Ord, Show, Read)
