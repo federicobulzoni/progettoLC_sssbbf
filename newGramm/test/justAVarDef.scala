@@ -11,7 +11,7 @@ def foo () = {
 var h : Float;
 var k : Array[*Int](4);
 
-def bar() : Int = {
+def bar() : Bool = {
     var x : Int = 3 + 4 * 3;
     def bar2(k : Int) : Float = {
         if( 3 < 4+4)
@@ -19,6 +19,6 @@ def bar() : Int = {
         return 3.3;
     }
     var b : Float = bar2(3+3);
-    return 1;
+    return True;
 }
 var z : Array[Int](3) = Array(11,12,13);
