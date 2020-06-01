@@ -20,3 +20,4 @@ Cose da discutere:
        non solo un modo di stamparlo carino forse.  
     [] il TypeChecker da errore se non trova un return nelle funzioni (anche se c'è un return in un if), è corretto? es. test2.scala
         probabilmente non è un problema
+        
