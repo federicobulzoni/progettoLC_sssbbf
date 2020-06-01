@@ -1,11 +1,18 @@
 Cose da fare:
-    [] mettere tipi tac                     SB
-    [] sistemare layout stampa tac          SB/SS
+    [X] mettere tipi tac                     SB
+    [X] sistemare layout stampa tac          SB/SS
     [] guardare todo in typechecker         SS/SB/BF
     [] fate tanti test                      BF
     [X] sistemare errori in file separato   SS
     [] pulizia codice                       SS/BF
+    [] se c'è una funzione "main" top level va messa all'inizio del tac.
+    [X] se l'istruzione precedente è un return, non aggiungere il return alla fine della funzione.
 
 Errori da risolvere:
     [] Se dichiaro all'interno di una funzione, una funzione con lo stesso nome, non da errore @critical 
     [] Funzioni di base non gestite dal TAC
+
+Cose da discutere:
+	[] è giusto che il TAC negli addr usi Ident, Loc e in generale cose di AbsGramm che non gli appartengono?
+	   Non dovrebbero forse essere solo stringhe? Ad esempio l'identificatore@numero è una cosa proprio della struttura TAC,
+	   non solo un modo di stamparlo carino forse.

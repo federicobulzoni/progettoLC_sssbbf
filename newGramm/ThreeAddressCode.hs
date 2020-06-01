@@ -109,34 +109,34 @@ genExpAssign addr texp@(ETyped exp typ loc) = case exp of
     EOp e1 op e2 -> do
         addrE1 <- genExp e1
         addrE2 <- genExp e2
-        out $ (AssignBinOp (convertOperation op typ) addr addrE1 addrE2 )
+        out $ AssignBinOp addr addrE1 (convertOperation op typ) addrE2 (convertToTACType typ)
         return ()
     ENeg e1 -> do
         addrE1 <- genExp e1
-        out $ (AssignUnOp (if (typ == TSimple SType_Int) then NegInt else NegFloat) addr addrE1)
+        out $ AssignUnOp addr (if (typ == TSimple SType_Int) then NegInt else NegFloat) addrE1 (convertToTACType typ)
         return ()
     ENot e1 -> do
         addrE1 <- genExp e1
-        out $ (AssignUnOp Not addr addrE1)
+        out $ AssignUnOp addr Not addrE1 (convertToTACType typ)
         return ()
     
     EFunCall id@(PIdent (_,ident)) params -> do
         genParams params
-        out $ AssignFromFunction addr (getLabel ident loc) (sum (map (\(ParExp x) -> length x) params))
+        out $ AssignFromFunction addr (buildFunLabel ident loc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
         return ()
 
     _ -> do
         addrTExp <- genExp texp
-        out $ (Assign addr addrTExp)
+        out $ Assign addr addrTExp (convertToTACType typ)
         return ()
 
 
 -- la locazione è quella di dichiarazione
-getAddress :: Ident -> Loc -> Addr
-getAddress ident dloc = Var ident dloc
+buildVarAddress :: Ident -> Loc -> Addr
+buildVarAddress ident dloc = Var ident dloc
 
-getLabel :: Ident -> Loc -> Label
-getLabel ident dloc = LabFun ident dloc
+buildFunLabel :: Ident -> Loc -> Label
+buildFunLabel ident dloc = LabFun ident dloc
 
 buildDefaultValue :: TypeSpec -> Exp
 buildDefaultValue etyp@(TSimple typ) = case typ of
@@ -153,23 +153,22 @@ buildDefaultValue etyp@(TArray typ (PInteger (_,n))) = (ETyped (EArray ( replica
 
 genDecl :: Declaration -> MyMon ()
 genDecl decl = case decl of
-    DefVar id@(PIdent (dloc, ident)) typ texp -> let addrId = getAddress ident dloc in
+    DefVar id@(PIdent (dloc, ident)) typ texp -> let addrId = buildVarAddress ident dloc in
         genExpAssign addrId texp
     DecVar id@(PIdent (dloc, ident)) typ ->
-        genExpAssign (getAddress ident dloc) (buildDefaultValue typ)
+        genExpAssign (buildVarAddress ident dloc) (buildDefaultValue typ)
 
     DefFun id@(PIdent (dloc, ident)) _ typ block@(BlockTyped (DBlock stms) _ _) -> do
         createStream
-        out $ (Lab (getLabel ident dloc))
-        genBlock block
-        case typ of
-            (TSimple TypeVoid) -> out $ (ReturnVoid)
-            _ -> do
+        out $ (Lab (buildFunLabel ident dloc))
+        lastIsReturn <- genBlock block
+        case (lastIsReturn,typ) of
+            (False, TSimple TypeVoid) -> out $ (ReturnVoid)
+            (False, _ ) -> do
                 addrDef <- genExp $ buildDefaultValue typ
                 out $ (ReturnAddr addrDef)
+            otherwise -> return ()
         pushCurrentStream
-        return ()
-
 
 sizeOf :: TypeSpec -> Int
 sizeOf (TSimple typ)  = case typ of
@@ -183,21 +182,19 @@ sizeOf (TArray typ (PInteger (_,size))) = (read size :: Int)  * (sizeOf typ)
 sizeOf (TPointer typ) = 4
 
 genLexp :: LExp -> MyMon Addr
--- LRef LExp
--- LArr LExp Exp
--- LIdent PIdent
-genLexp (LExpTyped lexp _ _ dloc) = case lexp of
-    LIdent (PIdent (_,ident)) -> return $ getAddress ident dloc
+genLexp (LExpTyped lexp typ _ dloc) = case lexp of
+    LIdent (PIdent (_,ident)) -> return $ buildVarAddress ident dloc
     LRef lexp' -> do
         addrTemp <- newTemp
         addrLexp' <- genLexp lexp'
-        out $ (AssignFromPointer addrTemp addrLexp')
+        out $ AssignFromPointer addrTemp addrLexp' (convertToTACType typ)
         return addrTemp
     LArr lexp' exp -> do
         addrTemp <- newTemp
         addrLexp' <- genLexp lexp'
         addrExp <- genExp exp
-        out $ (AssignFromArray addrTemp addrLexp' addrExp)
+        -- TODO: controllare se è giusto. Non sembra, l'indice dovrebbe essere convertito.
+        out $ AssignFromArray addrTemp addrLexp' addrExp (convertToTACType typ)
         return addrTemp
 
 
@@ -215,7 +212,7 @@ genExp texp@(ETyped exp typ loc) = case exp of
     EDeref lexp' -> do
         addrTemp <- newTemp 
         addrLexp' <- genLexp lexp'
-        out $ (AssignFromRef addrTemp addrLexp')
+        out $ AssignFromRef addrTemp addrLexp' (convertToTACType typ)
         return addrTemp
     
     EArray exps -> do
@@ -235,28 +232,41 @@ genExp texp@(ETyped exp typ loc) = case exp of
     where 
         aux base x i typ' = do 
             temp <- newTemp
-            out $ (AssignBinOp AbsTAC.ProdInt temp (LitInt i) (LitInt $ sizeOf typ'))
-            out $ (AssignToArray base temp x) 
+            out $ AssignBinOp temp (LitInt i) AbsTAC.ProdInt (LitInt $ sizeOf typ') (convertToTACType (TSimple SType_Int))
+            out $ AssignToArray base temp x (convertToTACType typ')
             return ()
         getArrayType (TArray typ' _) = typ'
 
-genBlock :: Block -> MyMon ()
+-- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
+genBlock :: Block -> MyMon Bool
 genBlock (BlockTyped (DBlock stms) typ _) = genStms stms
 
-genStms :: [Stm] -> MyMon ()
-genStms [] = return ()
+-- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
+genStms :: [Stm] -> MyMon Bool
+genStms [] = return False
+genStms [stm]
+    | isReturnStm stm = do
+        genStm stm
+        return True
+    | otherwise = do
+        genStm stm
+        return False
 genStms (stm:stms) = do
     genStm stm
     genStms stms
 
+isReturnStm :: Stm -> Bool
+isReturnStm (StmTyped (SReturn _ ) _ _) = True
+isReturnStm (StmTyped (SReturnExp _ _ ) _ _ ) = True
+isReturnStm _ = False
 
-convertToOppositeOp :: Op -> BinOp
-convertToOppositeOp AbsGramm.Equal     = AbsTAC.NotEqual
-convertToOppositeOp AbsGramm.NotEq     = AbsTAC.Equal
-convertToOppositeOp AbsGramm.Less      = AbsTAC.GreaterEq
-convertToOppositeOp AbsGramm.LessEq    = AbsTAC.Greater
-convertToOppositeOp AbsGramm.Greater   = AbsTAC.LessEq
-convertToOppositeOp AbsGramm.GreaterEq = AbsTAC.Less
+convertToOppositeTACOp :: Op -> BinOp
+convertToOppositeTACOp AbsGramm.Equal     = AbsTAC.NotEqual
+convertToOppositeTACOp AbsGramm.NotEq     = AbsTAC.Equal
+convertToOppositeTACOp AbsGramm.Less      = AbsTAC.GreaterEq
+convertToOppositeTACOp AbsGramm.LessEq    = AbsTAC.Greater
+convertToOppositeTACOp AbsGramm.Greater   = AbsTAC.LessEq
+convertToOppositeTACOp AbsGramm.GreaterEq = AbsTAC.Less
 
 convertToTACOp :: Op -> BinOp
 convertToTACOp AbsGramm.Equal     = AbsTAC.Equal
@@ -266,10 +276,21 @@ convertToTACOp AbsGramm.LessEq    = AbsTAC.LessEq
 convertToTACOp AbsGramm.Greater   = AbsTAC.Greater
 convertToTACOp AbsGramm.GreaterEq = AbsTAC.GreaterEq
 
+convertToTACType :: TypeSpec -> TACType
+convertToTACType (TSimple SType_Float) = TACFloat
+convertToTACType (TSimple SType_Int) = TACInt
+convertToTACType (TSimple SType_Char) = TACChar 
+convertToTACType (TSimple SType_String) = TACString
+convertToTACType (TSimple SType_Bool) = TACBool
+convertToTACType (TSimple _ ) = error "Internal error: converting void or error to TAC type."
+convertToTACType _ = TACAddr  
+
 genStm :: Stm -> MyMon ()
 genStm (StmTyped stm typ _) = case stm of
     SDecl decl -> genDecl decl
-    SBlock block -> genBlock block
+    SBlock block -> do
+        genBlock block
+        return ()
     SAssign lexp texp -> do
         addrLexp <- genLexp lexp
         genExpAssign addrLexp texp
@@ -368,7 +389,7 @@ genCondition texp@(ETyped exp typ loc) lblTrue lblFalse = case exp of
         addrE2 <- genExp e2
         case (lblTrue, lblFalse) of
             (_, Fall) -> out $ (IfRel (convertToTACOp rel) addrE1 addrE2 lblTrue)
-            (Fall, _) -> out $ (IfRel (convertToOppositeOp rel) addrE1 addrE2 lblFalse)
+            (Fall, _) -> out $ (IfRel (convertToOppositeTACOp rel) addrE1 addrE2 lblFalse)
             (_, _) -> do
                 out $ (IfRel (convertToTACOp rel) addrE1 addrE2 lblTrue)
                 out $ (Goto lblFalse)

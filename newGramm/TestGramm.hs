@@ -44,18 +44,12 @@ run v p s = let ts = myLLexer s in case p ts of
                           let (annotatedTree, logs) = runWriter $ typeCheck $ tree
                           case (logs) of
                             [] -> do
-                              putStrLn "Ciao"
-                              {-
                               printTypeCheckSuccess annotatedTree
                               let code = genTAC annotatedTree
-                              putStrLn "\n[Three Address Code]\n\n"
-                              printTAC code
-                              putStrLn "\n[TAC]\n\n"
-                              printTAC2 code
-                              -}
+                              showTAC code
                             _ -> do
                               putStrLn "\n[Lista errori type checker]\n\n"
-                              --printTypeCheckErrors logs 0   
+                              printTypeCheckErrors logs 0   
                               printTypeCheckSuccess annotatedTree
                           exitSuccess
 
@@ -70,11 +64,16 @@ printTypeCheckSuccess prog = do
   putStrLn "\n[Albero tipato]\n\n"
   putStrV 2 $ show prog
 
-printTAC :: [TAC] -> IO()
-printTAC [] = putStrLn ""
-printTAC (c:code) = do
-  putStrLn $ show c 
+separator :: String
+separator = "----------------------------------------------------------------"
+
+showTAC :: [TAC] -> IO ()
+showTAC code = do
+  putStrLn $ "\n" ++ separator
+  putStrLn "[Three Address Code]"
+  putStrLn separator
   printTAC code
+  putStrLn $ separator ++ "\n"
 
 showTree :: Int -> Program -> IO ()
 showTree v tree
