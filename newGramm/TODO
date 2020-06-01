@@ -10,12 +10,17 @@ Cose da fare:
     [X] le dichiarazioni delle variabili globali vanno in testa al tac
     [X] Distinguere stampa errori e warning
     [] modificare ordine delle funzioni quando si trova un main (che ora fa in testa al tac, dopo le dichiarazioni di variabile) ma le sue funzioni interne rimangono nell'ordine sbagliato
+    [] Aggiungere: *= -= += /= %= 
+    [] Aggiungere: operatore ternario 
+
+
 
 Errori da risolvere:
     [X] Se dichiaro all'interno di una funzione, una funzione con lo stesso nome, non da errore @critical 
     [X] Funzioni di base non gestite dal TAC
     [X] nelle procedure viene richiesto il tipo di ritorno
-    
+    [] se facciamo una definizione di funzione senza blocco e, ad esempio, trova un identificatore sbagliato poi da anche il warning perché gli manca il return
+        l'errore non lo da se mettiamo un'espressione corretta perché con lo zucchero gli mettiamo a forza il return. Vedere test3.scala
 
 Cose da discutere:
 	[] è giusto che il TAC negli addr usi Ident, Loc e in generale cose di AbsGramm che non gli appartengono?
