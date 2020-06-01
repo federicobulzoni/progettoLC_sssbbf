@@ -405,7 +405,7 @@ inferExp exp env = case exp of
   ETrue   const@(PTrue (loc, _))    -> return $ ETyped (ETrue const) (TSimple SType_Bool) (loc)
   EFalse  const@(PFalse (loc, _))   -> return $ ETyped (EFalse const) (TSimple SType_Bool) (loc)
   -- Ma serve Null? Con i puntatori probabilmente si, nel caso non avrebbe TypeVoid.
-  ENull const@(PNull (loc, _)) -> return $ ETyped (ENull const) (TSimple TypeVoid) loc 
+  ENull const@(PNull (loc, _)) -> return $ ETyped (ENull const) (TPointer (TSimple TypeVoid)) loc 
   EOp expl op expr -> inferBinOp expl op expr env
 
 

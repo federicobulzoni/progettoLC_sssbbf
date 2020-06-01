@@ -69,7 +69,7 @@ data ParamClause = PArg [Arg]
 data Arg = DArg PIdent TypeSpec
   deriving (Eq, Ord, Show, Read)
 
-data Block = DBlock [Stm] | BlockTyped Block Bool
+data Block = DBlock [Stm]
   deriving (Eq, Ord, Show, Read)
 
 --SReturnTyped Stm TypeSpec
@@ -137,8 +137,6 @@ class Typed a where
   getType :: a -> TypeSpec
   getLoc :: a -> Loc
   isTypeError :: a -> Bool
-
-
 
 -- ETyped Exp TypeSpec Integer Integer
 instance Typed Exp where
