@@ -77,26 +77,27 @@ genDecls (decl:decls) = do
     genDecls decls
 
 convertOperation :: Op -> TypeSpec -> BinOp
-convertOperation Plus   (TSimple SType_Int)     = PlusInt
-convertOperation Plus   (TSimple SType_Float)   = PlusFloat
-convertOperation Minus  (TSimple SType_Int)     = MinusInt
-convertOperation Minus  (TSimple SType_Float)   = MinusFloat
-convertOperation Prod   (TSimple SType_Int)     = ProdInt
-convertOperation Prod   (TSimple SType_Float)   = ProdFloat
-convertOperation Div    (TSimple SType_Int)     = DivInt
-convertOperation Div    (TSimple SType_Float)   = DivFloat
-convertOperation Mod    (TSimple SType_Int)     = ModInt
-convertOperation Mod    (TSimple SType_Float)   = ModFloat
-convertOperation Pow    (TSimple SType_Int)     = PowInt
-convertOperation Pow    (TSimple SType_Float)   = PowFloat
-convertOperation AbsGramm.Or _        = AbsTAC.Or
-convertOperation AbsGramm.And _       = AbsTAC.And
-convertOperation AbsGramm.Equal _     = AbsTAC.Equal
-convertOperation AbsGramm.NotEq _     = AbsTAC.NotEqual
-convertOperation AbsGramm.Less _      = AbsTAC.Less
-convertOperation AbsGramm.LessEq _    = AbsTAC.LessEq
-convertOperation AbsGramm.Greater _   = AbsTAC.Greater
-convertOperation AbsGramm.GreaterEq _ = AbsTAC.GreaterEq
+convertOperation op typ = case (op,typ) of
+    (Plus , (TSimple SType_Int)  )  -> PlusInt
+    (Plus , (TSimple SType_Float))  -> PlusFloat
+    (Minus, (TSimple SType_Int)  )  -> MinusInt
+    (Minus, (TSimple SType_Float))  -> MinusFloat
+    (Prod , (TSimple SType_Int)  )  -> ProdInt
+    (Prod , (TSimple SType_Float))  -> ProdFloat
+    (Div  , (TSimple SType_Int)  )  -> DivInt
+    (Div  , (TSimple SType_Float))  -> DivFloat
+    (Mod  , (TSimple SType_Int)  )  -> ModInt
+    (Mod  , (TSimple SType_Float))  -> ModFloat
+    (Pow  , (TSimple SType_Int)  )  -> PowInt
+    (Pow  , (TSimple SType_Float))  -> PowFloat
+    (AbsGramm.Or       , _)         -> AbsTAC.Or
+    (AbsGramm.And      , _)         -> AbsTAC.And
+    (AbsGramm.Equal    , _)         -> AbsTAC.Equal
+    (AbsGramm.NotEq    , _)         -> AbsTAC.NotEqual
+    (AbsGramm.Less     , _)         -> AbsTAC.Less
+    (AbsGramm.LessEq   , _)         -> AbsTAC.LessEq
+    (AbsGramm.Greater  , _)         -> AbsTAC.Greater
+    (AbsGramm.GreaterEq, _)         -> AbsTAC.GreaterEq
 
 genParams :: [Params] -> MyMon ()
 genParams [] = return ()
@@ -149,7 +150,7 @@ buildDefaultValue etyp@(TSimple typ) = case typ of
     SType_Char      -> (ETyped (EChar (PChar ((0,0), "'\\0'")))     etyp (0,0))
     SType_String    -> (ETyped (EString (PString ((0,0), "\"\"")))  etyp (0,0))
     SType_Bool      -> (ETyped (EFalse (PFalse ((0,0), "False")))   etyp (0,0))
-    _        -> error $ "Chiamata sbagliata: " ++ show etyp
+    _               -> error $ "Chiamata sbagliata: " ++ show etyp
 
 buildDefaultValue etyp@(TPointer typ) = (ETyped (ENull (PNull ((0,0),"Null"))) etyp (0,0))
 buildDefaultValue etyp@(TArray typ (PInteger (_,n))) = (ETyped (EArray ( replicate (read n :: Int) (buildDefaultValue typ))) etyp (0,0))
@@ -270,29 +271,32 @@ isReturnStm (SReturnExp _ _ ) = True
 isReturnStm _ = False
 
 convertToOppositeTACOp :: Op -> BinOp
-convertToOppositeTACOp AbsGramm.Equal     = AbsTAC.NotEqual
-convertToOppositeTACOp AbsGramm.NotEq     = AbsTAC.Equal
-convertToOppositeTACOp AbsGramm.Less      = AbsTAC.GreaterEq
-convertToOppositeTACOp AbsGramm.LessEq    = AbsTAC.Greater
-convertToOppositeTACOp AbsGramm.Greater   = AbsTAC.LessEq
-convertToOppositeTACOp AbsGramm.GreaterEq = AbsTAC.Less
+convertToOppositeTACOp op = case op of
+    AbsGramm.Equal     -> AbsTAC.NotEqual
+    AbsGramm.NotEq     -> AbsTAC.Equal
+    AbsGramm.Less      -> AbsTAC.GreaterEq
+    AbsGramm.LessEq    -> AbsTAC.Greater
+    AbsGramm.Greater   -> AbsTAC.LessEq
+    AbsGramm.GreaterEq -> AbsTAC.Less
 
 convertToTACOp :: Op -> BinOp
-convertToTACOp AbsGramm.Equal     = AbsTAC.Equal
-convertToTACOp AbsGramm.NotEq     = AbsTAC.NotEqual
-convertToTACOp AbsGramm.Less      = AbsTAC.Less
-convertToTACOp AbsGramm.LessEq    = AbsTAC.LessEq
-convertToTACOp AbsGramm.Greater   = AbsTAC.Greater
-convertToTACOp AbsGramm.GreaterEq = AbsTAC.GreaterEq
+convertToTACOp op = case op of
+    AbsGramm.Equal     -> AbsTAC.Equal
+    AbsGramm.NotEq     -> AbsTAC.NotEqual
+    AbsGramm.Less      -> AbsTAC.Less
+    AbsGramm.LessEq    -> AbsTAC.LessEq
+    AbsGramm.Greater   -> AbsTAC.Greater
+    AbsGramm.GreaterEq -> AbsTAC.GreaterEq
 
 convertToTACType :: TypeSpec -> TACType
-convertToTACType (TSimple SType_Float) = TACFloat
-convertToTACType (TSimple SType_Int) = TACInt
-convertToTACType (TSimple SType_Char) = TACChar 
-convertToTACType (TSimple SType_String) = TACString
-convertToTACType (TSimple SType_Bool) = TACBool
-convertToTACType (TSimple _ ) = error "Internal error: converting void or error to TAC type."
-convertToTACType _ = TACAddr  
+convertToTACType typ = case typ of
+    (TSimple SType_Float)  -> TACFloat
+    (TSimple SType_Int)    -> TACInt
+    (TSimple SType_Char)   -> TACChar 
+    (TSimple SType_String) -> TACString
+    (TSimple SType_Bool)   -> TACBool
+    (TSimple _ )           ->  error "Internal error: converting void or error to TAC type."
+    _                      -> TACAddr  
 
 genStm :: Stm -> MyMon ()
 genStm stm = case stm of
@@ -305,12 +309,6 @@ genStm stm = case stm of
         addrLexp <- genLexp lexp
         genExpAssign addrLexp texp
 
-    -- LABEL while
-    -- ifFalse (cond) labelFalse
-    -- stmts
-    -- goto while
-    -- LABEL labelFalse
-
     SWhile texp@(ETyped exp _ _) tstm -> do
         labelWhile <- newLabel
         labelFalse <- newLabel
@@ -320,14 +318,6 @@ genStm stm = case stm of
         out $ (Goto labelWhile)
         out $ (Lab labelFalse)
 
-
-
-    -- IfElse (conf) labelElse
-    -- stmtif
-    -- goto next
-    -- LABEL else
-    -- smtselse
-    -- LABEL next
     SIfElse texp@(ETyped exp _ _) stm_if stm_else -> do
         labelNext <- newLabel
         labelElse <- if isBlockEmpty stm_else then return labelNext else newLabel
@@ -341,12 +331,9 @@ genStm stm = case stm of
             else return ()
         out $ Lab labelNext
   
-
-    -- SProcCall PIdent [Params]
     SProcCall (PIdent (loc, ident)) params -> do
         genParams params
         out $ Call (buildFunLabel ident loc) (sum (map (\(ParExp x) -> length x) params))
-
 
     SReturn preturn -> 
         out $ ReturnVoid
@@ -355,14 +342,8 @@ genStm stm = case stm of
         addrTexp <- genExp texp
         out $ ReturnAddr addrTexp
 
-
     where 
         isBlockEmpty bl = if (SBlock (DBlock []) == bl ) then True else False
-
-checkLabel :: Label -> MyMon ()
-checkLabel label = case label of
-    Fall -> return ()
-    _ -> out $ Goto label
 
 isTrue :: Exp -> Bool
 isTrue (ETyped (ETrue _) _ _) = True
@@ -424,3 +405,8 @@ genCondition texp@(ETyped exp typ loc) lblTrue lblFalse = case exp of
             (_,_)    -> do
                 out $ (IfBool addrExp lblTrue)
                 out $ (Goto lblFalse)
+
+    where
+        checkLabel label = case label of
+            Fall -> return ()
+            _ -> out $ Goto label

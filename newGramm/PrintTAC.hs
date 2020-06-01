@@ -2,13 +2,11 @@ module PrintTAC where
 
 import AbsTAC
 import Data.List
-
+import Color
 -- (Minimum) width of the column containing labels.
 columnWidth :: Int
 columnWidth = 16
 
-colorMagenta :: String -> String
-colorMagenta x = "\x1b[35m" ++  x ++ "\x1b[37;1m"
 
 -- Entrypoint. Called by TestGramm.
 printTAC :: [TAC] -> IO ()
@@ -138,7 +136,7 @@ buildAssignType TACBool = "bool"
 buildAssignType TACAddr = "addr"
 
 buildColAssignType :: TACType -> String
-buildColAssignType t = colorMagenta $ buildAssignType t 
+buildColAssignType t = color Magenta Bold $ buildAssignType t 
 
 buildLabel :: Label -> String
 buildLabel label = case label of
