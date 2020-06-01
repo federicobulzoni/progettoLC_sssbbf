@@ -9,14 +9,14 @@ import Control.Monad (when)
 
 import LexGramm
 import ParGramm
-import SkelGramm
+--import SkelGramm
 import PrintGramm
 import AbsGramm
 import AbsTAC
-import ThreeAddressCode
+--import ThreeAddressCode
 import TypeChecker
 import Control.Monad.Writer
-import PrintTAC
+--import PrintTAC
 
 import ErrM
 
@@ -44,15 +44,18 @@ run v p s = let ts = myLLexer s in case p ts of
                           let (annotatedTree, logs) = runWriter $ typeCheck $ tree
                           case (logs) of
                             [] -> do
+                              putStrLn "Ciao"
+                              {-
                               printTypeCheckSuccess annotatedTree
                               let code = genTAC annotatedTree
                               putStrLn "\n[Three Address Code]\n\n"
                               printTAC code
                               putStrLn "\n[TAC]\n\n"
                               printTAC2 code
+                              -}
                             _ -> do
                               putStrLn "\n[Lista errori type checker]\n\n"
-                              printTypeCheckErrors logs 0   
+                              --printTypeCheckErrors logs 0   
                               printTypeCheckSuccess annotatedTree
                           exitSuccess
 

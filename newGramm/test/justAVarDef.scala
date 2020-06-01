@@ -1,4 +1,4 @@
-var x : Array[*Int](3) = Array(11,12,13);
+var x : Array[Int](3) = Array(11,12,13);
 var y : Int = x[1];
 
 def foo () = {

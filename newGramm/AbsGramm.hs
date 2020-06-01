@@ -69,8 +69,10 @@ data ParamClause = PArg [Arg]
 data Arg = DArg PIdent TypeSpec
   deriving (Eq, Ord, Show, Read)
 
-data Block = DBlock [Stm] | BlockTyped Block TypeSpec Loc
+data Block = DBlock [Stm] | BlockTyped Block Bool
   deriving (Eq, Ord, Show, Read)
+
+--SReturnTyped Stm TypeSpec
 
 data Stm
     = SDecl Declaration
@@ -81,7 +83,7 @@ data Stm
     | SReturn PReturn
     | SReturnExp PReturn Exp
     | SProcCall PIdent [Params]
-    | StmTyped Stm TypeSpec Loc
+    -- Tipizzare solo i return.
   deriving (Eq, Ord, Show, Read)
 
 data Params = ParExp [Exp]
@@ -126,6 +128,7 @@ data LExp
     = LRef LExp
     | LArr LExp Exp
     | LIdent PIdent
+    -- La prima è la loc la seconda è la dloc.
     | LExpTyped LExp TypeSpec Loc Loc
   deriving (Eq, Ord, Show, Read)
 
@@ -136,19 +139,6 @@ class Typed a where
   isTypeError :: a -> Bool
 
 
-instance Typed Declaration where
-  --getType (DecVar (PIdent (loc, _)) typ ) = typ
-  getType (DefVar (PIdent (loc, _)) typ _) = typ
-  getType (DefFun (PIdent (loc, _)) _ typ _) = typ
-  getType (DefFunInLine (PIdent (loc, _)) _ typ _) = typ
-
-  --getLoc  (DecVar (PIdent (loc, _)) typ ) = loc
-  getLoc  (DefVar (PIdent (loc, _)) typ _) = loc
-  getLoc  (DecVar (PIdent (loc, _)) typ) = loc
-  getLoc  (DefFun (PIdent (loc, _)) _ typ _) = loc
-  getLoc  (DefFunInLine (PIdent (loc, _)) _ typ _) = loc
-
-  isTypeError tdecl = getType tdecl == (TSimple TypeError)
 
 -- ETyped Exp TypeSpec Integer Integer
 instance Typed Exp where
@@ -157,26 +147,17 @@ instance Typed Exp where
     isTypeError texp = getType texp == (TSimple TypeError)
 
 
--- BlockTyped Block TypeSpec
-instance Typed Block where
-    getType (BlockTyped _ typ _) = typ
-    getLoc (BlockTyped _ _ loc) = loc
-    isTypeError tblock = getType tblock == (TSimple TypeError)
-
 -- StmTyped Stm TypeSpec
+{-
 instance Typed Stm where
-    getType (StmTyped _ typ _) = typ
-    getLoc (StmTyped _ _ loc) = loc
+    getType (SReturnTyped _ typ) = typ
     isTypeError tstm = getType tstm == (TSimple TypeError)
-
+-}
 
 -- LExpTyped LExp TypeSpec Integer Integer
 -- LIdentTyped PIdent TypeSpec Integer Integer
 instance Typed LExp where
-    getType (LExpTyped _ typ _ _) = typ
-    --getType (LIdentTyped _ typ _) = typ
-    getLoc (LExpTyped _ _ loc _) = loc
-    -- Locazione di dichiarazione in questo caso.
-    --getLoc (LIdentTyped _ _ loc) = loc
+    getType (LExpTyped _ typ _ _ ) = typ
+    getLoc (LExpTyped _ _ loc _ ) = loc
     isTypeError tlexp = getType tlexp == (TSimple TypeError)
   
