@@ -5,15 +5,19 @@ Cose da fare:
     [] fate tanti test                      BF
     [X] sistemare errori in file separato   SS
     [] pulizia codice                       SS/BF
-    [] se c'è una funzione "main" top level va messa all'inizio del tac.
+    [X] se c'è una funzione "main" top level va messa all'inizio del tac.
     [X] se l'istruzione precedente è un return, non aggiungere il return alla fine della funzione.
     [X] le dichiarazioni delle variabili globali vanno in testa al tac
     [X] Distinguere stampa errori e warning
-    [] modificare ordine delle funzioni quando si trova un main (che ora fa in testa al tac, dopo le dichiarazioni di variabile) ma le sue funzioni interne rimangono nell'ordine sbagliato
+    [] modificare ordine delle funzioni quando si trova un main (che ora va in testa al tac, dopo le dichiarazioni di variabile) ma le sue funzioni interne rimangono nell'ordine sbagliato
     [] Aggiungere: *= -= += /= %= 
     [] Aggiungere: operatore ternario 
 
-
+Cose da aggiungere consegna finale:
+    [] continue
+    [] switch
+    [] conversione tipi
+    []
 
 Errori da risolvere:
     [X] Se dichiaro all'interno di una funzione, una funzione con lo stesso nome, non da errore @critical 
