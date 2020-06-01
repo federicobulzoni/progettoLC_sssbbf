@@ -59,7 +59,7 @@ data TCException
 printException :: LogElement -> String
 printException e = case e of
   Warning loc e -> (color Yellow Bold "Warning: ") ++ printTree loc ++ ": " ++ getExceptionMsg e 
-  Error loc e   -> (color Red Fraktur "Error: ")   ++ printTree loc ++ ": " ++ getExceptionMsg e 
+  Error loc e   -> (color Red Bold "Error: ")   ++ printTree loc ++ ": " ++ getExceptionMsg e 
 
 launchWarning :: Loc -> TCException -> LogElement
 launchWarning loc except = Warning loc except

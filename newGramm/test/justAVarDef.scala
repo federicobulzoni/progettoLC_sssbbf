@@ -34,7 +34,7 @@ def mm () : Int = {
     do {
         writeInt(3);
     } while(3 < 5);
-    //return 3.5;
+    return 3.5;
 }
 
 var z : Array[Int](3) = Array(11,12,13);
