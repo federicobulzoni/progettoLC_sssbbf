@@ -11,6 +11,14 @@ def foo () = {
 var h : Float;
 var k : Array[*Int](4);
 
+def main() = {
+    var x : Int;
+    def main3 (a : Int) : Int = {
+        return 1;
+    }
+    var y : Int;
+}
+
 def bar() : Bool = {
     var x : Int = 3 + 4 * 3;
     def bar2(k : Int) : Float = {
@@ -21,4 +29,9 @@ def bar() : Bool = {
     var b : Float = bar2(3+3);
     return True;
 }
+
+def mm () : Int = {
+    //return 3;
+}
+
 var z : Array[Int](3) = Array(11,12,13);

@@ -24,30 +24,27 @@ out instr = do
     --    then put (k, l, instr : revcode, funs)
     --    else 
     put (k, l, revcode, (instr : (head funs)) : (tail funs))
-    
-    return ()
+
 
 pushCurrentStream :: MyMon ()
 pushCurrentStream = do
     (k, l, revcode, funs) <- get
-    if length funs == 1 
-        then
-            put (k, l, revcode ++ (head funs), tail funs)
-        else
-            put (k, l,  (head funs) ++ revcode, tail funs)
-    return ()
+    --if length funs == 1 
+    --    then
+    --        put (k, l, revcode ++ (head funs), tail funs)
+    --    else
+    --        put (k, l,  (head funs) ++ revcode, tail funs)
+    put (k, l,  (head funs) ++ revcode, tail funs)
 
---pushGlobalStream :: MyMon ()
---pushGlobalStream = do
---    (k, l, revcode, funs) <- get
---    put (k, l, revcode ++ (head funs), tail funs)
---    return ()
+pushGlobalStream :: MyMon ()
+pushGlobalStream = do
+    (k, l, revcode, funs) <- get
+    put (k, l, revcode ++ (head funs), tail funs)
 
 createStream :: MyMon ()
 createStream = do
     (k, l, revcode, funs) <- get
     put (k,l, revcode, [] : funs)
-    return ()
 
 
 newTemp :: MyMon Addr
@@ -71,14 +68,13 @@ genTAC prog = reverse $ getTACCode $ execState ( genProg prog ) (0, 0 ,[], [[]])
 genProg :: Program -> MyMon ()
 genProg (Prog decls) = do
     genDecls decls
-    pushCurrentStream
+    pushGlobalStream
 
 genDecls :: [Declaration] -> MyMon ()
 genDecls [] = return ()
 genDecls (decl:decls) = do
     genDecl decl
     genDecls decls
-    return ()
 
 convertOperation :: Op -> TypeSpec -> BinOp
 convertOperation Plus   (TSimple SType_Int)     = PlusInt
@@ -121,25 +117,22 @@ genExpAssign addr texp@(ETyped exp typ loc) = case exp of
         addrE1 <- genExp e1
         addrE2 <- genExp e2
         out $ AssignBinOp addr addrE1 (convertOperation op typ) addrE2 (convertToTACType typ)
-        return ()
+
     ENeg e1 -> do
         addrE1 <- genExp e1
         out $ AssignUnOp addr (if (typ == TSimple SType_Int) then NegInt else NegFloat) addrE1 (convertToTACType typ)
-        return ()
+
     ENot e1 -> do
         addrE1 <- genExp e1
         out $ AssignUnOp addr Not addrE1 (convertToTACType typ)
-        return ()
-    
+
     EFunCall id@(PIdent (_,ident)) params -> do
         genParams params
         out $ AssignFromFunction addr (buildFunLabel ident loc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
-        return ()
 
     _ -> do
         addrTExp <- genExp texp
         out $ Assign addr addrTExp (convertToTACType typ)
-        return ()
 
 
 -- la locazione è quella di dichiarazione
@@ -179,7 +172,12 @@ genDecl decl = case decl of
                 addrDef <- genExp $ buildDefaultValue typ
                 out $ (ReturnAddr addrDef)
             otherwise -> return ()
-        pushCurrentStream
+        if ident == "main"
+            then
+                pushGlobalStream 
+            else
+                pushCurrentStream
+        
 
 sizeOf :: TypeSpec -> Int
 sizeOf (TSimple typ)  = case typ of
@@ -245,7 +243,7 @@ genExp texp@(ETyped exp typ loc) = case exp of
             temp <- newTemp
             out $ AssignBinOp temp (LitInt i) AbsTAC.ProdInt (LitInt $ sizeOf typ') (convertToTACType (TSimple SType_Int))
             out $ AssignToArray base temp x (convertToTACType typ')
-            return ()
+
         getArrayType (TArray typ' _) = typ'
 
 -- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
@@ -302,6 +300,7 @@ genStm stm = case stm of
     SBlock block -> do
         genBlock block
         return ()
+
     SAssign lexp texp -> do
         addrLexp <- genLexp lexp
         genExpAssign addrLexp texp
@@ -320,7 +319,7 @@ genStm stm = case stm of
         genStm tstm
         out $ (Goto labelWhile)
         out $ (Lab labelFalse)
-        return ()
+
 
 
     -- IfElse (conf) labelElse
@@ -341,13 +340,13 @@ genStm stm = case stm of
                 genStm stm_else
             else return ()
         out $ Lab labelNext
-        return ()
+  
 
     -- SProcCall PIdent [Params]
     SProcCall (PIdent (loc, ident)) params -> do
         genParams params
         out $ Call (buildFunLabel ident loc) (sum (map (\(ParExp x) -> length x) params))
-        return ()
+
 
     SReturn preturn -> 
         out $ ReturnVoid
@@ -355,7 +354,7 @@ genStm stm = case stm of
     SReturnExp  preturn texp -> do
         addrTexp <- genExp texp
         out $ ReturnAddr addrTexp
-        return ()
+
 
     where 
         isBlockEmpty bl = if (SBlock (DBlock []) == bl ) then True else False

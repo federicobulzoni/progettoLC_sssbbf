@@ -51,23 +51,36 @@ run v p s = let ts = myLLexer s in case p ts of
                               let code = genTAC annotatedTree
                               showTAC code
                             _ -> do
-                              showErrors logs  
-                              printTypeCheckSuccess annotatedTree 
+                              errors <- showErrors logs
+                              if errors == True
+                                then do
+                                  let code = genTAC annotatedTree
+                                  showTAC code
+                                else 
+                                  return ()
+                              
                           exitSuccess
 
-showErrors :: [LogElement] -> IO()
+showErrors :: [LogElement] -> IO Bool
 showErrors logs = do
   putStrLn $ "\n" ++ separator
   putStrLn "[Lista errori type checker]"
   putStrLn separator
-  printTypeCheckErrors logs 0
+  errorFound <- printTypeCheckErrors logs 0
   putStrLn separator
+  return errorFound
 
-printTypeCheckErrors :: [LogElement] -> Int -> IO()
-printTypeCheckErrors [] index = putStrLn ""
+printTypeCheckErrors :: [LogElement] -> Int -> IO Bool
+printTypeCheckErrors [] index = return True
 printTypeCheckErrors (log:logs) index = do
   putStrLn $ (printIndex index) ++  " " ++ printException log
-  printTypeCheckErrors logs (index+1)
+  res <- printTypeCheckErrors logs (index+1)
+  if isError log
+    then
+      return $ res && False 
+    else
+      return $ res && True
+    
   where
     printIndex n = show index ++ ")"
 

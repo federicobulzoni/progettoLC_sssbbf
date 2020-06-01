@@ -67,6 +67,9 @@ launchWarning loc except = Warning loc except
 launchError :: Loc -> TCException -> LogElement
 launchError loc except = Error loc except
 
+isError :: LogElement -> Bool
+isError (Error _ _) = True
+isError _ = False
 
 --printError :: Loc -> String -> String
 --printError loc mes = "Error(" ++ printTree loc ++ "): " ++ mes
