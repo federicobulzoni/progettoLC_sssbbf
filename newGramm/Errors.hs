@@ -6,20 +6,20 @@ import PrintGramm
 import Control.Monad (MonadPlus(..), liftM)
 import Control.Applicative (Applicative(..), Alternative(..))
 
-data Err a = Ok a | Bad TCException
+data ErrEnv a = Success a | Failure TCException
     deriving (Show)
-instance Monad Err where
-  return      = Ok
-  Ok a  >>= f = f a
-  Bad s >>= _ = Bad s
+instance Monad ErrEnv where
+  return      = Success
+  Success a  >>= f = f a
+  Failure s >>= _ = Failure s
 
 
-instance Applicative Err where
-  pure = Ok
-  (Bad s) <*> _ = Bad s
-  (Ok f) <*> o  = liftM f o
+instance Applicative ErrEnv where
+  pure = Success
+  (Failure s) <*> _ = Failure s
+  (Success f) <*> o  = liftM f o
 
-instance Functor Err where
+instance Functor ErrEnv where
   fmap = liftM
 
 
@@ -47,14 +47,19 @@ data TCException
     | WrongNotApplication Exp Exp
     | WrongNegApplication Exp Exp
     | WrongOpApplication Op Exp Exp
---    | EnvError String
+--    | ErrEnvor String
     | UnexpectedReturn
---    | EnvErrorWithLoc Loc String
+--    | ErrEnvorWithLoc Loc String
     | EnvDuplicateIdent Ident Loc Bool
     | EnvNotDeclaredIdent Ident
     | InternalError
     deriving(Show)
 
+
+printException :: LogElement -> String
+printException e = case e of
+  Warning loc e -> "Warging: " ++ printTree loc ++ ": " ++ getExceptionMsg e 
+  Error loc e   -> "Error: "   ++ printTree loc ++ ": " ++ getExceptionMsg e 
 
 launchWarning :: Loc -> TCException -> LogElement
 launchWarning loc except = Warning loc except
@@ -135,9 +140,9 @@ getExceptionMsg except = case except of
 
     EnvNotDeclaredIdent ident -> "Identificatore " ++ printTree ident ++ " utilizzato, ma non dichiarato in precedenza."
     InternalError -> "Errore interno."
-    --EnvError msg -> msg
+    --ErrEnvor msg -> msg
 
-    --EnvErrorWithLoc loc msg -> printError loc $ msg
+    --ErrEnvorWithLoc loc msg -> printError loc $ msg
 
 
 

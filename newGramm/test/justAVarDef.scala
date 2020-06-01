@@ -12,7 +12,7 @@ var h : Float;
 var k : Array[*Int](4);
 
 def bar() : Int = {
-    var x : Int = 3 + 4 * 5;
+    var x : Int = 3 + 4 * 3;
     def bar2(k : Int) : Float = {
         if( 3 < 4+4)
             return 3.4;

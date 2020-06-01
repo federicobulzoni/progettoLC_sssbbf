@@ -13,10 +13,11 @@ import ParGramm
 import PrintGramm
 import AbsGramm
 import AbsTAC
---import ThreeAddressCode
+import ThreeAddressCode
 import TypeChecker
 import Control.Monad.Writer
---import PrintTAC
+import Errors
+import PrintTAC
 
 import ErrM
 
@@ -34,12 +35,14 @@ runFile v p f = putStrLn f >> readFile f >>= run v p
 
 run :: Verbosity -> ParseFun Program -> String -> IO ()
 run v p s = let ts = myLLexer s in case p ts of
-           Bad s    -> do putStrLn "\nParse              Failed...\n"
+           Bad s  -> do 
+                          putStrLn "\nParse              Failed...\n"
                           putStrV v "Tokens:"
                           putStrV v $ show ts
                           putStrLn s
                           exitFailure
-           Ok  tree -> do putStrLn "\nParse Successful!"
+           Ok tree -> do 
+                          putStrLn "\nParse Successful!"
                           showTree v tree
                           let (annotatedTree, logs) = runWriter $ typeCheck $ tree
                           case (logs) of
@@ -53,11 +56,13 @@ run v p s = let ts = myLLexer s in case p ts of
                               printTypeCheckSuccess annotatedTree
                           exitSuccess
 
-printTypeCheckErrors :: [String] -> Int -> IO()
+printTypeCheckErrors :: [LogElement] -> Int -> IO()
 printTypeCheckErrors [] index = putStrLn ""
 printTypeCheckErrors (log:logs) index = do
-  putStrLn $ show index ++ ") " ++ log
+  putStrLn $ (printIndex index) ++  " " ++ printException log
   printTypeCheckErrors logs (index+1)
+  where
+    printIndex n = show index ++ ")"
 
 printTypeCheckSuccess :: Program -> IO()
 printTypeCheckSuccess prog = do

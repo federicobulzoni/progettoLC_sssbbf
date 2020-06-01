@@ -82,6 +82,10 @@ buildTACInstruction instr = case instr of
     Param addr1 -> 
         "param " ++ buildAddr addr1
 
+    Call label n ->
+        intercalate " " ["pcall",buildLabelDefaultFun label,",",show n] 
+
+
 
 
 
@@ -140,6 +144,9 @@ buildLabel :: Label -> String
 buildLabel label = case label of
     LabStm n              -> id "l" ++ show n
     LabFun ident (r,c)       ->  ident ++ "@(" ++ show r ++ "," ++ show c ++ ")"
+
+buildLabelDefaultFun :: Label -> String
+buildLabelDefaultFun (LabFun ident _) = ident ++ "@(defaultFun)"
 
 buildInstrLabel :: Label -> String
 buildInstrLabel label = (buildLabel label) ++ ":" 
