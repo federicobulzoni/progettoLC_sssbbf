@@ -30,8 +30,18 @@ out instr = do
 pushCurrentStream :: MyMon ()
 pushCurrentStream = do
     (k, l, revcode, funs) <- get
-    put (k, l,  (head funs) ++ revcode, tail funs)
+    if length funs == 1 
+        then
+            put (k, l, revcode ++ (head funs), tail funs)
+        else
+            put (k, l,  (head funs) ++ revcode, tail funs)
     return ()
+
+--pushGlobalStream :: MyMon ()
+--pushGlobalStream = do
+--    (k, l, revcode, funs) <- get
+--    put (k, l, revcode ++ (head funs), tail funs)
+--    return ()
 
 createStream :: MyMon ()
 createStream = do
