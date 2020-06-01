@@ -29,17 +29,17 @@ out instr = do
 pushCurrentStream :: MyMon ()
 pushCurrentStream = do
     (k, l, revcode, funs) <- get
-    --if length funs == 1 
-    --    then
-    --        put (k, l, revcode ++ (head funs), tail funs)
-    --    else
-    --        put (k, l,  (head funs) ++ revcode, tail funs)
-    put (k, l,  (head funs) ++ revcode, tail funs)
+    if length funs == 1 
+        then
+            put (k, l, revcode ++ (head funs), tail funs)
+        else
+            put (k, l,  (head funs) ++ revcode, tail funs)
+    --put (k, l,  (head funs) ++ revcode, tail funs)
 
-pushGlobalStream :: MyMon ()
-pushGlobalStream = do
+pushMain :: Label -> MyMon ()
+pushMain label = do
     (k, l, revcode, funs) <- get
-    put (k, l, revcode ++ (head funs), tail funs)
+    put (k, l, revcode ++ [Goto label], funs)
 
 createStream :: MyMon ()
 createStream = do
@@ -68,7 +68,7 @@ genTAC prog = reverse $ getTACCode $ execState ( genProg prog ) (0, 0 ,[], [[]])
 genProg :: Program -> MyMon ()
 genProg (Prog decls) = do
     genDecls decls
-    pushGlobalStream
+    pushCurrentStream
 
 genDecls :: [Declaration] -> MyMon ()
 genDecls [] = return ()
@@ -173,11 +173,13 @@ genDecl decl = case decl of
                 addrDef <- genExp $ buildDefaultValue typ
                 out $ (ReturnAddr addrDef)
             otherwise -> return ()
+        pushCurrentStream
         if ident == "main"
-            then
-                pushGlobalStream 
+            then do
+                pushMain $ buildFunLabel ident dloc
+                return ()
             else
-                pushCurrentStream
+                return ()
         
 
 sizeOf :: TypeSpec -> Int
