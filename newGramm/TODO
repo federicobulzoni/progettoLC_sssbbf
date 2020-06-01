@@ -7,12 +7,17 @@ Cose da fare:
     [] pulizia codice                       SS/BF
     [] se c'è una funzione "main" top level va messa all'inizio del tac.
     [X] se l'istruzione precedente è un return, non aggiungere il return alla fine della funzione.
+    [X] le dichiarazioni delle variabili globali vanno in testa al tac
 
 Errori da risolvere:
     [X] Se dichiaro all'interno di una funzione, una funzione con lo stesso nome, non da errore @critical 
-    [] Funzioni di base non gestite dal TAC
+    [X] Funzioni di base non gestite dal TAC
+    [X] nelle procedure viene richiesto il tipo di ritorno
 
 Cose da discutere:
 	[X] è giusto che il TAC negli addr usi Ident, Loc e in generale cose di AbsGramm che non gli appartengono?
 	   Non dovrebbero forse essere solo stringhe? Ad esempio l'identificatore@numero è una cosa proprio della struttura TAC,
-	   non solo un modo di stamparlo carino forse.
+       non solo un modo di stamparlo carino forse.  
+    [] il TypeChecker da errore se non trova un return nelle funzioni (anche se c'è un return in un if), è corretto? es. test2.scala
+        probabilmente non è un problema
+        

@@ -13,10 +13,11 @@ import ParGramm
 import PrintGramm
 import AbsGramm
 import AbsTAC
---import ThreeAddressCode
+import ThreeAddressCode
 import TypeChecker
 import Control.Monad.Writer
---import PrintTAC
+import Errors
+import PrintTAC
 
 import ErrM
 
@@ -34,12 +35,14 @@ runFile v p f = putStrLn f >> readFile f >>= run v p
 
 run :: Verbosity -> ParseFun Program -> String -> IO ()
 run v p s = let ts = myLLexer s in case p ts of
-           Bad s    -> do putStrLn "\nParse              Failed...\n"
+           Bad s  -> do 
+                          putStrLn "\nParse              Failed...\n"
                           putStrV v "Tokens:"
                           putStrV v $ show ts
                           putStrLn s
                           exitFailure
-           Ok  tree -> do putStrLn "\nParse Successful!"
+           Ok tree -> do 
+                          putStrLn "\nParse Successful!"
                           showTree v tree
                           let (annotatedTree, logs) = runWriter $ typeCheck $ tree
                           case (logs) of
@@ -48,21 +51,33 @@ run v p s = let ts = myLLexer s in case p ts of
                               let code = genTAC annotatedTree
                               showTAC code
                             _ -> do
-                              putStrLn "\n[Lista errori type checker]\n\n"
-                              printTypeCheckErrors logs 0   
-                              printTypeCheckSuccess annotatedTree
+                              showErrors logs  
+                              printTypeCheckSuccess annotatedTree 
                           exitSuccess
 
-printTypeCheckErrors :: [String] -> Int -> IO()
+showErrors :: [LogElement] -> IO()
+showErrors logs = do
+  putStrLn $ "\n" ++ separator
+  putStrLn "[Lista errori type checker]"
+  putStrLn separator
+  printTypeCheckErrors logs 0
+  putStrLn separator
+
+printTypeCheckErrors :: [LogElement] -> Int -> IO()
 printTypeCheckErrors [] index = putStrLn ""
 printTypeCheckErrors (log:logs) index = do
-  putStrLn $ show index ++ ") " ++ log
+  putStrLn $ (printIndex index) ++  " " ++ printException log
   printTypeCheckErrors logs (index+1)
+  where
+    printIndex n = show index ++ ")"
 
 printTypeCheckSuccess :: Program -> IO()
 printTypeCheckSuccess prog = do
-  putStrLn "\n[Albero tipato]\n\n"
+  putStrLn $ "\n" ++ separator
+  putStrLn "[Albero tipato]"
+  putStrLn separator
   putStrV 2 $ show prog
+  putStrLn separator
 
 separator :: String
 separator = "----------------------------------------------------------------"

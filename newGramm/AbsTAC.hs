@@ -76,6 +76,6 @@ data TAC
     | ReturnVoid                                    -- return
     | ReturnAddr Addr                               -- return x
     | Param Addr                                    -- param x
-    | Call Addr Int                                 -- call f , n
+    | Call Label Int                                 -- call f , n
 
   deriving (Eq, Ord, Show, Read)

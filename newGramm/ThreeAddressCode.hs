@@ -20,17 +20,28 @@ type MyMon a = State (
 out :: TAC -> MyMon ()
 out instr = do
     (k, l, revcode, funs) <- get
-    if length funs == 1 
-        then put (k, l, instr : revcode, funs)
-        else put (k, l, revcode, (instr : (head funs)) : (tail funs))
+    --if length funs == 1 
+    --    then put (k, l, instr : revcode, funs)
+    --    else 
+    put (k, l, revcode, (instr : (head funs)) : (tail funs))
     
     return ()
 
 pushCurrentStream :: MyMon ()
 pushCurrentStream = do
     (k, l, revcode, funs) <- get
-    put (k, l,  (head funs) ++ revcode, tail funs)
+    if length funs == 1 
+        then
+            put (k, l, revcode ++ (head funs), tail funs)
+        else
+            put (k, l,  (head funs) ++ revcode, tail funs)
     return ()
+
+--pushGlobalStream :: MyMon ()
+--pushGlobalStream = do
+--    (k, l, revcode, funs) <- get
+--    put (k, l, revcode ++ (head funs), tail funs)
+--    return ()
 
 createStream :: MyMon ()
 createStream = do
@@ -158,7 +169,7 @@ genDecl decl = case decl of
     DecVar id@(PIdent (dloc, ident)) typ ->
         genExpAssign (buildVarAddress ident dloc) (buildDefaultValue typ)
 
-    DefFun id@(PIdent (dloc, ident)) _ typ block@(BlockTyped (DBlock stms) _ _) -> do
+    DefFun id@(PIdent (dloc, ident)) _ typ block -> do
         createStream
         out $ (Lab (buildFunLabel ident dloc))
         lastIsReturn <- genBlock block
@@ -239,7 +250,7 @@ genExp texp@(ETyped exp typ loc) = case exp of
 
 -- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
 genBlock :: Block -> MyMon Bool
-genBlock (BlockTyped (DBlock stms) typ _) = genStms stms
+genBlock (DBlock stms) = genStms stms
 
 -- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
 genStms :: [Stm] -> MyMon Bool
@@ -256,8 +267,8 @@ genStms (stm:stms) = do
     genStms stms
 
 isReturnStm :: Stm -> Bool
-isReturnStm (StmTyped (SReturn _ ) _ _) = True
-isReturnStm (StmTyped (SReturnExp _ _ ) _ _ ) = True
+isReturnStm (SReturn _ ) = True
+isReturnStm (SReturnExp _ _ ) = True
 isReturnStm _ = False
 
 convertToOppositeTACOp :: Op -> BinOp
@@ -286,7 +297,7 @@ convertToTACType (TSimple _ ) = error "Internal error: converting void or error 
 convertToTACType _ = TACAddr  
 
 genStm :: Stm -> MyMon ()
-genStm (StmTyped stm typ _) = case stm of
+genStm stm = case stm of
     SDecl decl -> genDecl decl
     SBlock block -> do
         genBlock block
@@ -318,26 +329,36 @@ genStm (StmTyped stm typ _) = case stm of
     -- LABEL else
     -- smtselse
     -- LABEL next
-    SIfElse texp@(ETyped exp _ _) tstm_if tstm_else@(StmTyped stm_else t l) -> do
+    SIfElse texp@(ETyped exp _ _) stm_if stm_else -> do
         labelNext <- newLabel
-        labelElse <- (if stm_else == (SBlock (BlockTyped (DBlock []) t l)) then return labelNext else newLabel)
+        labelElse <- if isBlockEmpty stm_else then return labelNext else newLabel
         genCondition texp Fall labelElse
-        genStm tstm_if
-        if ((SBlock (BlockTyped (DBlock []) t l)) /= stm_else )
+        genStm stm_if
+        if (not $ isBlockEmpty stm_else)
             then do
                 out $ (Goto labelNext)
                 out $ (Lab labelElse)
-                genStm tstm_else
+                genStm stm_else
             else return ()
-        out $ (Lab labelNext)
+        out $ Lab labelNext
         return ()
 
-    
-    SReturn preturn -> out $ (ReturnVoid)
+    -- SProcCall PIdent [Params]
+    SProcCall (PIdent (loc, ident)) params -> do
+        genParams params
+        out $ Call (buildFunLabel ident loc) (sum (map (\(ParExp x) -> length x) params))
+        return ()
+
+    SReturn preturn -> 
+        out $ ReturnVoid
+
     SReturnExp  preturn texp -> do
         addrTexp <- genExp texp
-        out $ (ReturnAddr addrTexp)
+        out $ ReturnAddr addrTexp
         return ()
+
+    where 
+        isBlockEmpty bl = if (SBlock (DBlock []) == bl ) then True else False
 
 checkLabel :: Label -> MyMon ()
 checkLabel label = case label of

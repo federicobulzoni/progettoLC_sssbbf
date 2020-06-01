@@ -43,7 +43,7 @@ lookupIdent (lookTable, _, _) ident = Map.lookup ident lookTable
 -- nel caso non lo sia viene aggiunta la corrispondenza identificatore-info allo scope
 -- altrimenti viene riportato un'errore dato che la variabile era già stata dichiarata
 -- nello scope.
-updateScope :: Scope -> Ident -> Info -> Err Scope
+updateScope :: Scope -> Ident -> Info -> ErrEnv Scope
 updateScope (lookTable, ftyp, hasReturn) ident info = case Map.lookup ident lookTable of
     Nothing -> return $ (Map.insert ident info lookTable, ftyp, hasReturn)
     {-
@@ -52,8 +52,8 @@ updateScope (lookTable, ftyp, hasReturn) ident info = case Map.lookup ident look
     Just (FunInfo dloc _ _) -> Bad $ "identificatore " ++ ident ++
                                 " usato in precedenza per una funzione in posizione " ++ show dloc
     -}
-    Just (VarInfo dloc _) -> Bad $ EnvDuplicateIdent ident dloc True
-    Just (FunInfo dloc _ _) -> Bad $ EnvDuplicateIdent ident dloc False
+    Just (VarInfo dloc _) -> Failure $ EnvDuplicateIdent ident dloc True
+    Just (FunInfo dloc _ _) -> Failure $ EnvDuplicateIdent ident dloc False
 -- Funzioni riguardanti l'intero environment:
 -- Triviale.
 emptyEnv :: Env
@@ -63,18 +63,18 @@ emptyEnv = [emptyScope (TSimple TypeVoid)]
 addScope :: Env -> TypeSpec -> Env
 addScope env ftyp = (emptyScope ftyp):env
 
-lookup :: Env -> PIdent -> Err Info
-lookup [] (PIdent (_, ident)) = Bad $ EnvNotDeclaredIdent ident
+lookup :: Env -> PIdent -> ErrEnv Info
+lookup [] (PIdent (_, ident)) = Failure $ EnvNotDeclaredIdent ident
 lookup (scope:stack') id@(PIdent (_, ident)) = case lookupIdent scope ident of
     Just info -> return info
     Nothing -> Environment.lookup stack' id
 
 
-update :: Env -> Ident -> Info -> Err Env
-update [] _ _ = Bad $ InternalError
+update :: Env -> Ident -> Info -> ErrEnv Env
+update [] _ _ = Failure $ InternalError
 update (scope:stack) ident info = case updateScope scope ident info of
-    Bad except -> Bad except
-    Ok scope' -> return(scope':stack)
+    Failure except -> Failure except
+    Success scope' -> return(scope':stack)
 
 setReturnFound :: Env -> Env
 setReturnFound (scope:stack') = let (lookTable, ftyp, _) = scope in (lookTable, ftyp, True):stack'

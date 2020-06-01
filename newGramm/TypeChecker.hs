@@ -40,7 +40,7 @@ paramsToStms params = argsToStms (concat ( map (\(PArg args) -> args) params ) )
 startingEnv :: Env
 startingEnv = 
   -- bruttino da vedere, come si può fare altrimenti?
-  let (Ok env) = foldM (\x (ident, info) -> Env.update x ident info) (Env.emptyEnv) initialFuns
+  let (Success env) = foldM (\x (ident, info) -> Env.update x ident info) (Env.emptyEnv) initialFuns
   in
     env
   where
@@ -72,13 +72,13 @@ inferDecls (decl:decls) env = do
  return (tdecl:tdecls)
 
 
--- Ci sono vari pattern con casi duplicati in base ad Ok env' o Bad msg che però si differenziano di poco,
+-- Ci sono vari pattern con casi duplicati in base ad Success env' o Failure msg che però si differenziano di poco,
 -- andrebbero messi a posto.
 inferDecl :: Declaration -> Env -> Writer [LogElement] (Declaration, Env)
 inferDecl decl env = case decl of
   DefVar id@(PIdent (loc, ident)) typ exp -> 
     case (Env.update env ident (VarInfo loc typ)) of
-      Ok env' -> do
+      Success env' -> do
         texp <- inferExp exp env
         if isTypeError texp || isCompatible texp typ
           then
@@ -86,23 +86,23 @@ inferDecl decl env = case decl of
           else do
             saveLog $ launchError loc (WrongExpType exp texp typ)
             return $ (DefVar id typ texp, env)
-      Bad except -> do
+      Failure except -> do
         saveLog $ launchError loc except
         texp <- inferExp exp env
         return $ (DefVar id typ texp, env)
 -------------------------------------------------------------------------------------------------------------------------------------------
   DecVar id@(PIdent (loc, ident)) typ -> 
     case Env.update env ident (VarInfo loc typ) of
-      Ok env' -> return $ (DecVar id typ, env')
-      Bad except -> do
+      Success env' -> return $ (DecVar id typ, env')
+      Failure except -> do
         saveLog $ launchError loc except
         return $ (DecVar id typ, env)
 ----------------------------------------------------------------------------------------------------------------------------
   DefFun id@(PIdent (loc, ident)) params typ block@(DBlock stms) -> 
     case update env ident (FunInfo loc typ params) of
-      Ok env' -> do
+      Success env' -> do
         functionHandler env'
-      Bad except -> do
+      Failure except -> do
         saveLog $ launchError loc except
         functionHandler env
       where 
@@ -110,7 +110,7 @@ inferDecl decl env = case decl of
           -- Creare nuovo scope avviato con i parametri e il nome della fun.
           (tstms, e') <- inferStms stms (startFunScope e id params typ)
           -- (tblock, e') <- inferBlock (DBlock ((paramsToStms params)++stms)) typ e
-          if Env.hasReturn e'
+          if Env.hasReturn e' || isTypeVoid typ
             then
               return $ (DefFun id params typ (DBlock tstms), e)
             else do
@@ -125,7 +125,7 @@ inferDecl decl env = case decl of
 startFunScope :: Env -> PIdent -> [ParamClause] -> TypeSpec -> Env
 startFunScope env id@(PIdent (loc, ident)) params typ = 
   let 
-    (Ok env') = foldM (\x (ident', info) -> Env.update x ident' info) (Env.addScope env typ) funInfo
+    (Success env') = foldM (\x (ident', info) -> Env.update x ident' info) (Env.addScope env typ) funInfo
   in
     env'
   where
@@ -241,12 +241,12 @@ inferStm stm env = case stm of
     tparams <- mapM (\(ParExp x) -> (mapM (\y -> (inferExp y env)) x)) params
     let typ_params = map (map getType) tparams in
       case Env.lookup env id of
-        Ok (VarInfo dloc _) ->
+        Success (VarInfo dloc _) ->
          -- è da mettere a posto sto errore.
          saveLog $ launchError loc (DuplicateVariable ident dloc)
-        Bad except ->
+        Failure except ->
           saveLog $ launchError loc except
-        Ok (FunInfo dloc typ paramclauses) -> 
+        Success (FunInfo dloc typ paramclauses) -> 
           let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
             if not (any (isTypeError) (concat tparams))
               then
@@ -302,12 +302,12 @@ inferLExp lexp env = case lexp of
            return  $ LExpTyped (LArr tlexp texp) (TSimple TypeError) (getLoc tlexp) (getDLoc tlexp)
  LIdent id@(PIdent (loc, ident)) -> let res = Env.lookup env id in
    case res of
-     Bad except -> do
+     Failure except -> do
        saveLog $ launchError loc except
        return $ LExpTyped lexp (TSimple TypeError) loc (0,0)
      -- dloc dichiarazione loc
-     Ok (VarInfo dloc typ) -> return $ LExpTyped (LIdent id) typ loc dloc
-     Ok (FunInfo dloc _ _) -> do
+     Success (VarInfo dloc typ) -> return $ LExpTyped (LIdent id) typ loc dloc
+     Success (FunInfo dloc _ _) -> do
        -- è da mettere a posto sto errore.
        saveLog $ launchError loc (DuplicateFunction ident dloc)
        return $ LExpTyped lexp (TSimple TypeError) loc dloc
@@ -354,14 +354,14 @@ inferExp exp env = case exp of
     tparams <- mapM (\(ParExp x) -> (mapM (\y -> (inferExp y env)) x)) params
     let typ_params = map (map getType) tparams in
       case Env.lookup env id of
-        Ok (VarInfo dloc _) -> do
+        Success (VarInfo dloc _) -> do
          -- è da mettere a posto sto errore.
          saveLog $ launchError loc (DuplicateVariable ident dloc)
          return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc
-        Bad except -> do
+        Failure except -> do
           saveLog $ launchError loc except
           return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc
-        Ok (FunInfo dloc typ paramclauses) ->
+        Success (FunInfo dloc typ paramclauses) ->
           let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
             if any (isTypeError) (concat tparams)
               then return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc
