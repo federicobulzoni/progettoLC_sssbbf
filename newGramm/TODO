@@ -9,9 +9,14 @@ Cose da fare:
     [X] se l'istruzione precedente è un return, non aggiungere il return alla fine della funzione.
     [X] le dichiarazioni delle variabili globali vanno in testa al tac
     [X] Distinguere stampa errori e warning
-    [] modificare ordine delle funzioni quando si trova un main (che ora va in testa al tac, dopo le dichiarazioni di variabile) ma le sue funzioni interne rimangono nell'ordine sbagliato
+    [X] modificare ordine delle funzioni quando si trova un main (che ora va in testa al tac, dopo le dichiarazioni di variabile) ma le sue funzioni interne rimangono nell'ordine sbagliato
     [] Aggiungere: *= -= += /= %= 
-    [] Aggiungere: operatore ternario 
+    [] Aggiungere: operatore ternario
+    [] costanti?
+    [] una funzione può anche essere dichiarata senza parentesi in Scala
+                            def foo : Int = {
+                                1
+                            }
 
 Cose da aggiungere consegna finale:
     [] continue
