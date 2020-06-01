@@ -11,7 +11,7 @@ Cose da fare:
 Errori da risolvere:
     [X] Se dichiaro all'interno di una funzione, una funzione con lo stesso nome, non da errore @critical 
     [X] Funzioni di base non gestite dal TAC
-    [X] nelle procedure vuole il tipo di ritorno
+    [X] nelle procedure viene richiesto il tipo di ritorno
 
 Cose da discutere:
 	[] è giusto che il TAC negli addr usi Ident, Loc e in generale cose di AbsGramm che non gli appartengono?
