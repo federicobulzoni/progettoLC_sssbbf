@@ -8,17 +8,15 @@
 
 module Environment where
 
---import ErrM
-import Control.Monad
 import AbsGramm
 import qualified Data.Map as Map
 import Errors
 
--- TypeSpec indica il tipo della funzione in cui è racchiuso lo scope
--- se lo scope è globale il tipo sarà TypeVoid.
-
 type LookupTable = Map.Map Ident Info
--- LookupTable, tipo della funzione in cui è racchiuso lo scope, booleano che indica se è presente o meno un return adeguato.
+
+-- LookupTable, 
+-- Tipo della funzione in cui è racchiuso lo scope,
+-- Booleano che indica se è presente o meno un return adeguato.
 type Scope = (LookupTable, TypeSpec, Bool)
 
 data Info = 
@@ -28,8 +26,9 @@ data Info =
 
 type Env = [Scope]
 
--- Funzioni riguardanti un singolo scope:
--- Triviale.
+-- Funzioni riguardanti un singolo scope. --
+
+-- Costruisce uno scope vuoto.
 emptyScope  :: TypeSpec -> Scope
 emptyScope ftyp = (Map.empty, ftyp, False)
 
@@ -46,20 +45,16 @@ lookupIdent (lookTable, _, _) ident = Map.lookup ident lookTable
 updateScope :: Scope -> Ident -> Info -> ErrEnv Scope
 updateScope (lookTable, ftyp, hasReturn) ident info = case Map.lookup ident lookTable of
     Nothing -> return $ (Map.insert ident info lookTable, ftyp, hasReturn)
-    {-
-    Just (VarInfo dloc _) -> Bad $ "identificatore " ++ ident ++
-                             " usato in precedenza per una variabile in posizione " ++ show dloc
-    Just (FunInfo dloc _ _) -> Bad $ "identificatore " ++ ident ++
-                                " usato in precedenza per una funzione in posizione " ++ show dloc
-    -}
     Just (VarInfo dloc _) -> Failure $ EnvDuplicateIdent ident dloc True
     Just (FunInfo dloc _ _) -> Failure $ EnvDuplicateIdent ident dloc False
--- Funzioni riguardanti l'intero environment:
--- Triviale.
+
+-- Funzioni riguardanti l'intero environment. --
+
+-- Costruisce un environment vuoto.
 emptyEnv :: Env
 emptyEnv = [emptyScope (TSimple TypeVoid)]
 
--- Triviale.
+-- Aggiunge uno scope allo stack.
 addScope :: Env -> TypeSpec -> Env
 addScope env ftyp = (emptyScope ftyp):env
 
@@ -68,7 +63,6 @@ lookup [] (PIdent (_, ident)) = Failure $ EnvNotDeclaredIdent ident
 lookup (scope:stack') id@(PIdent (_, ident)) = case lookupIdent scope ident of
     Just info -> return info
     Nothing -> Environment.lookup stack' id
-
 
 update :: Env -> Ident -> Info -> ErrEnv Env
 update [] _ _ = Failure $ InternalError

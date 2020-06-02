@@ -4,11 +4,6 @@ import AbsTAC
 import AbsGramm
 import Control.Monad.State.Lazy
 
-------------------------------------------------------------
--- TODO:
---  * aggingere statement vuoto (Stm ::= ;) per evitare brutture nell'if
-------------------------------------------------------------
-
 type MyMon a = State (
     Int,      -- temporanei
     Int,      -- label
@@ -20,9 +15,6 @@ type MyMon a = State (
 out :: TAC -> MyMon ()
 out instr = do
     (k, l, revcode, funs) <- get
-    --if length funs == 1 
-    --    then put (k, l, instr : revcode, funs)
-    --    else 
     put (k, l, revcode, (instr : (head funs)) : (tail funs))
 
 
@@ -34,7 +26,6 @@ pushCurrentStream = do
             put (k, l, revcode ++ (head funs), tail funs)
         else
             put (k, l,  (head funs) ++ revcode, tail funs)
-    --put (k, l,  (head funs) ++ revcode, tail funs)
 
 pushMain :: Label -> MyMon ()
 pushMain label = do
@@ -62,6 +53,7 @@ newLabel = do
 getTACCode :: (Int, Int, [TAC], [[TAC]]) -> [TAC]
 getTACCode (k, l, code, _) = code
 
+-- Entry point. Called by TestGramm.
 genTAC :: Program -> [TAC]
 genTAC prog = reverse $ getTACCode $ execState ( genProg prog ) (0, 0 ,[], [[]])
 
@@ -136,7 +128,7 @@ genExpAssign addr texp@(ETyped exp typ loc) = case exp of
         out $ Assign addr addrTExp (convertToTACType typ)
 
 
--- la locazione è quella di dichiarazione
+-- Identifier, declaration location.
 buildVarAddress :: Ident -> Loc -> Addr
 buildVarAddress ident dloc = Var ident dloc
 
@@ -205,7 +197,6 @@ genLexp (LExpTyped lexp typ _ dloc) = case lexp of
         addrTemp <- newTemp
         addrLexp' <- genLexp lexp'
         addrExp <- genExp exp
-        -- TODO: controllare se è giusto. Non sembra, l'indice dovrebbe essere convertito.
         out $ AssignFromArray addrTemp addrLexp' addrExp (convertToTACType typ)
         return addrTemp
 
@@ -219,7 +210,6 @@ genExp texp@(ETyped exp typ loc) = case exp of
     ETrue _ -> return $ LitBool True
     EFalse _ -> return $ LitBool False
     ENull _ -> return $ LitNull
-    --DummyExp -> genExp $ buildDefaultValue typ
     
     EDeref lexp' -> do
         addrTemp <- newTemp 
@@ -230,7 +220,6 @@ genExp texp@(ETyped exp typ loc) = case exp of
     EArray exps -> do
         arrVals <- mapM (genExp) exps
         addrTemp <- newTemp
-        -- aggiungere la base + dimensione data dal tipo
         zipWithM (\x i -> aux addrTemp x i (getArrayType typ)) arrVals [0..((length exps)-1)]
         return addrTemp
 

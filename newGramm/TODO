@@ -1,15 +1,15 @@
 Cose da fare:
-    [X] mettere tipi tac                     SB
+	[X] mettere tipi tac                     SB
     [X] sistemare layout stampa tac          SB/SS
-    [] guardare todo in typechecker         SS/SB/BF
-    [] fate tanti test                      BF
     [X] sistemare errori in file separato   SS
-    [] pulizia codice                       SS/BF
     [X] se c'è una funzione "main" top level va messa all'inizio del tac.
     [X] se l'istruzione precedente è un return, non aggiungere il return alla fine della funzione.
     [X] le dichiarazioni delle variabili globali vanno in testa al tac
     [X] Distinguere stampa errori e warning
     [X] modificare ordine delle funzioni quando si trova un main (che ora va in testa al tac, dopo le dichiarazioni di variabile) ma le sue funzioni interne rimangono nell'ordine sbagliato
+    [] guardare todo in typechecker         SS/SB/BF
+    [] fate tanti test                      BF    
+    [] pulizia codice                       SS/BF   
     [] Aggiungere: *= -= += /= %= 
     [] Aggiungere: operatore ternario
     [] costanti?
@@ -22,6 +22,21 @@ Cose da fare:
     return exp. Per come è fatto ora non è possibile fare "wrap" di procedure.
     [] Aggiungere nella grammatica un ; alla fine delle dichiarazioni di funzione inline.
     [] Aggiungere commenti al TAC, per far capire che sappiamo quali sono gli argomenti di una funzione.s
+    [] Type Error e Type Void sono brutti scritti in modo diverso dagli altri tipi base.
+    [] Finire di commentare le funzioni in environment.
+    [] Controllare se tutti gli import in TestGramm.hs servono veramente.
+    [] Aggiungere statement vuoto per evitare brutture nell-if nel tac.
+    [] Controllare se genLExp per gli array array è giusto. Non sembra, l'indice dovrebbe essere convertito.
+    [] Riga 289 del tac. Si pu; lanciare l'errore?
+    [] Todo del typechecker:
+  		[] controllare l'uso di array vuoti, e la posizione a loro assegnata di default.
+  		[] pensare alla compatibilita String + String. 
+  		[] controllare la grammatica e aggiungere le locazioni a tutti i typed che non ce l'hanno.
+  		[] controllare che la locazione negli statement serva veramente (sembra servire solo nella chiamata di funzione)
+  		[] ci serve la posizione di dichiarazione di tutto ciò che viene dichiarato (identificatori: var, fun) --> serve nel tac per identificare gli id
+  		[] l'unica cosa che necessita della locazione sono le espressioni --> stampa errori
+  		[] starting env brutto da vedere.
+  		[] errore duplicate variable e duplicate function da mettere a posto.
 
 Cose da aggiungere consegna finale:
     [] continue
@@ -42,3 +57,7 @@ Cose da discutere:
         Secondo me va bene così com'è con il warning, avvisa che non c'è un return in tutti i percorsi e questo potrebbe essere non voluto. Sara.
     [] Aggiungere warning se manca il main?
        Io lo farei. Sara.
+    [] AbsGramm dovrebbe contenere sono la sintassi astratta, quindi i vari data e type, non la classe typed con relative implementazioni delle funzioni nelle istanze. Vanno da qualche altra parte.
+    [] Perché l'abbiamo chiamato Gramm? Tutti i file non dovrebbero avere un nome più significativo, tipo il nome del nostro linguaggio?
+    [] Il commento all'inizio di environment?
+    [] Rimuovere il file TestGramm

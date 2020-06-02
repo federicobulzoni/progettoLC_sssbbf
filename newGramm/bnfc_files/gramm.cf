@@ -3,29 +3,26 @@ position token PFalse	'F' 'a' 'l' 's' 'e' ;
 position token PReturn	'r' 'e' 't' 'u' 'r' 'n' ;	
 position token PNull	'N' 'u' 'l' 'l';			
 position token PIdent ( letter (letter | digit | '_' )* );
-					-- Sia parte int che decim. Solo int.   Solo decim.
 position token PFloat ( (digit+ '.' digit+) | (digit+ '.') | ('.' digit+));
 position token PInteger ( digit+ );
 
 comment "//";
 comment "/*" "*/";
 
-Prog. Program ::= [Declaration];
-separator Declaration "";
-
 TSimple. TypeSpec ::= SType;
 TPointer. TypeSpec ::= "*" TypeSpec;
 TArray. TypeSpec ::= "Array" "[" TypeSpec "]" "(" PInteger ")";
-
 
 rules SType ::= "Float" | "Int" | "Char" | "String" | "Bool";
 internal TypeError. SType ::= "Error";
 internal TypeVoid. SType ::= "Void";
 
+Prog. Program ::= [Declaration];
+separator Declaration "";
+
 DefVar. Declaration ::= "var" PIdent ":" TypeSpec "=" Exp ";";
 DecVar. Declaration ::= "var" PIdent ":" TypeSpec ";";
 
---internal DummyExp. Exp ::= "dummy";
 DefFun. Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Block;
 DefFunInLine. Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Exp ";"; 
 dproc. Declaration ::= "def" PIdent [ParamClause] "=" Block;
@@ -45,8 +42,6 @@ SBlock.     Stm ::= Block;
 SAssign.    Stm ::= LExp "=" Exp ";";
 SWhile.     Stm ::= "while" "(" Exp ")" Stm;
 SIfElse. 	Stm ::= "if" "(" Exp ")" Stm "else" Stm ;
--- Introduce uno shift/reduce, ma ci va bene, è giusto che se incontra
--- un else va avanti.
 sif.        Stm ::= "if" "(" Exp ")" Stm;
 sdo. 		Stm ::= "do" Stm "while" "(" Exp ")" ";";
 SReturn. 	Stm ::= PReturn ";";
@@ -57,46 +52,40 @@ ParExp. Params ::= "(" [Exp] ")";
 separator nonempty Params "";
 separator Exp ",";
 
--- LAss
+-- Left associative.
 Or. 		Op ::= "||";
 And. 		Op1 ::= "&&";
--- Tutti questi (i 4) sono non associativi.
+-- Non associative.
 Less. 		Op2 ::= "<";
 LessEq. 	Op2 ::= "<=";
 Greater. 	Op2 ::= ">";
 GreaterEq. 	Op2 ::= ">=";
--- Le stringhe si può controllare che siano uguali o diverse.
+-- Left associative.
 Equal. 		Op2 ::= "==";
 NotEq. 		Op2 ::= "!=";
--- LAss.
 Plus. 		Op3 ::= "+";
 Minus. 		Op3 ::= "-";
 Prod. 		Op4 ::= "*";
 Div. 		Op4 ::= "/";
 Mod. 		Op4 ::= "%";
--- RAss.
+-- Right associative.
 Pow. 		Op5 ::= "^"; 
 
 coercions Op 5;
 
--- Lista di RExp
+-- R-Expressions.
 op. 		Exp ::= Exp Op Exp1;
 op. 		Exp1 ::= Exp1 Op1 Exp2;
--- Diamo il permesso di mettere più negazioni.
 ENot. 		Exp2 ::= "!" Exp2;
 op. 		Exp2 ::= Exp3 Op2 Exp3;
-
 op. 		Exp3 ::= Exp3 Op3 Exp4;
 op. 		Exp4 ::= Exp4 Op4 Exp5;
-
 op. 		Exp5 ::= Exp6 Op5 Exp7;
 ENeg. 		Exp6 ::= "-" Exp7;
 
--- Exp si riscrive in LExp, dato che le LExp identificano sempre delle variabili/indirizzi/array e per tanto possono 
--- anche essere assegnati.
 ELExp. 		Exp7 ::= LExp;
 EDeref. 	Exp7 ::= "&" LExp;
--- I valori costanti sono invece questi.
+
 EInt. 		Exp7 ::= PInteger  ;
 EFloat. 	Exp7 ::= PFloat ;
 EChar. 		Exp7 ::= PChar ;
@@ -111,24 +100,22 @@ internal ETyped. Exp ::= "[" Exp ":" TypeSpec ":" "(" Integer "," Integer ")" "]
 internal EOp. Exp ::= Exp7 Op Exp7;
 coercions Exp 7 ; 
 
--- Le LExp danno solo uno shift/reduce che è sotto controllo.
+-- L-Expressions
 LRef. LExp ::= "*" LExp;
--- Qua c'è uno shift/reduce, perchè potrebbe ridurre LExp con la regola LIdent.
 LArr. LExp1 ::= LExp1 "[" Exp "]";
 LIdent. LExp1 ::= PIdent;
 
 coercions LExp 1; 
 
--- La prima coppia di interi è come da convenzione, la posizione dell'identificatore.
--- la seconda coppia di interi è la posizione in cui l'identificatore riferito è stato dichiarato.
+-- [ LExp : inferred type of LExp : location of LExp : if LExp is an ident, declaration location of ident ]
 internal LExpTyped. LExp ::= "[" LExp ":" TypeSpec ":" "(" Integer "," Integer ")" ":" "(" Integer ":" Integer ")" "]";
 
 define op e1 o e2 = EOp e1 o e2;
---define decVar id typ  = DefVar id typ DummyExp ;
 define dproc id params block = DefFun id params (TSimple TypeVoid) (block);
 define dprocinline id params exp = DefFunInLine id params (TSimple TypeVoid) exp;
 define sdo st ex = SBlock (DBlock [st, (SWhile ex st)]);
 define sif exp stm = SIfElse exp stm (SBlock (DBlock []));
+
 position token PString ( '"' ((char - ["\"\\"]) | ('\\' ["\"\\nt"]))* '"' );
 position token PChar ('\'' ((char - ["'\\"]) | ('\\' ["'\\nt"])) '\'' );
 

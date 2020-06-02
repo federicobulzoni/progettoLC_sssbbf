@@ -1,15 +1,6 @@
 module TypeChecker where
 
--- TODO:
-  -- controllare l'uso di array vuoti, e la posizione a loro assegnata di default.
-  -- pensare alla compatibilita String + String. 
-  -- controllare la grammatica e aggiungere le locazioni a tutti i typed che non ce l'hanno.
-  -- controllare che la locazione negli statement serva veramente (sembra servire solo nella chiamata di funzione)
-  -- ci serve la posizione di dichiarazione di tutto ciò che viene dichiarato (identificatori: var, fun) --> serve nel tac per identificare gli id
-  -- l'unica cosa che necessita della locazione sono le espressioni --> stampa errori
-
 import AbsGramm
---import ErrM
 import Environment as Env
 import PrintGramm
 import Control.Monad.Writer
@@ -23,14 +14,10 @@ saveLog logelem = do
 isTypeVoid :: TypeSpec -> Bool
 isTypeVoid typ = typ == (TSimple TypeVoid)
 
--- Questa funzione ora è banale, ma nel caso sia richiesta la compatibilità tra tipi
--- diventerà utile. Sostituisce checkExp.
 isCompatible :: Exp -> TypeSpec -> Bool
 isCompatible texp typ = case typ of
-                                      -- Null
   (TPointer typ') -> getType texp == (TPointer (TSimple TypeVoid)) || getType texp == typ
   _               -> getType texp == typ
-
 
 paramsToStms :: [ParamClause] -> [Stm]
 paramsToStms params = argsToStms (concat ( map (\(PArg args) -> args) params ) )
@@ -38,10 +25,8 @@ paramsToStms params = argsToStms (concat ( map (\(PArg args) -> args) params ) )
     argsToStms [] = []  
     argsToStms (arg@(DArg id typ):args) = (SDecl (DecVar id typ)):(argsToStms args)
 
-
 startingEnv :: Env
 startingEnv = 
-  -- bruttino da vedere, come si può fare altrimenti?
   let (Success env) = foldM (\x (ident, info) -> Env.update x ident info) (Env.emptyEnv) initialFuns
   in
     env
@@ -73,9 +58,6 @@ inferDecls (decl:decls) env = do
  tdecls <- inferDecls decls env'
  return (tdecl:tdecls)
 
-
--- Ci sono vari pattern con casi duplicati in base ad Success env' o Failure msg che però si differenziano di poco,
--- andrebbero messi a posto.
 inferDecl :: Declaration -> Env -> Writer [LogElement] (Declaration, Env)
 inferDecl decl env = case decl of
   DefVar id@(PIdent (loc, ident)) typ exp -> 
@@ -262,7 +244,6 @@ inferStm stm env = case stm of
       else
         return $ (SReturn preturn, env)
 
-
                                     -- lista di liste ParExp [Exp]
   SProcCall id@(PIdent (loc, ident)) params -> do
     -- Tre possibili errori:
@@ -270,16 +251,11 @@ inferStm stm env = case stm of
       -- 2. Il numero di argomenti all'interno di una clausola non corrisponde con il numero di parametri della clausola,
       -- 3. Le dimensioni combaciano, ma almeno un'espressione passata come argomento ha tipo diverso da quello del corrispondente parametro.
 
-    -- Possibile errore: la firma della funzione è questa, ed invece è stata chiamata con questa.
-    -- questo errore è da lanciare solo al top level che è sull'uguaglianza delle liste.
-    -- se any ha Type_Error allora manda su il Type_Error senza stampare che le firme non combaciano.
-
     -- [[TypeSpec]]
     tparams <- mapM (\(ParExp x) -> (mapM (\y -> (inferExp y env)) x)) params
     let typ_params = map (map getType) tparams in
       case Env.lookup env id of
         Success (VarInfo dloc _) ->
-         -- è da mettere a posto sto errore.
          saveLog $ launchError loc (DuplicateVariable ident dloc)
         Failure except ->
           saveLog $ launchError loc except
@@ -342,16 +318,14 @@ inferLExp lexp env = case lexp of
      Failure except -> do
        saveLog $ launchError loc except
        return $ LExpTyped lexp (TSimple TypeError) loc (0,0)
-     -- dloc dichiarazione loc
      Success (VarInfo dloc typ) -> return $ LExpTyped (LIdent id) typ loc dloc
      Success (FunInfo dloc _ _) -> do
-       -- è da mettere a posto sto errore.
        saveLog $ launchError loc (DuplicateFunction ident dloc)
        return $ LExpTyped lexp (TSimple TypeError) loc dloc
 
 
 
--- Prende una lista di espressioni tipizzate, un tipo, e ritorna una coppia con il primo elemento
+-- Prende una lista di espressioni tipate, un tipo, e ritorna una coppia con il primo elemento
 -- che dice se si è trovato almeno un elemento con tipo (TSimple TypeError), ed il secondo elemento che dice
 -- se tutte le espressioni hanno tipo type o meno.
 inferArrayAux :: [Exp] -> TypeSpec -> (Bool, Bool)
@@ -359,10 +333,7 @@ inferArrayAux texps typ = ( (any (\x -> isCompatible x (TSimple TypeError)) texp
 
 inferExp :: Exp -> Env -> Writer [LogElement] Exp
 inferExp exp env = case exp of
-  --DummyExp -> return (ETyped exp (TSimple TypeVoid) (0,0) )  
-  -- Punto di vista di Bulzo: gli array di dim 0 non hanno alcuna utilità per il programmatore nel nostro linguaggio
-  -- in cui non ci sono liste e non ci sono allocazioni dinamiche di memoria.
-                                                                              -- posizione fittizia. Spunta da qualche parte?
+                                                                              -- posizione fittizia.
   EArray [] -> return $ ETyped (exp) (TArray (TSimple TypeVoid) (PInteger ( (0,0), show (0)  ) )) (0,0) 
   EArray exps -> do
     texps <- mapM (\x -> inferExp x env) exps
@@ -370,10 +341,7 @@ inferExp exp env = case exp of
       (True, _) -> return $ ETyped (EArray texps) (TArray (TSimple TypeError) (PInteger ( (getLoc (head texps)) , show (length texps)  ) )) (getLoc (head texps)) 
       (_, True) -> return $ ETyped (EArray texps) (TArray (getType (head texps) )  (PInteger ( (getLoc (head texps)), show (length texps)  ))) (getLoc (head texps))
       (_ , _) -> do
-        -- Da mettere un più bel messaggio di errore.
-        -- ETyped Exp TypeSpec Integer Integer
         saveLog $ launchError (getLoc (head texps)) ArrayInconsistency
-        -- bisogna far tornare l'espressione tipata, non la lunghezza della lisa texps
         return $ ETyped (EArray texps) (TSimple TypeError) (getLoc (head texps))
 
                                     -- lista di liste ParExp [Exp]
@@ -383,16 +351,11 @@ inferExp exp env = case exp of
       -- 2. Il numero di argomenti all'interno di una clausola non corrisponde con il numero di parametri della clausola,
       -- 3. Le dimensioni combaciano, ma almeno un'espressione passata come argomento ha tipo diverso da quello del corrispondente parametro.
 
-    -- Possibile errore: la firma della funzione è questa, ed invece è stata chiamata con questa.
-    -- questo errore è da lanciare solo al top level che è sull'uguaglianza delle liste.
-    -- se any ha Type_Error allora manda su il Type_Error senza stampare che le firme non combaciano.
-
     -- [[TypeSpec]]
     tparams <- mapM (\(ParExp x) -> (mapM (\y -> (inferExp y env)) x)) params
     let typ_params = map (map getType) tparams in
       case Env.lookup env id of
         Success (VarInfo dloc _) -> do
-         -- è da mettere a posto sto errore.
          saveLog $ launchError loc (DuplicateVariable ident dloc)
          return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc
         Failure except -> do
@@ -448,7 +411,6 @@ inferExp exp env = case exp of
   EString const@(PString (loc, _))  -> return $ ETyped (EString const) (TSimple SType_String) (loc)
   ETrue   const@(PTrue (loc, _))    -> return $ ETyped (ETrue const) (TSimple SType_Bool) (loc)
   EFalse  const@(PFalse (loc, _))   -> return $ ETyped (EFalse const) (TSimple SType_Bool) (loc)
-  -- Ma serve Null? Con i puntatori probabilmente si, nel caso non avrebbe TypeVoid.
   ENull const@(PNull (loc, _)) -> return $ ETyped (ENull const) (TPointer (TSimple TypeVoid)) loc 
   EOp expl op expr -> inferBinOp expl op expr env
 
@@ -492,8 +454,8 @@ checkBooleanTyp :: TypeSpec -> Bool
 checkBooleanTyp (TSimple SType_Bool) = True
 checkBooleanTyp _ = False
 
--- controllare che operazione mod di possa fare tra Float
 data TypeOp = NumericOp | BooleanOp | EqOp | RelOp
+
 getTypeOp :: Op -> TypeOp
 getTypeOp Plus      = NumericOp
 getTypeOp Minus     = NumericOp

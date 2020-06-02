@@ -11,4 +11,7 @@
 *.log
 *.o
 newGramm/TestGramm
+*.exe
+*.out
+*.gz
 
