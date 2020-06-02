@@ -77,8 +77,8 @@ isError _ = False
 
 getExceptionMsg :: TCException -> String
 getExceptionMsg except = case except of
-    MissingReturn ident -> "Attesa un'istruzione return all'interno della funzione " 
-                                    ++ printTree ident ++ ", ma non trovata."
+    MissingReturn ident -> "Not every code path returns a value in function " 
+                                    ++ printTree ident ++ "."
 
     WrongExpType exp texp typ -> "L'espressione " ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) 
                                                     ++ ", ma il tipo atteso e' " ++ printTree typ ++ "."
