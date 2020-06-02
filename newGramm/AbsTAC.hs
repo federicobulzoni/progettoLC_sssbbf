@@ -2,9 +2,6 @@ module AbsTAC where
 
 import AbsGramm
 
--- Var -> ident@(r,c)
--- Temp -> t_Int
-
 data Addr
     = Var Ident Loc
     | Temp Int
@@ -21,7 +18,6 @@ data Label
   | LabFun Ident Loc
   | Fall
   deriving (Eq, Ord, Show, Read)
-
 
 data BinOp 
     = PlusInt

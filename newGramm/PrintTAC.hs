@@ -3,10 +3,10 @@ module PrintTAC where
 import AbsTAC
 import Data.List
 import Color
+
 -- (Minimum) width of the column containing labels.
 columnWidth :: Int
 columnWidth = 16
-
 
 -- Entrypoint. Called by TestGramm.
 printTAC :: [TAC] -> IO ()
@@ -82,9 +82,6 @@ buildTACInstruction instr = case instr of
 
     Call label n ->
         intercalate " " ["pcall",buildLabelDefaultFun label,",",show n] 
-
-
-
 
 
 buildBinOpr :: BinOp -> String

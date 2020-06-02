@@ -8,11 +8,11 @@ import Control.Applicative (Applicative(..), Alternative(..))
 
 data ErrEnv a = Success a | Failure TCException
     deriving (Show)
+
 instance Monad ErrEnv where
   return      = Success
   Success a  >>= f = f a
   Failure s >>= _ = Failure s
-
 
 instance Applicative ErrEnv where
   pure = Success
@@ -47,10 +47,8 @@ data TCException
     | WrongNotApplication Exp Exp
     | WrongNegApplication Exp Exp
     | WrongOpApplication Op Exp Exp
---    | ErrEnvor String
     | UnexpectedReturn
     | UnexpectedProc Ident
---    | ErrEnvorWithLoc Loc String
     | EnvDuplicateIdent Ident Loc Bool
     | EnvNotDeclaredIdent Ident
     | InternalError
@@ -71,9 +69,6 @@ launchError loc except = Error loc except
 isError :: LogElement -> Bool
 isError (Error _ _) = True
 isError _ = False
-
---printError :: Loc -> String -> String
---printError loc mes = "Error(" ++ printTree loc ++ "): " ++ mes
 
 getExceptionMsg :: TCException -> String
 getExceptionMsg except = case except of
@@ -147,21 +142,5 @@ getExceptionMsg except = case except of
     EnvNotDeclaredIdent ident -> "Identificatore " ++ printTree ident ++ " utilizzato, ma non dichiarato in precedenza."
     InternalError -> "Errore interno."
     --ErrEnvor msg -> msg
-
-    --ErrEnvorWithLoc loc msg -> printError loc $ msg
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
