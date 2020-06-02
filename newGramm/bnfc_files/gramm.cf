@@ -27,7 +27,7 @@ DecVar. Declaration ::= "var" PIdent ":" TypeSpec ";";
 
 --internal DummyExp. Exp ::= "dummy";
 DefFun. Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Block;
-DefFunInLine. Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Exp;
+DefFunInLine. Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Exp ";"; 
 dproc. Declaration ::= "def" PIdent [ParamClause] "=" Block;
 separator nonempty ParamClause "";
 
@@ -37,7 +37,6 @@ separator Arg ",";
 DArg. Arg ::= PIdent ":" TypeSpec;
 DBlock. Block ::= "{" [Stm] "}";
 
-internal BlockTyped. Block ::= "[" Block ":" TypeSpec ":" "(" Integer "," Integer ")" "]";
 separator Stm "";
 
 SDecl.      Stm ::= Declaration;
@@ -52,8 +51,6 @@ sdo. 		Stm ::= "do" Stm "while" "(" Exp ")" ";";
 SReturn. 	Stm ::= PReturn ";";
 SReturnExp. Stm ::= PReturn Exp ";" ;
 SProcCall.  Stm ::= PIdent [Params] ";";
-
-internal StmTyped. Stm :: = "[" Stm ":" TypeSpec ":" "(" Integer "," Integer ")" "]";
 
 ParExp. Params ::= "(" [Exp] ")";
 separator nonempty Params "";
@@ -109,11 +106,12 @@ ENull. 		Exp7 ::= PNull;
 EArray.     Exp7 ::= "Array" "("[Exp]")";
 EFunCall. 	Exp7 ::= PIdent [Params];
 
+internal ETyped. Exp ::= "[" Exp ":" TypeSpec ":" "(" Integer "," Integer ")" "]";
 internal EOp. Exp ::= Exp7 Op Exp7;
 coercions Exp 7 ; 
 
 -- Le LExp danno solo uno shift/reduce che è sotto controllo.
-LRef. LExp ::= "*" LExp1;
+LRef. LExp ::= "*" LExp;
 -- Qua c'è uno shift/reduce, perchè potrebbe ridurre LExp con la regola LIdent.
 LArr. LExp1 ::= LExp1 "[" Exp "]";
 LIdent. LExp1 ::= PIdent;

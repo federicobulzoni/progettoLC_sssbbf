@@ -43,7 +43,7 @@ data TypeSpec
 instance Eq TypeSpec where
   (==) (TSimple typ1) (TSimple typ2) = typ1 == typ2 
   (==) (TPointer typ1) (TPointer typ2) = typ1 == typ2
-  (==) (TArray typ1 (PInteger (_,ident1))) (TArray typ2 (PInteger (_,ident2))) = ident1 == ident2 && typ1 == typ2
+  (==) (TArray typ1 (PInteger (_,dim1))) (TArray typ2 (PInteger (_,dim2))) = dim1 == dim2 && typ1 == typ2
   (==) _ _ = False
 
 data SType
@@ -72,8 +72,6 @@ data Arg = DArg PIdent TypeSpec
 data Block = DBlock [Stm]
   deriving (Eq, Ord, Show, Read)
 
---SReturnTyped Stm TypeSpec
-
 data Stm
     = SDecl Declaration
     | SBlock Block
@@ -83,7 +81,6 @@ data Stm
     | SReturn PReturn
     | SReturnExp PReturn Exp
     | SProcCall PIdent [Params]
-    -- Tipizzare solo i return.
   deriving (Eq, Ord, Show, Read)
 
 data Params = ParExp [Exp]
@@ -138,24 +135,12 @@ class Typed a where
   getLoc :: a -> Loc
   isTypeError :: a -> Bool
 
-
-
 -- ETyped Exp TypeSpec Integer Integer
 instance Typed Exp where
     getType (ETyped _ typ _ ) = typ
     getLoc (ETyped _ _ loc) = loc
     isTypeError texp = getType texp == (TSimple TypeError)
 
-
--- StmTyped Stm TypeSpec
-{-
-instance Typed Stm where
-    getType (SReturnTyped _ typ) = typ
-    isTypeError tstm = getType tstm == (TSimple TypeError)
--}
-
--- LExpTyped LExp TypeSpec Integer Integer
--- LIdentTyped PIdent TypeSpec Integer Integer
 instance Typed LExp where
     getType (LExpTyped _ typ _ _ ) = typ
     getLoc (LExpTyped _ _ loc _ ) = loc

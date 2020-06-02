@@ -143,7 +143,7 @@ Declaration :: { Declaration }
 Declaration : 'var' PIdent ':' TypeSpec '=' Exp ';' { AbsGramm.DefVar $2 $4 $6 }
             | 'var' PIdent ':' TypeSpec ';' { AbsGramm.DecVar $2 $4 }
             | 'def' PIdent ListParamClause ':' TypeSpec '=' Block { AbsGramm.DefFun $2 $3 $5 $7 }
-            | 'def' PIdent ListParamClause ':' TypeSpec '=' Exp { AbsGramm.DefFunInLine $2 $3 $5 $7 }
+            | 'def' PIdent ListParamClause ':' TypeSpec '=' Exp ';' { AbsGramm.DefFunInLine $2 $3 $5 $7 }
             | 'def' PIdent ListParamClause '=' Block { dproc_ $2 $3 $5 }
 ListParamClause :: { [ParamClause] }
 ListParamClause : ParamClause { (:[]) $1 }
@@ -230,7 +230,7 @@ Exp7 : LExp { AbsGramm.ELExp $1 }
      | PIdent ListParams { AbsGramm.EFunCall $1 $2 }
      | '(' Exp ')' { $2 }
 LExp :: { LExp }
-LExp : '*' LExp1 { AbsGramm.LRef $2 } | LExp1 { $1 }
+LExp : '*' LExp { AbsGramm.LRef $2 } | LExp1 { $1 }
 LExp1 :: { LExp }
 LExp1 : LExp1 '[' Exp ']' { AbsGramm.LArr $1 $3 }
       | PIdent { AbsGramm.LIdent $1 }

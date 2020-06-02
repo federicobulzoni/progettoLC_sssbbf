@@ -1,7 +1,6 @@
 module TypeChecker where
 
 -- TODO:
-  -- controllare l'uso di NULL che per ora ancora non è stato utilizzato.
   -- controllare l'uso di array vuoti, e la posizione a loro assegnata di default.
   -- pensare alla compatibilita String + String. 
   -- controllare la grammatica e aggiungere le locazioni a tutti i typed che non ce l'hanno.
@@ -16,7 +15,6 @@ import PrintGramm
 import Control.Monad.Writer
 import Errors
 
-
 saveLog:: LogElement -> Writer [LogElement] ()
 saveLog logelem = do 
   tell [logelem]
@@ -28,7 +26,11 @@ isTypeVoid typ = typ == (TSimple TypeVoid)
 -- Questa funzione ora è banale, ma nel caso sia richiesta la compatibilità tra tipi
 -- diventerà utile. Sostituisce checkExp.
 isCompatible :: Exp -> TypeSpec -> Bool
-isCompatible texp typ = getType texp == typ
+isCompatible texp typ = case typ of
+                                      -- Null
+  (TPointer typ') -> getType texp == (TPointer (TSimple TypeVoid)) || getType texp == typ
+  _               -> getType texp == typ
+
 
 paramsToStms :: [ParamClause] -> [Stm]
 paramsToStms params = argsToStms (concat ( map (\(PArg args) -> args) params ) )
@@ -117,9 +119,23 @@ inferDecl decl env = case decl of
               saveLog $ launchWarning loc (MissingReturn ident)
               return $ (DefFun id params typ (DBlock tstms), e)
 -------------------------------------------------------------------------------------------------------------------------------------------
-  -- Zucchero sintattico manuale e via.
   DefFunInLine id@(PIdent (loc, ident)) params typ exp -> 
-    inferDecl (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) exp])) env
+    case update env ident (FunInfo loc typ params) of
+      Success env' -> do
+        functionHandler env'
+      Failure except -> do
+        saveLog $ launchError loc except
+        functionHandler env
+      where 
+        functionHandler e = do
+          texp <- inferExp exp (startFunScope e id params typ)
+          if isTypeError texp || isCompatible texp typ 
+            then
+              return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
+            else do
+              saveLog $ launchError loc (WrongExpType exp texp typ)
+              return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
+
 
 
 startFunScope :: Env -> PIdent -> [ParamClause] -> TypeSpec -> Env
@@ -254,7 +270,7 @@ inferStm stm env = case stm of
                   then
                     if not (isTypeVoid typ)
                       then
-                        saveLog $ launchError loc (MissingAssignVariable ident)
+                        saveLog $ launchWarning loc (MissingAssignVariable ident)
                       else
                         return ()
                   else 
@@ -364,10 +380,17 @@ inferExp exp env = case exp of
         Success (FunInfo dloc typ paramclauses) ->
           let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
             if any (isTypeError) (concat tparams)
-              then return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc
+              then 
+                return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc
               else
                 if typ_args == typ_params 
-                  then return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) typ dloc
+                  then 
+                    if isTypeVoid typ
+                      then do
+                        saveLog $ launchError loc (UnexpectedProc ident)
+                        return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc
+                      else
+                        return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) typ dloc
                   else do
                     saveLog $ launchError loc (WrongFunctionParams ident typ_args typ_params typ)
                     return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc
@@ -405,9 +428,8 @@ inferExp exp env = case exp of
   ETrue   const@(PTrue (loc, _))    -> return $ ETyped (ETrue const) (TSimple SType_Bool) (loc)
   EFalse  const@(PFalse (loc, _))   -> return $ ETyped (EFalse const) (TSimple SType_Bool) (loc)
   -- Ma serve Null? Con i puntatori probabilmente si, nel caso non avrebbe TypeVoid.
-  ENull const@(PNull (loc, _)) -> return $ ETyped (ENull const) (TSimple TypeVoid) loc 
+  ENull const@(PNull (loc, _)) -> return $ ETyped (ENull const) (TPointer (TSimple TypeVoid)) loc 
   EOp expl op expr -> inferBinOp expl op expr env
-
 
 -- Prese due espressioni ed un operatore binario ritorna la corrispondente espressione tipizzata
 inferBinOp :: Exp -> Op -> Exp -> Env -> Writer [LogElement] Exp

@@ -49,6 +49,7 @@ data TCException
     | WrongOpApplication Op Exp Exp
 --    | ErrEnvor String
     | UnexpectedReturn
+    | UnexpectedProc Ident
 --    | ErrEnvorWithLoc Loc String
     | EnvDuplicateIdent Ident Loc Bool
     | EnvNotDeclaredIdent Ident
@@ -95,6 +96,8 @@ getExceptionMsg except = case except of
     WrongReturnValue typ -> "L'operazione return non ha valore di ritorno, ma la funzione ha tipo " ++ printTree typ ++ "."
 
     UnexpectedReturn -> "Valore di ritorno inaspettato."
+    UnexpectedProc ident -> "Chiamata alla procedura " ++ printTree ident ++ " inaspettata."
+
 
     --DuplicateVariable loc ident dloc -> "L'identificatore " ++ printTree ident ++ "e' stato utilizzato in posizione " 
     --                                        ++ printTree dloc ++ "per dichiarare una variabile."
