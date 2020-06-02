@@ -5,14 +5,31 @@ Cose da fare:
     [] fate tanti test                      BF
     [X] sistemare errori in file separato   SS
     [] pulizia codice                       SS/BF
-    [] se c'è una funzione "main" top level va messa all'inizio del tac.
+    [X] se c'è una funzione "main" top level va messa all'inizio del tac.
     [X] se l'istruzione precedente è un return, non aggiungere il return alla fine della funzione.
     [X] le dichiarazioni delle variabili globali vanno in testa al tac
+    [X] Distinguere stampa errori e warning
+    [X] modificare ordine delle funzioni quando si trova un main (che ora va in testa al tac, dopo le dichiarazioni di variabile) ma le sue funzioni interne rimangono nell'ordine sbagliato
+    [] Aggiungere: *= -= += /= %= 
+    [] Aggiungere: operatore ternario
+    [] costanti?
+    [] una funzione può anche essere dichiarata senza parentesi in Scala
+                            def foo : Int = {
+                                1
+                            }
+
+Cose da aggiungere consegna finale:
+    [] continue
+    [] switch
+    [] conversione tipi
+    []
 
 Errori da risolvere:
     [X] Se dichiaro all'interno di una funzione, una funzione con lo stesso nome, non da errore @critical 
     [X] Funzioni di base non gestite dal TAC
     [X] nelle procedure viene richiesto il tipo di ritorno
+    [] se facciamo una definizione di funzione senza blocco e, ad esempio, trova un identificatore sbagliato poi da anche il warning perché gli manca il return
+        l'errore non lo da se mettiamo un'espressione corretta perché con lo zucchero gli mettiamo a forza il return. Vedere test3.scala
 
 Cose da discutere:
 	[X] è giusto che il TAC negli addr usi Ident, Loc e in generale cose di AbsGramm che non gli appartengono?
@@ -20,4 +37,4 @@ Cose da discutere:
        non solo un modo di stamparlo carino forse.  
     [] il TypeChecker da errore se non trova un return nelle funzioni (anche se c'è un return in un if), è corretto? es. test2.scala
         probabilmente non è un problema
-        
+    [] Aggiungere warning se manca il main?

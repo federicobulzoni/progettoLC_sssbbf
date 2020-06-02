@@ -2,7 +2,7 @@ module Errors where
 
 import AbsGramm
 import PrintGramm
-
+import Color
 import Control.Monad (MonadPlus(..), liftM)
 import Control.Applicative (Applicative(..), Alternative(..))
 
@@ -54,12 +54,12 @@ data TCException
     | EnvNotDeclaredIdent Ident
     | InternalError
     deriving(Show)
-
+  
 
 printException :: LogElement -> String
 printException e = case e of
-  Warning loc e -> "Warging: " ++ printTree loc ++ ": " ++ getExceptionMsg e 
-  Error loc e   -> "Error: "   ++ printTree loc ++ ": " ++ getExceptionMsg e 
+  Warning loc e -> (color Yellow Bold "Warning: ") ++ printTree loc ++ ": " ++ getExceptionMsg e 
+  Error loc e   -> (color Red Bold "Error: ")   ++ printTree loc ++ ": " ++ getExceptionMsg e 
 
 launchWarning :: Loc -> TCException -> LogElement
 launchWarning loc except = Warning loc except
@@ -67,6 +67,9 @@ launchWarning loc except = Warning loc except
 launchError :: Loc -> TCException -> LogElement
 launchError loc except = Error loc except
 
+isError :: LogElement -> Bool
+isError (Error _ _) = True
+isError _ = False
 
 --printError :: Loc -> String -> String
 --printError loc mes = "Error(" ++ printTree loc ++ "): " ++ mes
