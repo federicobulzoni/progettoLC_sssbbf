@@ -20,11 +20,11 @@ Cose da fare:
     return exp. Per come è fatto ora non è possibile fare "wrap" di procedure.
     [X] Aggiungere nella grammatica un ; alla fine delle dichiarazioni di funzione inline.
     [] Aggiungere commenti al TAC, per far capire che sappiamo quali sono gli argomenti di una funzione.s
-    [] Type Error e Type Void sono brutti scritti in modo diverso dagli altri tipi base.
+    [] Type Error e Type Void sono brutti scritti in modo diverso dagli altri tipi base. @critical 
     [] Finire di commentare le funzioni in environment.
     [] Controllare se tutti gli import in TestGramm.hs servono veramente.
-    [] Aggiungere statement vuoto per evitare brutture nell-if nel tac.
-    [] Controllare se genLExp per gli array array è giusto. Non sembra, l'indice dovrebbe essere convertito.
+    [X] Aggiungere statement vuoto per evitare brutture nell-if nel tac.
+    [X] Controllare se genLExp per gli array array è giusto. Non sembra, l'indice dovrebbe essere convertito.
     [] Riga 289 del tac. Si pu; lanciare l'errore?
     [] Togliere dipendenze da Typed in Errors
     [] Aggiungere warning se manca il main

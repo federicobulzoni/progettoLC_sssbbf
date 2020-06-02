@@ -301,9 +301,30 @@ genStm stm = case stm of
         genBlock block
         return ()
 
-    SAssign lexp texp -> do
-        addrLexp <- genLexp lexp
-        genExpAssign addrLexp texp
+    --addrOffset <- newTemp
+    --addrTemp <- newTemp
+    --addrLexp' <- genLexp lexp'
+    --addrExp <- genExp exp
+    --out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
+    --out $ AssignFromArray addrTemp addrLexp' addrOffset (convertToTACType typ)
+    --return addrTemp
+
+    SAssign (LExpTyped lexp typ loc dloc) texp -> do
+        case lexp of
+            (LRef lexp') -> do
+                addrLexp' <- genLexp lexp'
+                addrExp <- genExp texp
+                out $ AssignToPointer addrLexp' addrExp (convertToTACType typ)
+            (LArr lexp' texp') -> do
+                addrOffset <- newTemp
+                addrLexp' <- genLexp lexp'
+                addrExp' <- genExp texp'
+                out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
+                addrExp <- genExp texp
+                out $ AssignToArray addrLexp' addrOffset addrExp (convertToTACType typ)
+            (LIdent id) -> do
+                addrLexp <- genLexp lexp
+                genExpAssign addrLexp texp
 
     SWhile texp@(ETyped exp _ _) tstm -> do
         labelWhile <- newLabel
