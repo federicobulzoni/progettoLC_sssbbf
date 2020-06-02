@@ -123,9 +123,10 @@ instance Print AbsGramm.Program where
 
 instance Print [AbsGramm.Declaration] where
   prt = prtList
+
 instance Print AbsGramm.Loc where
   prt i (line, column) =  (concatD [doc (showString "("), prt 0 line, doc (showString ","), prt 0 column, doc (showString ")")])
-  
+
 instance Print AbsGramm.TypeSpec where
   prt i e = case e of
     AbsGramm.TSimple stype -> prPrec i 0 (concatD [prt 0 stype])

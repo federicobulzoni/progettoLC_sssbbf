@@ -1,12 +1,14 @@
-def f0 () : Int = 3+3;
+def main() : Int = {
+    //var a : Array[Array[Int](2)](3);
+    //a[1-1] = Array(1,2);
 
-def f1 () = { 
-    var o : Int = 3; 
+    var y : Int;
+    var z : Int;
+    var x : *Int;
+
+    // **x = y + z * k
+    t1 = *x
+    t2 = z * k
+    t3 = *t1
+    t3 = y + t2;
 }
-
-// def f2() = f1();
-def f2 () = f0();
-
-def f3 () : Int = f1();
-
-def f4 () = 3+3;

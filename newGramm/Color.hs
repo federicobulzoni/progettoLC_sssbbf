@@ -10,7 +10,8 @@ data Color
     | Blue   
     | Magenta
     | Cyan   
-    | White  
+    | White
+    | Default 
 
 data Style 
     = Normal
@@ -34,6 +35,7 @@ getColor c = case c of
     Magenta -> "35"
     Cyan    -> "36"
     White   -> "37"
+    Default -> ""
 
 getStyle :: Style -> String
 getStyle s = case s of

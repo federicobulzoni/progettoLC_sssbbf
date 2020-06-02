@@ -3,7 +3,7 @@ module ThreeAddressCode where
 import AbsTAC
 import AbsGramm
 import Control.Monad.State.Lazy
-
+import PrintGramm
 type MyMon a = State (
     Int,      -- temporanei
     Int,      -- label
@@ -185,6 +185,10 @@ sizeOf (TSimple typ)  = case typ of
 sizeOf (TArray typ (PInteger (_,size))) = (read size :: Int)  * (sizeOf typ)
 sizeOf (TPointer typ) = 4
 
+getArrayType :: TypeSpec -> TypeSpec
+getArrayType (TArray typ' _) = typ'
+getArrayType typ = error $ "Errore: " ++ printTree typ
+
 genLexp :: LExp -> MyMon Addr
 genLexp (LExpTyped lexp typ _ dloc) = case lexp of
     LIdent (PIdent (_,ident)) -> return $ buildVarAddress ident dloc
@@ -194,10 +198,12 @@ genLexp (LExpTyped lexp typ _ dloc) = case lexp of
         out $ AssignFromPointer addrTemp addrLexp' (convertToTACType typ)
         return addrTemp
     LArr lexp' exp -> do
+        addrOffset <- newTemp
         addrTemp <- newTemp
         addrLexp' <- genLexp lexp'
         addrExp <- genExp exp
-        out $ AssignFromArray addrTemp addrLexp' addrExp (convertToTACType typ)
+        out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
+        out $ AssignFromArray addrTemp addrLexp' addrOffset (convertToTACType typ)
         return addrTemp
 
 
@@ -236,7 +242,6 @@ genExp texp@(ETyped exp typ loc) = case exp of
             out $ AssignBinOp temp (LitInt i) AbsTAC.ProdInt (LitInt $ sizeOf typ') (convertToTACType (TSimple SType_Int))
             out $ AssignToArray base temp x (convertToTACType typ')
 
-        getArrayType (TArray typ' _) = typ'
 
 -- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
 genBlock :: Block -> MyMon Bool
@@ -286,7 +291,7 @@ convertToTACType typ = case typ of
     (TSimple SType_Char)   -> TACChar 
     (TSimple SType_String) -> TACString
     (TSimple SType_Bool)   -> TACBool
-    (TSimple _ )           ->  error "Internal error: converting void or error to TAC type."
+    (TSimple _ )           -> error "Internal error: converting void or error to TAC type."
     _                      -> TACAddr  
 
 genStm :: Stm -> MyMon ()

@@ -40,12 +40,6 @@ data TypeSpec
     = TSimple SType | TPointer TypeSpec | TArray TypeSpec PInteger
   deriving (Ord, Show, Read)
 
-instance Eq TypeSpec where
-  (==) (TSimple typ1) (TSimple typ2) = typ1 == typ2 
-  (==) (TPointer typ1) (TPointer typ2) = typ1 == typ2
-  (==) (TArray typ1 (PInteger (_,dim1))) (TArray typ2 (PInteger (_,dim2))) = dim1 == dim2 && typ1 == typ2
-  (==) _ _ = False
-
 data SType
     = SType_Float
     | SType_Int
@@ -128,17 +122,9 @@ data LExp
     | LExpTyped LExp TypeSpec Loc Loc -- loc dloc
   deriving (Eq, Ord, Show, Read)
 
-class Typed a where
-  getType :: a -> TypeSpec
-  getLoc :: a -> Loc
-  isTypeError :: a -> Bool
 
-instance Typed Exp where
-    getType (ETyped _ typ _ ) = typ
-    getLoc (ETyped _ _ loc) = loc
-    isTypeError texp = getType texp == (TSimple TypeError)
-
-instance Typed LExp where
-    getType (LExpTyped _ typ _ _ ) = typ
-    getLoc (LExpTyped _ _ loc _ ) = loc
-    isTypeError tlexp = getType tlexp == (TSimple TypeError)
+instance Eq TypeSpec where
+  (==) (TSimple typ1) (TSimple typ2) = typ1 == typ2 
+  (==) (TPointer typ1) (TPointer typ2) = typ1 == typ2
+  (==) (TArray typ1 (PInteger (_,dim1))) (TArray typ2 (PInteger (_,dim2))) = dim1 == dim2 && typ1 == typ2
+  (==) _ _ = False

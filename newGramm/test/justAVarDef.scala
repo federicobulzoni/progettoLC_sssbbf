@@ -11,9 +11,9 @@ def foo () = {
 var h : Float;
 var k : Array[*Int](4);
 
-def main() = {
+def main3() = {
     var x : Int;
-    def main3 (a : Int) : Int = {
+    def main (a : Int) : Int = {
         return 1;
     }
     var y : Int;

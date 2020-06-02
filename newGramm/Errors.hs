@@ -5,6 +5,7 @@ import PrintGramm
 import Color
 import Control.Monad (MonadPlus(..), liftM)
 import Control.Applicative (Applicative(..), Alternative(..))
+import Typed
 
 data ErrEnv a = Success a | Failure TCException
     deriving (Show)
@@ -73,7 +74,7 @@ isError _ = False
 getExceptionMsg :: TCException -> String
 getExceptionMsg except = case except of
     MissingReturn ident -> "Not every code path returns a value in function " 
-                                    ++ printTree ident ++ "."
+                                    ++ color Default Italic (printTree ident) ++ "."
 
     WrongExpType exp texp typ -> "L'espressione " ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) 
                                                     ++ ", ma il tipo atteso e' " ++ printTree typ ++ "."

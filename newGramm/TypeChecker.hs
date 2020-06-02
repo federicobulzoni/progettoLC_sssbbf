@@ -5,6 +5,7 @@ import Environment as Env
 import PrintGramm
 import Control.Monad.Writer
 import Errors
+import Typed
 
 saveLog:: LogElement -> Writer [LogElement] ()
 saveLog logelem = do 
@@ -93,7 +94,6 @@ inferDecl decl env = case decl of
         functionHandler e = do
           -- Creare nuovo scope avviato con i parametri e il nome della fun.
           (tstms, e') <- inferStms stms (startFunScope e id params typ)
-          -- (tblock, e') <- inferBlock (DBlock ((paramsToStms params)++stms)) typ e
           if Env.hasReturn e' || isTypeVoid typ
             then
               return $ (DefFun id params typ (DBlock tstms), e)
@@ -129,16 +129,6 @@ inferDecl decl env = case decl of
                 else do
                   saveLog $ launchError loc (WrongExpType exp texp typ)
                   return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
-          --    saveLog $ launchError loc (WrongReturnValue typ)
-          --  (_, True) -> do
-          --texp <- inferExp exp (startFunScope e id params typ)
-          --if isTypeError texp || isCompatible texp typ 
-          --  then
-          --    return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
-          --  else do
-          --    saveLog $ launchError loc (WrongExpType exp texp typ)
-          --    return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
-
 
 
 startFunScope :: Env -> PIdent -> [ParamClause] -> TypeSpec -> Env

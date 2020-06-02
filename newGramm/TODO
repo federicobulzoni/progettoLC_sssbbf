@@ -11,8 +11,6 @@ Cose da fare:
     [] fate tanti test                      BF    
     [] pulizia codice                       SS/BF   
     [] Aggiungere: *= -= += /= %= 
-    [] Aggiungere: operatore ternario
-    [] costanti?
     [] una funzione può anche essere dichiarata senza parentesi in Scala
                             def foo : Int = {
                                 1
@@ -20,7 +18,7 @@ Cose da fare:
     [] le dichiarazioni in linea di funzioni riguardano solo le funzioni e non lo procedure per come è fatto ora,
     il significato di una definizione il linea di funzione è quello di avere una funzione con una unica istruzione
     return exp. Per come è fatto ora non è possibile fare "wrap" di procedure.
-    [] Aggiungere nella grammatica un ; alla fine delle dichiarazioni di funzione inline.
+    [X] Aggiungere nella grammatica un ; alla fine delle dichiarazioni di funzione inline.
     [] Aggiungere commenti al TAC, per far capire che sappiamo quali sono gli argomenti di una funzione.s
     [] Type Error e Type Void sono brutti scritti in modo diverso dagli altri tipi base.
     [] Finire di commentare le funzioni in environment.
@@ -28,36 +26,35 @@ Cose da fare:
     [] Aggiungere statement vuoto per evitare brutture nell-if nel tac.
     [] Controllare se genLExp per gli array array è giusto. Non sembra, l'indice dovrebbe essere convertito.
     [] Riga 289 del tac. Si pu; lanciare l'errore?
+    [] Togliere dipendenze da Typed in Errors
+    [] Aggiungere warning se manca il main
+    [] Aggiungere un'etichetta in fondo al tac (raggiungibile con goto dopo le decl globali), se manca il main
     [] Todo del typechecker:
-  		[] controllare l'uso di array vuoti, e la posizione a loro assegnata di default.
-  		[] pensare alla compatibilita String + String. 
-  		[] controllare la grammatica e aggiungere le locazioni a tutti i typed che non ce l'hanno.
-  		[] controllare che la locazione negli statement serva veramente (sembra servire solo nella chiamata di funzione)
-  		[] ci serve la posizione di dichiarazione di tutto ciò che viene dichiarato (identificatori: var, fun) --> serve nel tac per identificare gli id
-  		[] l'unica cosa che necessita della locazione sono le espressioni --> stampa errori
-  		[] starting env brutto da vedere.
+  		[] fare in  modo che agli array si possano assegnare Array() di cardinalità minore rispetto a quella dell'array
+  		[X] controllare la grammatica e aggiungere le locazioni a tutti i typed che non ce l'hanno.
+  		[X] controllare che la locazione negli statement serva veramente (sembra servire solo nella chiamata di funzione)
+  		[X] ci serve la posizione di dichiarazione di tutto ciò che viene dichiarato (identificatori: var, fun) --> serve nel tac per identificare gli id
+  		[X] l'unica cosa che necessita della locazione sono le espressioni --> stampa errori
+  		[X] starting env brutto da vedere.
   		[] errore duplicate variable e duplicate function da mettere a posto.
 
 Cose da aggiungere consegna finale:
     [] continue
     [] switch
     [] conversione tipi
-    []
+    [] pensare alla compatibilita String + String
+    [] Aggiungere: operatore ternario
+    [] costanti
 
 Errori da risolvere:
-    [X] Se dichiaro all'interno di una funzione, una funzione con lo stesso nome, non da errore @critical 
-    [X] Funzioni di base non gestite dal TAC
-    [X] nelle procedure viene richiesto il tipo di ritorno
-    [] se facciamo una definizione di funzione senza blocco e, ad esempio, trova un identificatore sbagliato poi da anche il warning perché gli manca il return
-        l'errore non lo da se mettiamo un'espressione corretta perché con lo zucchero gli mettiamo a forza il return. Vedere test3.scala
 
 Cose da discutere:
-    [] il TypeChecker da errore se non trova un return nelle funzioni (anche se c'è un return in un if), è corretto? es. test2.scala
+    [X] il TypeChecker da errore se non trova un return nelle funzioni (anche se c'è un return in un if), è corretto? es. test2.scala
         probabilmente non è un problema
         Secondo me va bene così com'è con il warning, avvisa che non c'è un return in tutti i percorsi e questo potrebbe essere non voluto. Sara.
-    [] Aggiungere warning se manca il main?
+   
        Io lo farei. Sara.
-    [] AbsGramm dovrebbe contenere sono la sintassi astratta, quindi i vari data e type, non la classe typed con relative implementazioni delle funzioni nelle istanze. Vanno da qualche altra parte.
+    [X] AbsGramm dovrebbe contenere sono la sintassi astratta, quindi i vari data e type, non la classe typed con relative implementazioni delle funzioni nelle istanze. Vanno da qualche altra parte.
     [] Perché l'abbiamo chiamato Gramm? Tutti i file non dovrebbero avere un nome più significativo, tipo il nome del nostro linguaggio?
-    [] Il commento all'inizio di environment?
-    [] Rimuovere il file TestGramm
+    [X] Il commento all'inizio di environment?
+    [X] Rimuovere il file TestGramm
