@@ -27,7 +27,7 @@ DecVar. Declaration ::= "var" PIdent ":" TypeSpec ";";
 
 --internal DummyExp. Exp ::= "dummy";
 DefFun. Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Block;
-DefFunInLine. Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Exp;
+DefFunInLine. Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Exp ";"; 
 dproc. Declaration ::= "def" PIdent [ParamClause] "=" Block;
 separator nonempty ParamClause "";
 
@@ -113,7 +113,7 @@ internal EOp. Exp ::= Exp7 Op Exp7;
 coercions Exp 7 ; 
 
 -- Le LExp danno solo uno shift/reduce che è sotto controllo.
-LRef. LExp ::= "*" LExp1;
+LRef. LExp ::= "*" LExp;
 -- Qua c'è uno shift/reduce, perchè potrebbe ridurre LExp con la regola LIdent.
 LArr. LExp1 ::= LExp1 "[" Exp "]";
 LIdent. LExp1 ::= PIdent;

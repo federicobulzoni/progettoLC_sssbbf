@@ -15,7 +15,11 @@ var a3 : **Int = &a2;
 var a4 : ***Int = &a3;
 var a5 : ****Int = &a4;
 
+var b : *Int = Null;
+
+
 def proc () = {
 	****a5 = 2;
 }
+
 

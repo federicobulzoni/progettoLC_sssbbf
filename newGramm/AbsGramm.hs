@@ -43,7 +43,7 @@ data TypeSpec
 instance Eq TypeSpec where
   (==) (TSimple typ1) (TSimple typ2) = typ1 == typ2 
   (==) (TPointer typ1) (TPointer typ2) = typ1 == typ2
-  (==) (TArray typ1 (PInteger (_,ident1))) (TArray typ2 (PInteger (_,ident2))) = ident1 == ident2 && typ1 == typ2
+  (==) (TArray typ1 (PInteger (_,dim1))) (TArray typ2 (PInteger (_,dim2))) = dim1 == dim2 && typ1 == typ2
   (==) _ _ = False
 
 data SType

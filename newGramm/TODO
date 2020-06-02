@@ -17,6 +17,11 @@ Cose da fare:
                             def foo : Int = {
                                 1
                             }
+    [] le dichiarazioni in linea di funzioni riguardano solo le funzioni e non lo procedure per come è fatto ora,
+    il significato di una definizione il linea di funzione è quello di avere una funzione con una unica istruzione
+    return exp. Per come è fatto ora non è possibile fare "wrap" di procedure.
+    [] Aggiungere nella grammatica un ; alla fine delle dichiarazioni di funzione inline.
+    [] Aggiungere commenti al TAC, per far capire che sappiamo quali sono gli argomenti di una funzione.s
 
 Cose da aggiungere consegna finale:
     [] continue
