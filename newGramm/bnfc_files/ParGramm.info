@@ -13,7 +13,7 @@ state 178 contains 1 shift/reduce conflicts.
 state 189 contains 5 shift/reduce conflicts.
 state 191 contains 7 shift/reduce conflicts.
 state 195 contains 14 shift/reduce conflicts.
-state 223 contains 1 shift/reduce conflicts.
+state 224 contains 1 shift/reduce conflicts.
 
 rule 31 is unused
 
@@ -77,84 +77,85 @@ Grammar
 	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' Block   (54)
 	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' Exp ';'   (55)
 	Declaration -> 'def' PIdent ListParamClause '=' Block   (56)
-	ListParamClause -> ParamClause                     (57)
-	ListParamClause -> ParamClause ListParamClause     (58)
-	ParamClause -> '(' ListArg ')'                     (59)
-	ListArg ->                                         (60)
-	ListArg -> Arg                                     (61)
-	ListArg -> Arg ',' ListArg                         (62)
-	Arg -> PIdent ':' TypeSpec                         (63)
-	Block -> '{' ListStm '}'                           (64)
-	ListStm ->                                         (65)
-	ListStm -> ListStm Stm                             (66)
-	Stm -> Declaration                                 (67)
-	Stm -> Block                                       (68)
-	Stm -> LExp '=' Exp ';'                            (69)
-	Stm -> 'while' '(' Exp ')' Stm                     (70)
-	Stm -> 'if' '(' Exp ')' Stm 'else' Stm             (71)
-	Stm -> 'if' '(' Exp ')' Stm                        (72)
-	Stm -> 'do' Stm 'while' '(' Exp ')' ';'            (73)
-	Stm -> PReturn ';'                                 (74)
-	Stm -> PReturn Exp ';'                             (75)
-	Stm -> PIdent ListParams ';'                       (76)
-	Params -> '(' ListExp ')'                          (77)
-	ListParams -> Params                               (78)
-	ListParams -> Params ListParams                    (79)
-	ListExp ->                                         (80)
-	ListExp -> Exp                                     (81)
-	ListExp -> Exp ',' ListExp                         (82)
-	Op -> '||'                                         (83)
-	Op -> Op1                                          (84)
-	Op1 -> '&&'                                        (85)
-	Op1 -> Op2                                         (86)
-	Op2 -> '<'                                         (87)
-	Op2 -> '<='                                        (88)
-	Op2 -> '>'                                         (89)
-	Op2 -> '>='                                        (90)
-	Op2 -> '=='                                        (91)
-	Op2 -> '!='                                        (92)
-	Op2 -> Op3                                         (93)
-	Op3 -> '+'                                         (94)
-	Op3 -> '-'                                         (95)
-	Op3 -> Op4                                         (96)
-	Op4 -> '*'                                         (97)
-	Op4 -> '/'                                         (98)
-	Op4 -> '%'                                         (99)
-	Op4 -> Op5                                         (100)
-	Op5 -> '^'                                         (101)
-	Op5 -> '(' Op ')'                                  (102)
-	Exp -> Exp Op Exp1                                 (103)
-	Exp -> Exp1                                        (104)
-	Exp1 -> Exp1 Op1 Exp2                              (105)
-	Exp1 -> Exp2                                       (106)
-	Exp2 -> '!' Exp2                                   (107)
-	Exp2 -> Exp3 Op2 Exp3                              (108)
-	Exp2 -> Exp3                                       (109)
-	Exp3 -> Exp3 Op3 Exp4                              (110)
-	Exp3 -> Exp4                                       (111)
-	Exp4 -> Exp4 Op4 Exp5                              (112)
-	Exp4 -> Exp5                                       (113)
-	Exp5 -> Exp6 Op5 Exp7                              (114)
-	Exp5 -> Exp6                                       (115)
-	Exp6 -> '-' Exp7                                   (116)
-	Exp6 -> Exp7                                       (117)
-	Exp7 -> LExp                                       (118)
-	Exp7 -> '&' LExp                                   (119)
-	Exp7 -> PInteger                                   (120)
-	Exp7 -> PFloat                                     (121)
-	Exp7 -> PChar                                      (122)
-	Exp7 -> PString                                    (123)
-	Exp7 -> PTrue                                      (124)
-	Exp7 -> PFalse                                     (125)
-	Exp7 -> PNull                                      (126)
-	Exp7 -> 'Array' '(' ListExp ')'                    (127)
-	Exp7 -> PIdent ListParams                          (128)
-	Exp7 -> '(' Exp ')'                                (129)
-	LExp -> '*' LExp                                   (130)
-	LExp -> LExp1                                      (131)
-	LExp1 -> LExp1 '[' Exp ']'                         (132)
-	LExp1 -> PIdent                                    (133)
-	LExp1 -> '(' LExp ')'                              (134)
+	Declaration -> 'def' PIdent ListParamClause '=' Exp ';'   (57)
+	ListParamClause -> ParamClause                     (58)
+	ListParamClause -> ParamClause ListParamClause     (59)
+	ParamClause -> '(' ListArg ')'                     (60)
+	ListArg ->                                         (61)
+	ListArg -> Arg                                     (62)
+	ListArg -> Arg ',' ListArg                         (63)
+	Arg -> PIdent ':' TypeSpec                         (64)
+	Block -> '{' ListStm '}'                           (65)
+	ListStm ->                                         (66)
+	ListStm -> ListStm Stm                             (67)
+	Stm -> Declaration                                 (68)
+	Stm -> Block                                       (69)
+	Stm -> LExp '=' Exp ';'                            (70)
+	Stm -> 'while' '(' Exp ')' Stm                     (71)
+	Stm -> 'if' '(' Exp ')' Stm 'else' Stm             (72)
+	Stm -> 'if' '(' Exp ')' Stm                        (73)
+	Stm -> 'do' Stm 'while' '(' Exp ')' ';'            (74)
+	Stm -> PReturn ';'                                 (75)
+	Stm -> PReturn Exp ';'                             (76)
+	Stm -> PIdent ListParams ';'                       (77)
+	Params -> '(' ListExp ')'                          (78)
+	ListParams -> Params                               (79)
+	ListParams -> Params ListParams                    (80)
+	ListExp ->                                         (81)
+	ListExp -> Exp                                     (82)
+	ListExp -> Exp ',' ListExp                         (83)
+	Op -> '||'                                         (84)
+	Op -> Op1                                          (85)
+	Op1 -> '&&'                                        (86)
+	Op1 -> Op2                                         (87)
+	Op2 -> '<'                                         (88)
+	Op2 -> '<='                                        (89)
+	Op2 -> '>'                                         (90)
+	Op2 -> '>='                                        (91)
+	Op2 -> '=='                                        (92)
+	Op2 -> '!='                                        (93)
+	Op2 -> Op3                                         (94)
+	Op3 -> '+'                                         (95)
+	Op3 -> '-'                                         (96)
+	Op3 -> Op4                                         (97)
+	Op4 -> '*'                                         (98)
+	Op4 -> '/'                                         (99)
+	Op4 -> '%'                                         (100)
+	Op4 -> Op5                                         (101)
+	Op5 -> '^'                                         (102)
+	Op5 -> '(' Op ')'                                  (103)
+	Exp -> Exp Op Exp1                                 (104)
+	Exp -> Exp1                                        (105)
+	Exp1 -> Exp1 Op1 Exp2                              (106)
+	Exp1 -> Exp2                                       (107)
+	Exp2 -> '!' Exp2                                   (108)
+	Exp2 -> Exp3 Op2 Exp3                              (109)
+	Exp2 -> Exp3                                       (110)
+	Exp3 -> Exp3 Op3 Exp4                              (111)
+	Exp3 -> Exp4                                       (112)
+	Exp4 -> Exp4 Op4 Exp5                              (113)
+	Exp4 -> Exp5                                       (114)
+	Exp5 -> Exp6 Op5 Exp7                              (115)
+	Exp5 -> Exp6                                       (116)
+	Exp6 -> '-' Exp7                                   (117)
+	Exp6 -> Exp7                                       (118)
+	Exp7 -> LExp                                       (119)
+	Exp7 -> '&' LExp                                   (120)
+	Exp7 -> PInteger                                   (121)
+	Exp7 -> PFloat                                     (122)
+	Exp7 -> PChar                                      (123)
+	Exp7 -> PString                                    (124)
+	Exp7 -> PTrue                                      (125)
+	Exp7 -> PFalse                                     (126)
+	Exp7 -> PNull                                      (127)
+	Exp7 -> 'Array' '(' ListExp ')'                    (128)
+	Exp7 -> PIdent ListParams                          (129)
+	Exp7 -> '(' Exp ')'                                (130)
+	LExp -> '*' LExp                                   (131)
+	LExp -> LExp1                                      (132)
+	LExp1 -> LExp1 '[' Exp ']'                         (133)
+	LExp1 -> PIdent                                    (134)
+	LExp1 -> '(' LExp ')'                              (135)
 
 -----------------------------------------------------------------------------
 Terminals
@@ -256,33 +257,33 @@ Non-terminals
 	ListDeclaration rules 42, 43
 	TypeSpec        rules 44, 45, 46
 	SType           rules 47, 48, 49, 50, 51
-	Declaration     rules 52, 53, 54, 55, 56
-	ListParamClause rules 57, 58
-	ParamClause     rule  59
-	ListArg         rules 60, 61, 62
-	Arg             rule  63
-	Block           rule  64
-	ListStm         rules 65, 66
-	Stm             rules 67, 68, 69, 70, 71, 72, 73, 74, 75, 76
-	Params          rule  77
-	ListParams      rules 78, 79
-	ListExp         rules 80, 81, 82
-	Op              rules 83, 84
-	Op1             rules 85, 86
-	Op2             rules 87, 88, 89, 90, 91, 92, 93
-	Op3             rules 94, 95, 96
-	Op4             rules 97, 98, 99, 100
-	Op5             rules 101, 102
-	Exp             rules 103, 104
-	Exp1            rules 105, 106
-	Exp2            rules 107, 108, 109
-	Exp3            rules 110, 111
-	Exp4            rules 112, 113
-	Exp5            rules 114, 115
-	Exp6            rules 116, 117
-	Exp7            rules 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129
-	LExp            rules 130, 131
-	LExp1           rules 132, 133, 134
+	Declaration     rules 52, 53, 54, 55, 56, 57
+	ListParamClause rules 58, 59
+	ParamClause     rule  60
+	ListArg         rules 61, 62, 63
+	Arg             rule  64
+	Block           rule  65
+	ListStm         rules 66, 67
+	Stm             rules 68, 69, 70, 71, 72, 73, 74, 75, 76, 77
+	Params          rule  78
+	ListParams      rules 79, 80
+	ListExp         rules 81, 82, 83
+	Op              rules 84, 85
+	Op1             rules 86, 87
+	Op2             rules 88, 89, 90, 91, 92, 93, 94
+	Op3             rules 95, 96, 97
+	Op4             rules 98, 99, 100, 101
+	Op5             rules 102, 103
+	Exp             rules 104, 105
+	Exp1            rules 106, 107
+	Exp2            rules 108, 109, 110
+	Exp3            rules 111, 112
+	Exp4            rules 113, 114
+	Exp5            rules 115, 116
+	Exp6            rules 117, 118
+	Exp7            rules 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130
+	LExp            rules 131, 132
+	LExp1           rules 133, 134, 135
 
 -----------------------------------------------------------------------------
 States
@@ -358,7 +359,7 @@ State 7
 
 
 	L_PIdent       shift, and enter state 36
-	%eof           reduce using rule 60
+	%eof           reduce using rule 61
 
 	PIdent         goto state 123
 	ListArg        goto state 125
@@ -382,17 +383,17 @@ State 9
 State 10
 
 
-	'('            reduce using rule 65
-	'*'            reduce using rule 65
-	'def'          reduce using rule 65
-	'do'           reduce using rule 65
-	'if'           reduce using rule 65
-	'var'          reduce using rule 65
-	'while'        reduce using rule 65
-	'{'            reduce using rule 65
-	L_PReturn      reduce using rule 65
-	L_PIdent       reduce using rule 65
-	%eof           reduce using rule 65
+	'('            reduce using rule 66
+	'*'            reduce using rule 66
+	'def'          reduce using rule 66
+	'do'           reduce using rule 66
+	'if'           reduce using rule 66
+	'var'          reduce using rule 66
+	'while'        reduce using rule 66
+	'{'            reduce using rule 66
+	L_PReturn      reduce using rule 66
+	L_PIdent       reduce using rule 66
+	%eof           reduce using rule 66
 
 	ListStm        goto state 121
 
@@ -450,7 +451,7 @@ State 14
 	L_PInteger     shift, and enter state 57
 	L_PString      shift, and enter state 58
 	L_PChar        shift, and enter state 59
-	%eof           reduce using rule 80
+	%eof           reduce using rule 81
 
 	PTrue          goto state 40
 	PFalse         goto state 41
@@ -875,36 +876,36 @@ State 32
 
 State 33
 
-	LExp1 -> PIdent .                                   (rule 133)
+	LExp1 -> PIdent .                                   (rule 134)
 
-	'!='           reduce using rule 133
-	'%'            reduce using rule 133
-	'&&'           reduce using rule 133
-	'('            reduce using rule 133
-	')'            reduce using rule 133
-	'*'            reduce using rule 133
-	'+'            reduce using rule 133
-	','            reduce using rule 133
-	'-'            reduce using rule 133
-	'/'            reduce using rule 133
-	';'            reduce using rule 133
-	'<'            reduce using rule 133
-	'<='           reduce using rule 133
-	'='            reduce using rule 133
-	'=='           reduce using rule 133
-	'>'            reduce using rule 133
-	'>='           reduce using rule 133
-	'['            reduce using rule 133
-	']'            reduce using rule 133
-	'^'            reduce using rule 133
-	'||'           reduce using rule 133
-	%eof           reduce using rule 133
+	'!='           reduce using rule 134
+	'%'            reduce using rule 134
+	'&&'           reduce using rule 134
+	'('            reduce using rule 134
+	')'            reduce using rule 134
+	'*'            reduce using rule 134
+	'+'            reduce using rule 134
+	','            reduce using rule 134
+	'-'            reduce using rule 134
+	'/'            reduce using rule 134
+	';'            reduce using rule 134
+	'<'            reduce using rule 134
+	'<='           reduce using rule 134
+	'='            reduce using rule 134
+	'=='           reduce using rule 134
+	'>'            reduce using rule 134
+	'>='           reduce using rule 134
+	'['            reduce using rule 134
+	']'            reduce using rule 134
+	'^'            reduce using rule 134
+	'||'           reduce using rule 134
+	%eof           reduce using rule 134
 
 
 State 34
 
 	%start_pLExp1 -> LExp1 .                            (rule 30)
-	LExp1 -> LExp1 . '[' Exp ']'                        (rule 132)
+	LExp1 -> LExp1 . '[' Exp ']'                        (rule 133)
 
 	'['            shift, and enter state 182
 	%eof           accept
@@ -912,7 +913,7 @@ State 34
 
 State 35
 
-	LExp1 -> '(' . LExp ')'                             (rule 134)
+	LExp1 -> '(' . LExp ')'                             (rule 135)
 
 	'('            shift, and enter state 35
 	'*'            shift, and enter state 39
@@ -960,36 +961,36 @@ State 37
 
 State 38
 
-	LExp -> LExp1 .                                     (rule 131)
-	LExp1 -> LExp1 . '[' Exp ']'                        (rule 132)
+	LExp -> LExp1 .                                     (rule 132)
+	LExp1 -> LExp1 . '[' Exp ']'                        (rule 133)
 
-	'!='           reduce using rule 131
-	'%'            reduce using rule 131
-	'&&'           reduce using rule 131
-	'('            reduce using rule 131
-	')'            reduce using rule 131
-	'*'            reduce using rule 131
-	'+'            reduce using rule 131
-	','            reduce using rule 131
-	'-'            reduce using rule 131
-	'/'            reduce using rule 131
-	';'            reduce using rule 131
-	'<'            reduce using rule 131
-	'<='           reduce using rule 131
-	'='            reduce using rule 131
-	'=='           reduce using rule 131
-	'>'            reduce using rule 131
-	'>='           reduce using rule 131
+	'!='           reduce using rule 132
+	'%'            reduce using rule 132
+	'&&'           reduce using rule 132
+	'('            reduce using rule 132
+	')'            reduce using rule 132
+	'*'            reduce using rule 132
+	'+'            reduce using rule 132
+	','            reduce using rule 132
+	'-'            reduce using rule 132
+	'/'            reduce using rule 132
+	';'            reduce using rule 132
+	'<'            reduce using rule 132
+	'<='           reduce using rule 132
+	'='            reduce using rule 132
+	'=='           reduce using rule 132
+	'>'            reduce using rule 132
+	'>='           reduce using rule 132
 	'['            shift, and enter state 182
-	']'            reduce using rule 131
-	'^'            reduce using rule 131
-	'||'           reduce using rule 131
-	%eof           reduce using rule 131
+	']'            reduce using rule 132
+	'^'            reduce using rule 132
+	'||'           reduce using rule 132
+	%eof           reduce using rule 132
 
 
 State 39
 
-	LExp -> '*' . LExp                                  (rule 130)
+	LExp -> '*' . LExp                                  (rule 131)
 
 	'('            shift, and enter state 35
 	'*'            shift, and enter state 39
@@ -1001,33 +1002,7 @@ State 39
 
 State 40
 
-	Exp7 -> PTrue .                                     (rule 124)
-
-	'!='           reduce using rule 124
-	'%'            reduce using rule 124
-	'&&'           reduce using rule 124
-	'('            reduce using rule 124
-	')'            reduce using rule 124
-	'*'            reduce using rule 124
-	'+'            reduce using rule 124
-	','            reduce using rule 124
-	'-'            reduce using rule 124
-	'/'            reduce using rule 124
-	';'            reduce using rule 124
-	'<'            reduce using rule 124
-	'<='           reduce using rule 124
-	'=='           reduce using rule 124
-	'>'            reduce using rule 124
-	'>='           reduce using rule 124
-	']'            reduce using rule 124
-	'^'            reduce using rule 124
-	'||'           reduce using rule 124
-	%eof           reduce using rule 124
-
-
-State 41
-
-	Exp7 -> PFalse .                                    (rule 125)
+	Exp7 -> PTrue .                                     (rule 125)
 
 	'!='           reduce using rule 125
 	'%'            reduce using rule 125
@@ -1051,9 +1026,9 @@ State 41
 	%eof           reduce using rule 125
 
 
-State 42
+State 41
 
-	Exp7 -> PNull .                                     (rule 126)
+	Exp7 -> PFalse .                                    (rule 126)
 
 	'!='           reduce using rule 126
 	'%'            reduce using rule 126
@@ -1077,119 +1052,67 @@ State 42
 	%eof           reduce using rule 126
 
 
+State 42
+
+	Exp7 -> PNull .                                     (rule 127)
+
+	'!='           reduce using rule 127
+	'%'            reduce using rule 127
+	'&&'           reduce using rule 127
+	'('            reduce using rule 127
+	')'            reduce using rule 127
+	'*'            reduce using rule 127
+	'+'            reduce using rule 127
+	','            reduce using rule 127
+	'-'            reduce using rule 127
+	'/'            reduce using rule 127
+	';'            reduce using rule 127
+	'<'            reduce using rule 127
+	'<='           reduce using rule 127
+	'=='           reduce using rule 127
+	'>'            reduce using rule 127
+	'>='           reduce using rule 127
+	']'            reduce using rule 127
+	'^'            reduce using rule 127
+	'||'           reduce using rule 127
+	%eof           reduce using rule 127
+
+
 State 43
 
-	Exp7 -> PIdent . ListParams                         (rule 128)
-	LExp1 -> PIdent .                                   (rule 133)
+	Exp7 -> PIdent . ListParams                         (rule 129)
+	LExp1 -> PIdent .                                   (rule 134)
 
-	'!='           reduce using rule 133
-	'%'            reduce using rule 133
-	'&&'           reduce using rule 133
+	'!='           reduce using rule 134
+	'%'            reduce using rule 134
+	'&&'           reduce using rule 134
 	'('            shift, and enter state 106
-			(reduce using rule 133)
+			(reduce using rule 134)
 
-	')'            reduce using rule 133
-	'*'            reduce using rule 133
-	'+'            reduce using rule 133
-	','            reduce using rule 133
-	'-'            reduce using rule 133
-	'/'            reduce using rule 133
-	';'            reduce using rule 133
-	'<'            reduce using rule 133
-	'<='           reduce using rule 133
-	'=='           reduce using rule 133
-	'>'            reduce using rule 133
-	'>='           reduce using rule 133
-	'['            reduce using rule 133
-	']'            reduce using rule 133
-	'^'            reduce using rule 133
-	'||'           reduce using rule 133
-	%eof           reduce using rule 133
+	')'            reduce using rule 134
+	'*'            reduce using rule 134
+	'+'            reduce using rule 134
+	','            reduce using rule 134
+	'-'            reduce using rule 134
+	'/'            reduce using rule 134
+	';'            reduce using rule 134
+	'<'            reduce using rule 134
+	'<='           reduce using rule 134
+	'=='           reduce using rule 134
+	'>'            reduce using rule 134
+	'>='           reduce using rule 134
+	'['            reduce using rule 134
+	']'            reduce using rule 134
+	'^'            reduce using rule 134
+	'||'           reduce using rule 134
+	%eof           reduce using rule 134
 
 	Params         goto state 104
 	ListParams     goto state 180
 
 State 44
 
-	Exp7 -> PFloat .                                    (rule 121)
-
-	'!='           reduce using rule 121
-	'%'            reduce using rule 121
-	'&&'           reduce using rule 121
-	'('            reduce using rule 121
-	')'            reduce using rule 121
-	'*'            reduce using rule 121
-	'+'            reduce using rule 121
-	','            reduce using rule 121
-	'-'            reduce using rule 121
-	'/'            reduce using rule 121
-	';'            reduce using rule 121
-	'<'            reduce using rule 121
-	'<='           reduce using rule 121
-	'=='           reduce using rule 121
-	'>'            reduce using rule 121
-	'>='           reduce using rule 121
-	']'            reduce using rule 121
-	'^'            reduce using rule 121
-	'||'           reduce using rule 121
-	%eof           reduce using rule 121
-
-
-State 45
-
-	Exp7 -> PInteger .                                  (rule 120)
-
-	'!='           reduce using rule 120
-	'%'            reduce using rule 120
-	'&&'           reduce using rule 120
-	'('            reduce using rule 120
-	')'            reduce using rule 120
-	'*'            reduce using rule 120
-	'+'            reduce using rule 120
-	','            reduce using rule 120
-	'-'            reduce using rule 120
-	'/'            reduce using rule 120
-	';'            reduce using rule 120
-	'<'            reduce using rule 120
-	'<='           reduce using rule 120
-	'=='           reduce using rule 120
-	'>'            reduce using rule 120
-	'>='           reduce using rule 120
-	']'            reduce using rule 120
-	'^'            reduce using rule 120
-	'||'           reduce using rule 120
-	%eof           reduce using rule 120
-
-
-State 46
-
-	Exp7 -> PString .                                   (rule 123)
-
-	'!='           reduce using rule 123
-	'%'            reduce using rule 123
-	'&&'           reduce using rule 123
-	'('            reduce using rule 123
-	')'            reduce using rule 123
-	'*'            reduce using rule 123
-	'+'            reduce using rule 123
-	','            reduce using rule 123
-	'-'            reduce using rule 123
-	'/'            reduce using rule 123
-	';'            reduce using rule 123
-	'<'            reduce using rule 123
-	'<='           reduce using rule 123
-	'=='           reduce using rule 123
-	'>'            reduce using rule 123
-	'>='           reduce using rule 123
-	']'            reduce using rule 123
-	'^'            reduce using rule 123
-	'||'           reduce using rule 123
-	%eof           reduce using rule 123
-
-
-State 47
-
-	Exp7 -> PChar .                                     (rule 122)
+	Exp7 -> PFloat .                                    (rule 122)
 
 	'!='           reduce using rule 122
 	'%'            reduce using rule 122
@@ -1213,6 +1136,84 @@ State 47
 	%eof           reduce using rule 122
 
 
+State 45
+
+	Exp7 -> PInteger .                                  (rule 121)
+
+	'!='           reduce using rule 121
+	'%'            reduce using rule 121
+	'&&'           reduce using rule 121
+	'('            reduce using rule 121
+	')'            reduce using rule 121
+	'*'            reduce using rule 121
+	'+'            reduce using rule 121
+	','            reduce using rule 121
+	'-'            reduce using rule 121
+	'/'            reduce using rule 121
+	';'            reduce using rule 121
+	'<'            reduce using rule 121
+	'<='           reduce using rule 121
+	'=='           reduce using rule 121
+	'>'            reduce using rule 121
+	'>='           reduce using rule 121
+	']'            reduce using rule 121
+	'^'            reduce using rule 121
+	'||'           reduce using rule 121
+	%eof           reduce using rule 121
+
+
+State 46
+
+	Exp7 -> PString .                                   (rule 124)
+
+	'!='           reduce using rule 124
+	'%'            reduce using rule 124
+	'&&'           reduce using rule 124
+	'('            reduce using rule 124
+	')'            reduce using rule 124
+	'*'            reduce using rule 124
+	'+'            reduce using rule 124
+	','            reduce using rule 124
+	'-'            reduce using rule 124
+	'/'            reduce using rule 124
+	';'            reduce using rule 124
+	'<'            reduce using rule 124
+	'<='           reduce using rule 124
+	'=='           reduce using rule 124
+	'>'            reduce using rule 124
+	'>='           reduce using rule 124
+	']'            reduce using rule 124
+	'^'            reduce using rule 124
+	'||'           reduce using rule 124
+	%eof           reduce using rule 124
+
+
+State 47
+
+	Exp7 -> PChar .                                     (rule 123)
+
+	'!='           reduce using rule 123
+	'%'            reduce using rule 123
+	'&&'           reduce using rule 123
+	'('            reduce using rule 123
+	')'            reduce using rule 123
+	'*'            reduce using rule 123
+	'+'            reduce using rule 123
+	','            reduce using rule 123
+	'-'            reduce using rule 123
+	'/'            reduce using rule 123
+	';'            reduce using rule 123
+	'<'            reduce using rule 123
+	'<='           reduce using rule 123
+	'=='           reduce using rule 123
+	'>'            reduce using rule 123
+	'>='           reduce using rule 123
+	']'            reduce using rule 123
+	'^'            reduce using rule 123
+	'||'           reduce using rule 123
+	%eof           reduce using rule 123
+
+
 State 48
 
 	%start_pExp7 -> Exp7 .                              (rule 28)
@@ -1222,33 +1223,33 @@ State 48
 
 State 49
 
-	Exp7 -> LExp .                                      (rule 118)
+	Exp7 -> LExp .                                      (rule 119)
 
-	'!='           reduce using rule 118
-	'%'            reduce using rule 118
-	'&&'           reduce using rule 118
-	'('            reduce using rule 118
-	')'            reduce using rule 118
-	'*'            reduce using rule 118
-	'+'            reduce using rule 118
-	','            reduce using rule 118
-	'-'            reduce using rule 118
-	'/'            reduce using rule 118
-	';'            reduce using rule 118
-	'<'            reduce using rule 118
-	'<='           reduce using rule 118
-	'=='           reduce using rule 118
-	'>'            reduce using rule 118
-	'>='           reduce using rule 118
-	']'            reduce using rule 118
-	'^'            reduce using rule 118
-	'||'           reduce using rule 118
-	%eof           reduce using rule 118
+	'!='           reduce using rule 119
+	'%'            reduce using rule 119
+	'&&'           reduce using rule 119
+	'('            reduce using rule 119
+	')'            reduce using rule 119
+	'*'            reduce using rule 119
+	'+'            reduce using rule 119
+	','            reduce using rule 119
+	'-'            reduce using rule 119
+	'/'            reduce using rule 119
+	';'            reduce using rule 119
+	'<'            reduce using rule 119
+	'<='           reduce using rule 119
+	'=='           reduce using rule 119
+	'>'            reduce using rule 119
+	'>='           reduce using rule 119
+	']'            reduce using rule 119
+	'^'            reduce using rule 119
+	'||'           reduce using rule 119
+	%eof           reduce using rule 119
 
 
 State 50
 
-	Exp7 -> '&' . LExp                                  (rule 119)
+	Exp7 -> '&' . LExp                                  (rule 120)
 
 	'('            shift, and enter state 35
 	'*'            shift, and enter state 39
@@ -1260,8 +1261,8 @@ State 50
 
 State 51
 
-	Exp7 -> '(' . Exp ')'                               (rule 129)
-	LExp1 -> '(' . LExp ')'                             (rule 134)
+	Exp7 -> '(' . Exp ')'                               (rule 130)
+	LExp1 -> '(' . LExp ')'                             (rule 135)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
@@ -1299,7 +1300,7 @@ State 51
 
 State 52
 
-	Exp7 -> 'Array' . '(' ListExp ')'                   (rule 127)
+	Exp7 -> 'Array' . '(' ListExp ')'                   (rule 128)
 
 	'('            shift, and enter state 176
 
@@ -1495,33 +1496,33 @@ State 60
 
 State 61
 
-	Exp6 -> Exp7 .                                      (rule 117)
+	Exp6 -> Exp7 .                                      (rule 118)
 
-	'!='           reduce using rule 117
-	'%'            reduce using rule 117
-	'&&'           reduce using rule 117
-	'('            reduce using rule 117
-	')'            reduce using rule 117
-	'*'            reduce using rule 117
-	'+'            reduce using rule 117
-	','            reduce using rule 117
-	'-'            reduce using rule 117
-	'/'            reduce using rule 117
-	';'            reduce using rule 117
-	'<'            reduce using rule 117
-	'<='           reduce using rule 117
-	'=='           reduce using rule 117
-	'>'            reduce using rule 117
-	'>='           reduce using rule 117
-	']'            reduce using rule 117
-	'^'            reduce using rule 117
-	'||'           reduce using rule 117
-	%eof           reduce using rule 117
+	'!='           reduce using rule 118
+	'%'            reduce using rule 118
+	'&&'           reduce using rule 118
+	'('            reduce using rule 118
+	')'            reduce using rule 118
+	'*'            reduce using rule 118
+	'+'            reduce using rule 118
+	','            reduce using rule 118
+	'-'            reduce using rule 118
+	'/'            reduce using rule 118
+	';'            reduce using rule 118
+	'<'            reduce using rule 118
+	'<='           reduce using rule 118
+	'=='           reduce using rule 118
+	'>'            reduce using rule 118
+	'>='           reduce using rule 118
+	']'            reduce using rule 118
+	'^'            reduce using rule 118
+	'||'           reduce using rule 118
+	%eof           reduce using rule 118
 
 
 State 62
 
-	Exp6 -> '-' . Exp7                                  (rule 116)
+	Exp6 -> '-' . Exp7                                  (rule 117)
 
 	'&'            shift, and enter state 50
 	'('            shift, and enter state 51
@@ -1557,40 +1558,40 @@ State 63
 
 State 64
 
-	Exp5 -> Exp6 . Op5 Exp7                             (rule 114)
-	Exp5 -> Exp6 .                                      (rule 115)
+	Exp5 -> Exp6 . Op5 Exp7                             (rule 115)
+	Exp5 -> Exp6 .                                      (rule 116)
 
-	'!='           reduce using rule 115
-	'%'            reduce using rule 115
-	'&&'           reduce using rule 115
+	'!='           reduce using rule 116
+	'%'            reduce using rule 116
+	'&&'           reduce using rule 116
 	'('            shift, and enter state 77
-			(reduce using rule 115)
+			(reduce using rule 116)
 
-	')'            reduce using rule 115
-	'*'            reduce using rule 115
-	'+'            reduce using rule 115
-	','            reduce using rule 115
-	'-'            reduce using rule 115
-	'/'            reduce using rule 115
-	';'            reduce using rule 115
-	'<'            reduce using rule 115
-	'<='           reduce using rule 115
-	'=='           reduce using rule 115
-	'>'            reduce using rule 115
-	'>='           reduce using rule 115
-	']'            reduce using rule 115
+	')'            reduce using rule 116
+	'*'            reduce using rule 116
+	'+'            reduce using rule 116
+	','            reduce using rule 116
+	'-'            reduce using rule 116
+	'/'            reduce using rule 116
+	';'            reduce using rule 116
+	'<'            reduce using rule 116
+	'<='           reduce using rule 116
+	'=='           reduce using rule 116
+	'>'            reduce using rule 116
+	'>='           reduce using rule 116
+	']'            reduce using rule 116
 	'^'            shift, and enter state 78
-			(reduce using rule 115)
+			(reduce using rule 116)
 
-	'||'           reduce using rule 115
-	%eof           reduce using rule 115
+	'||'           reduce using rule 116
+	%eof           reduce using rule 116
 
 	Op5            goto state 174
 
 State 65
 
 	%start_pExp4 -> Exp4 .                              (rule 25)
-	Exp4 -> Exp4 . Op4 Exp5                             (rule 112)
+	Exp4 -> Exp4 . Op4 Exp5                             (rule 113)
 
 	'%'            shift, and enter state 81
 	'('            shift, and enter state 77
@@ -1604,34 +1605,34 @@ State 65
 
 State 66
 
-	Exp4 -> Exp5 .                                      (rule 113)
+	Exp4 -> Exp5 .                                      (rule 114)
 
-	'!='           reduce using rule 113
-	'%'            reduce using rule 113
-	'&&'           reduce using rule 113
-	'('            reduce using rule 113
-	')'            reduce using rule 113
-	'*'            reduce using rule 113
-	'+'            reduce using rule 113
-	','            reduce using rule 113
-	'-'            reduce using rule 113
-	'/'            reduce using rule 113
-	';'            reduce using rule 113
-	'<'            reduce using rule 113
-	'<='           reduce using rule 113
-	'=='           reduce using rule 113
-	'>'            reduce using rule 113
-	'>='           reduce using rule 113
-	']'            reduce using rule 113
-	'^'            reduce using rule 113
-	'||'           reduce using rule 113
-	%eof           reduce using rule 113
+	'!='           reduce using rule 114
+	'%'            reduce using rule 114
+	'&&'           reduce using rule 114
+	'('            reduce using rule 114
+	')'            reduce using rule 114
+	'*'            reduce using rule 114
+	'+'            reduce using rule 114
+	','            reduce using rule 114
+	'-'            reduce using rule 114
+	'/'            reduce using rule 114
+	';'            reduce using rule 114
+	'<'            reduce using rule 114
+	'<='           reduce using rule 114
+	'=='           reduce using rule 114
+	'>'            reduce using rule 114
+	'>='           reduce using rule 114
+	']'            reduce using rule 114
+	'^'            reduce using rule 114
+	'||'           reduce using rule 114
+	%eof           reduce using rule 114
 
 
 State 67
 
 	%start_pExp3 -> Exp3 .                              (rule 24)
-	Exp3 -> Exp3 . Op3 Exp4                             (rule 110)
+	Exp3 -> Exp3 . Op3 Exp4                             (rule 111)
 
 	'%'            shift, and enter state 81
 	'('            shift, and enter state 77
@@ -1648,39 +1649,39 @@ State 67
 
 State 68
 
-	Exp3 -> Exp4 .                                      (rule 111)
-	Exp4 -> Exp4 . Op4 Exp5                             (rule 112)
+	Exp3 -> Exp4 .                                      (rule 112)
+	Exp4 -> Exp4 . Op4 Exp5                             (rule 113)
 
-	'!='           reduce using rule 111
+	'!='           reduce using rule 112
 	'%'            shift, and enter state 81
-			(reduce using rule 111)
+			(reduce using rule 112)
 
-	'&&'           reduce using rule 111
+	'&&'           reduce using rule 112
 	'('            shift, and enter state 77
-			(reduce using rule 111)
+			(reduce using rule 112)
 
-	')'            reduce using rule 111
+	')'            reduce using rule 112
 	'*'            shift, and enter state 82
-			(reduce using rule 111)
+			(reduce using rule 112)
 
-	'+'            reduce using rule 111
-	','            reduce using rule 111
-	'-'            reduce using rule 111
+	'+'            reduce using rule 112
+	','            reduce using rule 112
+	'-'            reduce using rule 112
 	'/'            shift, and enter state 83
-			(reduce using rule 111)
+			(reduce using rule 112)
 
-	';'            reduce using rule 111
-	'<'            reduce using rule 111
-	'<='           reduce using rule 111
-	'=='           reduce using rule 111
-	'>'            reduce using rule 111
-	'>='           reduce using rule 111
-	']'            reduce using rule 111
+	';'            reduce using rule 112
+	'<'            reduce using rule 112
+	'<='           reduce using rule 112
+	'=='           reduce using rule 112
+	'>'            reduce using rule 112
+	'>='           reduce using rule 112
+	']'            reduce using rule 112
 	'^'            shift, and enter state 78
-			(reduce using rule 111)
+			(reduce using rule 112)
 
-	'||'           reduce using rule 111
-	%eof           reduce using rule 111
+	'||'           reduce using rule 112
+	%eof           reduce using rule 112
 
 	Op4            goto state 172
 	Op5            goto state 80
@@ -1694,56 +1695,56 @@ State 69
 
 State 70
 
-	Exp2 -> Exp3 . Op2 Exp3                             (rule 108)
-	Exp2 -> Exp3 .                                      (rule 109)
-	Exp3 -> Exp3 . Op3 Exp4                             (rule 110)
+	Exp2 -> Exp3 . Op2 Exp3                             (rule 109)
+	Exp2 -> Exp3 .                                      (rule 110)
+	Exp3 -> Exp3 . Op3 Exp4                             (rule 111)
 
 	'!='           shift, and enter state 90
-			(reduce using rule 109)
+			(reduce using rule 110)
 
 	'%'            shift, and enter state 81
-			(reduce using rule 109)
+			(reduce using rule 110)
 
-	'&&'           reduce using rule 109
+	'&&'           reduce using rule 110
 	'('            shift, and enter state 77
-			(reduce using rule 109)
+			(reduce using rule 110)
 
-	')'            reduce using rule 109
+	')'            reduce using rule 110
 	'*'            shift, and enter state 82
-			(reduce using rule 109)
+			(reduce using rule 110)
 
 	'+'            shift, and enter state 86
-			(reduce using rule 109)
+			(reduce using rule 110)
 
-	','            reduce using rule 109
+	','            reduce using rule 110
 	'-'            shift, and enter state 87
-			(reduce using rule 109)
+			(reduce using rule 110)
 
 	'/'            shift, and enter state 83
-			(reduce using rule 109)
+			(reduce using rule 110)
 
-	';'            reduce using rule 109
+	';'            reduce using rule 110
 	'<'            shift, and enter state 91
-			(reduce using rule 109)
+			(reduce using rule 110)
 
 	'<='           shift, and enter state 92
-			(reduce using rule 109)
+			(reduce using rule 110)
 
 	'=='           shift, and enter state 93
-			(reduce using rule 109)
+			(reduce using rule 110)
 
 	'>'            shift, and enter state 94
-			(reduce using rule 109)
+			(reduce using rule 110)
 
 	'>='           shift, and enter state 95
-			(reduce using rule 109)
+			(reduce using rule 110)
 
-	']'            reduce using rule 109
+	']'            reduce using rule 110
 	'^'            shift, and enter state 78
-			(reduce using rule 109)
+			(reduce using rule 110)
 
-	'||'           reduce using rule 109
-	%eof           reduce using rule 109
+	'||'           reduce using rule 110
+	%eof           reduce using rule 110
 
 	Op2            goto state 170
 	Op3            goto state 171
@@ -1752,7 +1753,7 @@ State 70
 
 State 71
 
-	Exp2 -> '!' . Exp2                                  (rule 107)
+	Exp2 -> '!' . Exp2                                  (rule 108)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
@@ -1789,7 +1790,7 @@ State 71
 State 72
 
 	%start_pExp1 -> Exp1 .                              (rule 22)
-	Exp1 -> Exp1 . Op1 Exp2                             (rule 105)
+	Exp1 -> Exp1 . Op1 Exp2                             (rule 106)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
@@ -1815,34 +1816,34 @@ State 72
 
 State 73
 
-	Exp1 -> Exp2 .                                      (rule 106)
+	Exp1 -> Exp2 .                                      (rule 107)
 
-	'!='           reduce using rule 106
-	'%'            reduce using rule 106
-	'&&'           reduce using rule 106
-	'('            reduce using rule 106
-	')'            reduce using rule 106
-	'*'            reduce using rule 106
-	'+'            reduce using rule 106
-	','            reduce using rule 106
-	'-'            reduce using rule 106
-	'/'            reduce using rule 106
-	';'            reduce using rule 106
-	'<'            reduce using rule 106
-	'<='           reduce using rule 106
-	'=='           reduce using rule 106
-	'>'            reduce using rule 106
-	'>='           reduce using rule 106
-	']'            reduce using rule 106
-	'^'            reduce using rule 106
-	'||'           reduce using rule 106
-	%eof           reduce using rule 106
+	'!='           reduce using rule 107
+	'%'            reduce using rule 107
+	'&&'           reduce using rule 107
+	'('            reduce using rule 107
+	')'            reduce using rule 107
+	'*'            reduce using rule 107
+	'+'            reduce using rule 107
+	','            reduce using rule 107
+	'-'            reduce using rule 107
+	'/'            reduce using rule 107
+	';'            reduce using rule 107
+	'<'            reduce using rule 107
+	'<='           reduce using rule 107
+	'=='           reduce using rule 107
+	'>'            reduce using rule 107
+	'>='           reduce using rule 107
+	']'            reduce using rule 107
+	'^'            reduce using rule 107
+	'||'           reduce using rule 107
+	%eof           reduce using rule 107
 
 
 State 74
 
 	%start_pExp -> Exp .                                (rule 21)
-	Exp -> Exp . Op Exp1                                (rule 103)
+	Exp -> Exp . Op Exp1                                (rule 104)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
@@ -1870,57 +1871,57 @@ State 74
 
 State 75
 
-	Exp -> Exp1 .                                       (rule 104)
-	Exp1 -> Exp1 . Op1 Exp2                             (rule 105)
+	Exp -> Exp1 .                                       (rule 105)
+	Exp1 -> Exp1 . Op1 Exp2                             (rule 106)
 
 	'!='           shift, and enter state 90
-			(reduce using rule 104)
+			(reduce using rule 105)
 
 	'%'            shift, and enter state 81
-			(reduce using rule 104)
+			(reduce using rule 105)
 
 	'&&'           shift, and enter state 98
-			(reduce using rule 104)
+			(reduce using rule 105)
 
 	'('            shift, and enter state 77
-			(reduce using rule 104)
+			(reduce using rule 105)
 
-	')'            reduce using rule 104
+	')'            reduce using rule 105
 	'*'            shift, and enter state 82
-			(reduce using rule 104)
+			(reduce using rule 105)
 
 	'+'            shift, and enter state 86
-			(reduce using rule 104)
+			(reduce using rule 105)
 
-	','            reduce using rule 104
+	','            reduce using rule 105
 	'-'            shift, and enter state 87
-			(reduce using rule 104)
+			(reduce using rule 105)
 
 	'/'            shift, and enter state 83
-			(reduce using rule 104)
+			(reduce using rule 105)
 
-	';'            reduce using rule 104
+	';'            reduce using rule 105
 	'<'            shift, and enter state 91
-			(reduce using rule 104)
+			(reduce using rule 105)
 
 	'<='           shift, and enter state 92
-			(reduce using rule 104)
+			(reduce using rule 105)
 
 	'=='           shift, and enter state 93
-			(reduce using rule 104)
+			(reduce using rule 105)
 
 	'>'            shift, and enter state 94
-			(reduce using rule 104)
+			(reduce using rule 105)
 
 	'>='           shift, and enter state 95
-			(reduce using rule 104)
+			(reduce using rule 105)
 
-	']'            reduce using rule 104
+	']'            reduce using rule 105
 	'^'            shift, and enter state 78
-			(reduce using rule 104)
+			(reduce using rule 105)
 
-	'||'           reduce using rule 104
-	%eof           reduce using rule 104
+	'||'           reduce using rule 105
+	%eof           reduce using rule 105
 
 	Op1            goto state 168
 	Op2            goto state 97
@@ -1937,7 +1938,7 @@ State 76
 
 State 77
 
-	Op5 -> '(' . Op ')'                                 (rule 102)
+	Op5 -> '(' . Op ')'                                 (rule 103)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
@@ -1964,7 +1965,36 @@ State 77
 
 State 78
 
-	Op5 -> '^' .                                        (rule 101)
+	Op5 -> '^' .                                        (rule 102)
+
+	'!'            reduce using rule 102
+	'&'            reduce using rule 102
+	'('            reduce using rule 102
+	')'            reduce using rule 102
+	'*'            reduce using rule 102
+	'-'            reduce using rule 102
+	'Array'        reduce using rule 102
+	L_PTrue        reduce using rule 102
+	L_PFalse       reduce using rule 102
+	L_PNull        reduce using rule 102
+	L_PIdent       reduce using rule 102
+	L_PFloat       reduce using rule 102
+	L_PInteger     reduce using rule 102
+	L_PString      reduce using rule 102
+	L_PChar        reduce using rule 102
+	%eof           reduce using rule 102
+
+
+State 79
+
+	%start_pOp4 -> Op4 .                                (rule 19)
+
+	%eof           accept
+
+
+State 80
+
+	Op4 -> Op5 .                                        (rule 101)
 
 	'!'            reduce using rule 101
 	'&'            reduce using rule 101
@@ -1984,16 +2014,9 @@ State 78
 	%eof           reduce using rule 101
 
 
-State 79
+State 81
 
-	%start_pOp4 -> Op4 .                                (rule 19)
-
-	%eof           accept
-
-
-State 80
-
-	Op4 -> Op5 .                                        (rule 100)
+	Op4 -> '%' .                                        (rule 100)
 
 	'!'            reduce using rule 100
 	'&'            reduce using rule 100
@@ -2013,53 +2036,9 @@ State 80
 	%eof           reduce using rule 100
 
 
-State 81
-
-	Op4 -> '%' .                                        (rule 99)
-
-	'!'            reduce using rule 99
-	'&'            reduce using rule 99
-	'('            reduce using rule 99
-	')'            reduce using rule 99
-	'*'            reduce using rule 99
-	'-'            reduce using rule 99
-	'Array'        reduce using rule 99
-	L_PTrue        reduce using rule 99
-	L_PFalse       reduce using rule 99
-	L_PNull        reduce using rule 99
-	L_PIdent       reduce using rule 99
-	L_PFloat       reduce using rule 99
-	L_PInteger     reduce using rule 99
-	L_PString      reduce using rule 99
-	L_PChar        reduce using rule 99
-	%eof           reduce using rule 99
-
-
 State 82
 
-	Op4 -> '*' .                                        (rule 97)
-
-	'!'            reduce using rule 97
-	'&'            reduce using rule 97
-	'('            reduce using rule 97
-	')'            reduce using rule 97
-	'*'            reduce using rule 97
-	'-'            reduce using rule 97
-	'Array'        reduce using rule 97
-	L_PTrue        reduce using rule 97
-	L_PFalse       reduce using rule 97
-	L_PNull        reduce using rule 97
-	L_PIdent       reduce using rule 97
-	L_PFloat       reduce using rule 97
-	L_PInteger     reduce using rule 97
-	L_PString      reduce using rule 97
-	L_PChar        reduce using rule 97
-	%eof           reduce using rule 97
-
-
-State 83
-
-	Op4 -> '/' .                                        (rule 98)
+	Op4 -> '*' .                                        (rule 98)
 
 	'!'            reduce using rule 98
 	'&'            reduce using rule 98
@@ -2079,6 +2058,28 @@ State 83
 	%eof           reduce using rule 98
 
 
+State 83
+
+	Op4 -> '/' .                                        (rule 99)
+
+	'!'            reduce using rule 99
+	'&'            reduce using rule 99
+	'('            reduce using rule 99
+	')'            reduce using rule 99
+	'*'            reduce using rule 99
+	'-'            reduce using rule 99
+	'Array'        reduce using rule 99
+	L_PTrue        reduce using rule 99
+	L_PFalse       reduce using rule 99
+	L_PNull        reduce using rule 99
+	L_PIdent       reduce using rule 99
+	L_PFloat       reduce using rule 99
+	L_PInteger     reduce using rule 99
+	L_PString      reduce using rule 99
+	L_PChar        reduce using rule 99
+	%eof           reduce using rule 99
+
+
 State 84
 
 	%start_pOp3 -> Op3 .                                (rule 18)
@@ -2088,51 +2089,29 @@ State 84
 
 State 85
 
-	Op3 -> Op4 .                                        (rule 96)
+	Op3 -> Op4 .                                        (rule 97)
 
-	'!'            reduce using rule 96
-	'&'            reduce using rule 96
-	'('            reduce using rule 96
-	')'            reduce using rule 96
-	'*'            reduce using rule 96
-	'-'            reduce using rule 96
-	'Array'        reduce using rule 96
-	L_PTrue        reduce using rule 96
-	L_PFalse       reduce using rule 96
-	L_PNull        reduce using rule 96
-	L_PIdent       reduce using rule 96
-	L_PFloat       reduce using rule 96
-	L_PInteger     reduce using rule 96
-	L_PString      reduce using rule 96
-	L_PChar        reduce using rule 96
-	%eof           reduce using rule 96
+	'!'            reduce using rule 97
+	'&'            reduce using rule 97
+	'('            reduce using rule 97
+	')'            reduce using rule 97
+	'*'            reduce using rule 97
+	'-'            reduce using rule 97
+	'Array'        reduce using rule 97
+	L_PTrue        reduce using rule 97
+	L_PFalse       reduce using rule 97
+	L_PNull        reduce using rule 97
+	L_PIdent       reduce using rule 97
+	L_PFloat       reduce using rule 97
+	L_PInteger     reduce using rule 97
+	L_PString      reduce using rule 97
+	L_PChar        reduce using rule 97
+	%eof           reduce using rule 97
 
 
 State 86
 
-	Op3 -> '+' .                                        (rule 94)
-
-	'!'            reduce using rule 94
-	'&'            reduce using rule 94
-	'('            reduce using rule 94
-	')'            reduce using rule 94
-	'*'            reduce using rule 94
-	'-'            reduce using rule 94
-	'Array'        reduce using rule 94
-	L_PTrue        reduce using rule 94
-	L_PFalse       reduce using rule 94
-	L_PNull        reduce using rule 94
-	L_PIdent       reduce using rule 94
-	L_PFloat       reduce using rule 94
-	L_PInteger     reduce using rule 94
-	L_PString      reduce using rule 94
-	L_PChar        reduce using rule 94
-	%eof           reduce using rule 94
-
-
-State 87
-
-	Op3 -> '-' .                                        (rule 95)
+	Op3 -> '+' .                                        (rule 95)
 
 	'!'            reduce using rule 95
 	'&'            reduce using rule 95
@@ -2152,6 +2131,28 @@ State 87
 	%eof           reduce using rule 95
 
 
+State 87
+
+	Op3 -> '-' .                                        (rule 96)
+
+	'!'            reduce using rule 96
+	'&'            reduce using rule 96
+	'('            reduce using rule 96
+	')'            reduce using rule 96
+	'*'            reduce using rule 96
+	'-'            reduce using rule 96
+	'Array'        reduce using rule 96
+	L_PTrue        reduce using rule 96
+	L_PFalse       reduce using rule 96
+	L_PNull        reduce using rule 96
+	L_PIdent       reduce using rule 96
+	L_PFloat       reduce using rule 96
+	L_PInteger     reduce using rule 96
+	L_PString      reduce using rule 96
+	L_PChar        reduce using rule 96
+	%eof           reduce using rule 96
+
+
 State 88
 
 	%start_pOp2 -> Op2 .                                (rule 17)
@@ -2161,7 +2162,29 @@ State 88
 
 State 89
 
-	Op2 -> Op3 .                                        (rule 93)
+	Op2 -> Op3 .                                        (rule 94)
+
+	'!'            reduce using rule 94
+	'&'            reduce using rule 94
+	'('            reduce using rule 94
+	')'            reduce using rule 94
+	'*'            reduce using rule 94
+	'-'            reduce using rule 94
+	'Array'        reduce using rule 94
+	L_PTrue        reduce using rule 94
+	L_PFalse       reduce using rule 94
+	L_PNull        reduce using rule 94
+	L_PIdent       reduce using rule 94
+	L_PFloat       reduce using rule 94
+	L_PInteger     reduce using rule 94
+	L_PString      reduce using rule 94
+	L_PChar        reduce using rule 94
+	%eof           reduce using rule 94
+
+
+State 90
+
+	Op2 -> '!=' .                                       (rule 93)
 
 	'!'            reduce using rule 93
 	'&'            reduce using rule 93
@@ -2181,53 +2204,9 @@ State 89
 	%eof           reduce using rule 93
 
 
-State 90
-
-	Op2 -> '!=' .                                       (rule 92)
-
-	'!'            reduce using rule 92
-	'&'            reduce using rule 92
-	'('            reduce using rule 92
-	')'            reduce using rule 92
-	'*'            reduce using rule 92
-	'-'            reduce using rule 92
-	'Array'        reduce using rule 92
-	L_PTrue        reduce using rule 92
-	L_PFalse       reduce using rule 92
-	L_PNull        reduce using rule 92
-	L_PIdent       reduce using rule 92
-	L_PFloat       reduce using rule 92
-	L_PInteger     reduce using rule 92
-	L_PString      reduce using rule 92
-	L_PChar        reduce using rule 92
-	%eof           reduce using rule 92
-
-
 State 91
 
-	Op2 -> '<' .                                        (rule 87)
-
-	'!'            reduce using rule 87
-	'&'            reduce using rule 87
-	'('            reduce using rule 87
-	')'            reduce using rule 87
-	'*'            reduce using rule 87
-	'-'            reduce using rule 87
-	'Array'        reduce using rule 87
-	L_PTrue        reduce using rule 87
-	L_PFalse       reduce using rule 87
-	L_PNull        reduce using rule 87
-	L_PIdent       reduce using rule 87
-	L_PFloat       reduce using rule 87
-	L_PInteger     reduce using rule 87
-	L_PString      reduce using rule 87
-	L_PChar        reduce using rule 87
-	%eof           reduce using rule 87
-
-
-State 92
-
-	Op2 -> '<=' .                                       (rule 88)
+	Op2 -> '<' .                                        (rule 88)
 
 	'!'            reduce using rule 88
 	'&'            reduce using rule 88
@@ -2247,31 +2226,9 @@ State 92
 	%eof           reduce using rule 88
 
 
-State 93
+State 92
 
-	Op2 -> '==' .                                       (rule 91)
-
-	'!'            reduce using rule 91
-	'&'            reduce using rule 91
-	'('            reduce using rule 91
-	')'            reduce using rule 91
-	'*'            reduce using rule 91
-	'-'            reduce using rule 91
-	'Array'        reduce using rule 91
-	L_PTrue        reduce using rule 91
-	L_PFalse       reduce using rule 91
-	L_PNull        reduce using rule 91
-	L_PIdent       reduce using rule 91
-	L_PFloat       reduce using rule 91
-	L_PInteger     reduce using rule 91
-	L_PString      reduce using rule 91
-	L_PChar        reduce using rule 91
-	%eof           reduce using rule 91
-
-
-State 94
-
-	Op2 -> '>' .                                        (rule 89)
+	Op2 -> '<=' .                                       (rule 89)
 
 	'!'            reduce using rule 89
 	'&'            reduce using rule 89
@@ -2291,9 +2248,31 @@ State 94
 	%eof           reduce using rule 89
 
 
-State 95
+State 93
 
-	Op2 -> '>=' .                                       (rule 90)
+	Op2 -> '==' .                                       (rule 92)
+
+	'!'            reduce using rule 92
+	'&'            reduce using rule 92
+	'('            reduce using rule 92
+	')'            reduce using rule 92
+	'*'            reduce using rule 92
+	'-'            reduce using rule 92
+	'Array'        reduce using rule 92
+	L_PTrue        reduce using rule 92
+	L_PFalse       reduce using rule 92
+	L_PNull        reduce using rule 92
+	L_PIdent       reduce using rule 92
+	L_PFloat       reduce using rule 92
+	L_PInteger     reduce using rule 92
+	L_PString      reduce using rule 92
+	L_PChar        reduce using rule 92
+	%eof           reduce using rule 92
+
+
+State 94
+
+	Op2 -> '>' .                                        (rule 90)
 
 	'!'            reduce using rule 90
 	'&'            reduce using rule 90
@@ -2313,6 +2292,28 @@ State 95
 	%eof           reduce using rule 90
 
 
+State 95
+
+	Op2 -> '>=' .                                       (rule 91)
+
+	'!'            reduce using rule 91
+	'&'            reduce using rule 91
+	'('            reduce using rule 91
+	')'            reduce using rule 91
+	'*'            reduce using rule 91
+	'-'            reduce using rule 91
+	'Array'        reduce using rule 91
+	L_PTrue        reduce using rule 91
+	L_PFalse       reduce using rule 91
+	L_PNull        reduce using rule 91
+	L_PIdent       reduce using rule 91
+	L_PFloat       reduce using rule 91
+	L_PInteger     reduce using rule 91
+	L_PString      reduce using rule 91
+	L_PChar        reduce using rule 91
+	%eof           reduce using rule 91
+
+
 State 96
 
 	%start_pOp1 -> Op1 .                                (rule 16)
@@ -2322,7 +2323,29 @@ State 96
 
 State 97
 
-	Op1 -> Op2 .                                        (rule 86)
+	Op1 -> Op2 .                                        (rule 87)
+
+	'!'            reduce using rule 87
+	'&'            reduce using rule 87
+	'('            reduce using rule 87
+	')'            reduce using rule 87
+	'*'            reduce using rule 87
+	'-'            reduce using rule 87
+	'Array'        reduce using rule 87
+	L_PTrue        reduce using rule 87
+	L_PFalse       reduce using rule 87
+	L_PNull        reduce using rule 87
+	L_PIdent       reduce using rule 87
+	L_PFloat       reduce using rule 87
+	L_PInteger     reduce using rule 87
+	L_PString      reduce using rule 87
+	L_PChar        reduce using rule 87
+	%eof           reduce using rule 87
+
+
+State 98
+
+	Op1 -> '&&' .                                       (rule 86)
 
 	'!'            reduce using rule 86
 	'&'            reduce using rule 86
@@ -2342,9 +2365,16 @@ State 97
 	%eof           reduce using rule 86
 
 
-State 98
+State 99
 
-	Op1 -> '&&' .                                       (rule 85)
+	%start_pOp -> Op .                                  (rule 15)
+
+	%eof           accept
+
+
+State 100
+
+	Op -> Op1 .                                         (rule 85)
 
 	'!'            reduce using rule 85
 	'&'            reduce using rule 85
@@ -2364,16 +2394,9 @@ State 98
 	%eof           reduce using rule 85
 
 
-State 99
+State 101
 
-	%start_pOp -> Op .                                  (rule 15)
-
-	%eof           accept
-
-
-State 100
-
-	Op -> Op1 .                                         (rule 84)
+	Op -> '||' .                                        (rule 84)
 
 	'!'            reduce using rule 84
 	'&'            reduce using rule 84
@@ -2393,28 +2416,6 @@ State 100
 	%eof           reduce using rule 84
 
 
-State 101
-
-	Op -> '||' .                                        (rule 83)
-
-	'!'            reduce using rule 83
-	'&'            reduce using rule 83
-	'('            reduce using rule 83
-	')'            reduce using rule 83
-	'*'            reduce using rule 83
-	'-'            reduce using rule 83
-	'Array'        reduce using rule 83
-	L_PTrue        reduce using rule 83
-	L_PFalse       reduce using rule 83
-	L_PNull        reduce using rule 83
-	L_PIdent       reduce using rule 83
-	L_PFloat       reduce using rule 83
-	L_PInteger     reduce using rule 83
-	L_PString      reduce using rule 83
-	L_PChar        reduce using rule 83
-	%eof           reduce using rule 83
-
-
 State 102
 
 	%start_pListExp -> ListExp .                        (rule 14)
@@ -2424,15 +2425,15 @@ State 102
 
 State 103
 
-	ListExp -> Exp .                                    (rule 81)
-	ListExp -> Exp . ',' ListExp                        (rule 82)
-	Exp -> Exp . Op Exp1                                (rule 103)
+	ListExp -> Exp .                                    (rule 82)
+	ListExp -> Exp . ',' ListExp                        (rule 83)
+	Exp -> Exp . Op Exp1                                (rule 104)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
 	'&&'           shift, and enter state 98
 	'('            shift, and enter state 77
-	')'            reduce using rule 81
+	')'            reduce using rule 82
 	'*'            shift, and enter state 82
 	'+'            shift, and enter state 86
 	','            shift, and enter state 166
@@ -2445,7 +2446,7 @@ State 103
 	'>='           shift, and enter state 95
 	'^'            shift, and enter state 78
 	'||'           shift, and enter state 101
-	%eof           reduce using rule 81
+	%eof           reduce using rule 82
 
 	Op             goto state 165
 	Op1            goto state 100
@@ -2456,31 +2457,31 @@ State 103
 
 State 104
 
-	ListParams -> Params .                              (rule 78)
-	ListParams -> Params . ListParams                   (rule 79)
+	ListParams -> Params .                              (rule 79)
+	ListParams -> Params . ListParams                   (rule 80)
 
-	'!='           reduce using rule 78
-	'%'            reduce using rule 78
-	'&&'           reduce using rule 78
+	'!='           reduce using rule 79
+	'%'            reduce using rule 79
+	'&&'           reduce using rule 79
 	'('            shift, and enter state 106
-			(reduce using rule 78)
+			(reduce using rule 79)
 
-	')'            reduce using rule 78
-	'*'            reduce using rule 78
-	'+'            reduce using rule 78
-	','            reduce using rule 78
-	'-'            reduce using rule 78
-	'/'            reduce using rule 78
-	';'            reduce using rule 78
-	'<'            reduce using rule 78
-	'<='           reduce using rule 78
-	'=='           reduce using rule 78
-	'>'            reduce using rule 78
-	'>='           reduce using rule 78
-	']'            reduce using rule 78
-	'^'            reduce using rule 78
-	'||'           reduce using rule 78
-	%eof           reduce using rule 78
+	')'            reduce using rule 79
+	'*'            reduce using rule 79
+	'+'            reduce using rule 79
+	','            reduce using rule 79
+	'-'            reduce using rule 79
+	'/'            reduce using rule 79
+	';'            reduce using rule 79
+	'<'            reduce using rule 79
+	'<='           reduce using rule 79
+	'=='           reduce using rule 79
+	'>'            reduce using rule 79
+	'>='           reduce using rule 79
+	']'            reduce using rule 79
+	'^'            reduce using rule 79
+	'||'           reduce using rule 79
+	%eof           reduce using rule 79
 
 	Params         goto state 104
 	ListParams     goto state 164
@@ -2494,12 +2495,12 @@ State 105
 
 State 106
 
-	Params -> '(' . ListExp ')'                         (rule 77)
+	Params -> '(' . ListExp ')'                         (rule 78)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
 	'('            shift, and enter state 51
-	')'            reduce using rule 80
+	')'            reduce using rule 81
 	'*'            shift, and enter state 39
 	'-'            shift, and enter state 62
 	'Array'        shift, and enter state 52
@@ -2541,8 +2542,8 @@ State 107
 
 State 108
 
-	Stm -> PReturn . ';'                                (rule 74)
-	Stm -> PReturn . Exp ';'                            (rule 75)
+	Stm -> PReturn . ';'                                (rule 75)
+	Stm -> PReturn . Exp ';'                            (rule 76)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
@@ -2581,38 +2582,19 @@ State 108
 
 State 109
 
-	Stm -> PIdent . ListParams ';'                      (rule 76)
-	LExp1 -> PIdent .                                   (rule 133)
+	Stm -> PIdent . ListParams ';'                      (rule 77)
+	LExp1 -> PIdent .                                   (rule 134)
 
 	'('            shift, and enter state 106
-	'='            reduce using rule 133
-	'['            reduce using rule 133
+	'='            reduce using rule 134
+	'['            reduce using rule 134
 
 	Params         goto state 104
 	ListParams     goto state 160
 
 State 110
 
-	Stm -> Declaration .                                (rule 67)
-
-	'('            reduce using rule 67
-	'*'            reduce using rule 67
-	'def'          reduce using rule 67
-	'do'           reduce using rule 67
-	'else'         reduce using rule 67
-	'if'           reduce using rule 67
-	'var'          reduce using rule 67
-	'while'        reduce using rule 67
-	'{'            reduce using rule 67
-	'}'            reduce using rule 67
-	L_PReturn      reduce using rule 67
-	L_PIdent       reduce using rule 67
-	%eof           reduce using rule 67
-
-
-State 111
-
-	Stm -> Block .                                      (rule 68)
+	Stm -> Declaration .                                (rule 68)
 
 	'('            reduce using rule 68
 	'*'            reduce using rule 68
@@ -2629,6 +2611,25 @@ State 111
 	%eof           reduce using rule 68
 
 
+State 111
+
+	Stm -> Block .                                      (rule 69)
+
+	'('            reduce using rule 69
+	'*'            reduce using rule 69
+	'def'          reduce using rule 69
+	'do'           reduce using rule 69
+	'else'         reduce using rule 69
+	'if'           reduce using rule 69
+	'var'          reduce using rule 69
+	'while'        reduce using rule 69
+	'{'            reduce using rule 69
+	'}'            reduce using rule 69
+	L_PReturn      reduce using rule 69
+	L_PIdent       reduce using rule 69
+	%eof           reduce using rule 69
+
+
 State 112
 
 	%start_pStm -> Stm .                                (rule 11)
@@ -2638,7 +2639,7 @@ State 112
 
 State 113
 
-	Stm -> LExp . '=' Exp ';'                           (rule 69)
+	Stm -> LExp . '=' Exp ';'                           (rule 70)
 
 	'='            shift, and enter state 159
 
@@ -2648,6 +2649,7 @@ State 114
 	Declaration -> 'def' . PIdent ListParamClause ':' TypeSpec '=' Block    (rule 54)
 	Declaration -> 'def' . PIdent ListParamClause ':' TypeSpec '=' Exp ';'    (rule 55)
 	Declaration -> 'def' . PIdent ListParamClause '=' Block    (rule 56)
+	Declaration -> 'def' . PIdent ListParamClause '=' Exp ';'    (rule 57)
 
 	L_PIdent       shift, and enter state 36
 
@@ -2655,7 +2657,7 @@ State 114
 
 State 115
 
-	Stm -> 'do' . Stm 'while' '(' Exp ')' ';'           (rule 73)
+	Stm -> 'do' . Stm 'while' '(' Exp ')' ';'           (rule 74)
 
 	'('            shift, and enter state 35
 	'*'            shift, and enter state 39
@@ -2678,8 +2680,8 @@ State 115
 
 State 116
 
-	Stm -> 'if' . '(' Exp ')' Stm 'else' Stm            (rule 71)
-	Stm -> 'if' . '(' Exp ')' Stm                       (rule 72)
+	Stm -> 'if' . '(' Exp ')' Stm 'else' Stm            (rule 72)
+	Stm -> 'if' . '(' Exp ')' Stm                       (rule 73)
 
 	'('            shift, and enter state 156
 
@@ -2695,26 +2697,26 @@ State 117
 
 State 118
 
-	Stm -> 'while' . '(' Exp ')' Stm                    (rule 70)
+	Stm -> 'while' . '(' Exp ')' Stm                    (rule 71)
 
 	'('            shift, and enter state 154
 
 
 State 119
 
-	Block -> '{' . ListStm '}'                          (rule 64)
+	Block -> '{' . ListStm '}'                          (rule 65)
 
-	'('            reduce using rule 65
-	'*'            reduce using rule 65
-	'def'          reduce using rule 65
-	'do'           reduce using rule 65
-	'if'           reduce using rule 65
-	'var'          reduce using rule 65
-	'while'        reduce using rule 65
-	'{'            reduce using rule 65
-	'}'            reduce using rule 65
-	L_PReturn      reduce using rule 65
-	L_PIdent       reduce using rule 65
+	'('            reduce using rule 66
+	'*'            reduce using rule 66
+	'def'          reduce using rule 66
+	'do'           reduce using rule 66
+	'if'           reduce using rule 66
+	'var'          reduce using rule 66
+	'while'        reduce using rule 66
+	'{'            reduce using rule 66
+	'}'            reduce using rule 66
+	L_PReturn      reduce using rule 66
+	L_PIdent       reduce using rule 66
 
 	ListStm        goto state 153
 
@@ -2742,7 +2744,7 @@ State 120
 State 121
 
 	%start_pListStm -> ListStm .                        (rule 10)
-	ListStm -> ListStm . Stm                            (rule 66)
+	ListStm -> ListStm . Stm                            (rule 67)
 
 	'('            shift, and enter state 35
 	'*'            shift, and enter state 39
@@ -2773,7 +2775,7 @@ State 122
 
 State 123
 
-	Arg -> PIdent . ':' TypeSpec                        (rule 63)
+	Arg -> PIdent . ':' TypeSpec                        (rule 64)
 
 	':'            shift, and enter state 151
 
@@ -2794,12 +2796,12 @@ State 125
 
 State 126
 
-	ListArg -> Arg .                                    (rule 61)
-	ListArg -> Arg . ',' ListArg                        (rule 62)
+	ListArg -> Arg .                                    (rule 62)
+	ListArg -> Arg . ',' ListArg                        (rule 63)
 
-	')'            reduce using rule 61
+	')'            reduce using rule 62
 	','            shift, and enter state 150
-	%eof           reduce using rule 61
+	%eof           reduce using rule 62
 
 
 State 127
@@ -2811,9 +2813,9 @@ State 127
 
 State 128
 
-	ParamClause -> '(' . ListArg ')'                    (rule 59)
+	ParamClause -> '(' . ListArg ')'                    (rule 60)
 
-	')'            reduce using rule 60
+	')'            reduce using rule 61
 	L_PIdent       shift, and enter state 36
 
 	PIdent         goto state 123
@@ -2829,13 +2831,13 @@ State 129
 
 State 130
 
-	ListParamClause -> ParamClause .                    (rule 57)
-	ListParamClause -> ParamClause . ListParamClause    (rule 58)
+	ListParamClause -> ParamClause .                    (rule 58)
+	ListParamClause -> ParamClause . ListParamClause    (rule 59)
 
 	'('            shift, and enter state 128
-	':'            reduce using rule 57
-	'='            reduce using rule 57
-	%eof           reduce using rule 57
+	':'            reduce using rule 58
+	'='            reduce using rule 58
+	%eof           reduce using rule 58
 
 	ListParamClausegoto state 148
 	ParamClause    goto state 130
@@ -3022,27 +3024,27 @@ State 147
 
 State 148
 
-	ListParamClause -> ParamClause ListParamClause .    (rule 58)
+	ListParamClause -> ParamClause ListParamClause .    (rule 59)
 
-	':'            reduce using rule 58
-	'='            reduce using rule 58
-	%eof           reduce using rule 58
+	':'            reduce using rule 59
+	'='            reduce using rule 59
+	%eof           reduce using rule 59
 
 
 State 149
 
-	ParamClause -> '(' ListArg . ')'                    (rule 59)
+	ParamClause -> '(' ListArg . ')'                    (rule 60)
 
 	')'            shift, and enter state 208
 
 
 State 150
 
-	ListArg -> Arg ',' . ListArg                        (rule 62)
+	ListArg -> Arg ',' . ListArg                        (rule 63)
 
-	')'            reduce using rule 60
+	')'            reduce using rule 61
 	L_PIdent       shift, and enter state 36
-	%eof           reduce using rule 60
+	%eof           reduce using rule 61
 
 	PIdent         goto state 123
 	ListArg        goto state 207
@@ -3050,7 +3052,7 @@ State 150
 
 State 151
 
-	Arg -> PIdent ':' . TypeSpec                        (rule 63)
+	Arg -> PIdent ':' . TypeSpec                        (rule 64)
 
 	'*'            shift, and enter state 140
 	'Array'        shift, and enter state 141
@@ -3065,26 +3067,26 @@ State 151
 
 State 152
 
-	ListStm -> ListStm Stm .                            (rule 66)
+	ListStm -> ListStm Stm .                            (rule 67)
 
-	'('            reduce using rule 66
-	'*'            reduce using rule 66
-	'def'          reduce using rule 66
-	'do'           reduce using rule 66
-	'if'           reduce using rule 66
-	'var'          reduce using rule 66
-	'while'        reduce using rule 66
-	'{'            reduce using rule 66
-	'}'            reduce using rule 66
-	L_PReturn      reduce using rule 66
-	L_PIdent       reduce using rule 66
-	%eof           reduce using rule 66
+	'('            reduce using rule 67
+	'*'            reduce using rule 67
+	'def'          reduce using rule 67
+	'do'           reduce using rule 67
+	'if'           reduce using rule 67
+	'var'          reduce using rule 67
+	'while'        reduce using rule 67
+	'{'            reduce using rule 67
+	'}'            reduce using rule 67
+	L_PReturn      reduce using rule 67
+	L_PIdent       reduce using rule 67
+	%eof           reduce using rule 67
 
 
 State 153
 
-	Block -> '{' ListStm . '}'                          (rule 64)
-	ListStm -> ListStm . Stm                            (rule 66)
+	Block -> '{' ListStm . '}'                          (rule 65)
+	ListStm -> ListStm . Stm                            (rule 67)
 
 	'('            shift, and enter state 35
 	'*'            shift, and enter state 39
@@ -3108,7 +3110,7 @@ State 153
 
 State 154
 
-	Stm -> 'while' '(' . Exp ')' Stm                    (rule 70)
+	Stm -> 'while' '(' . Exp ')' Stm                    (rule 71)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
@@ -3154,8 +3156,8 @@ State 155
 
 State 156
 
-	Stm -> 'if' '(' . Exp ')' Stm 'else' Stm            (rule 71)
-	Stm -> 'if' '(' . Exp ')' Stm                       (rule 72)
+	Stm -> 'if' '(' . Exp ')' Stm 'else' Stm            (rule 72)
+	Stm -> 'if' '(' . Exp ')' Stm                       (rule 73)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
@@ -3193,7 +3195,7 @@ State 156
 
 State 157
 
-	Stm -> 'do' Stm . 'while' '(' Exp ')' ';'           (rule 73)
+	Stm -> 'do' Stm . 'while' '(' Exp ')' ';'           (rule 74)
 
 	'while'        shift, and enter state 201
 
@@ -3203,6 +3205,7 @@ State 158
 	Declaration -> 'def' PIdent . ListParamClause ':' TypeSpec '=' Block    (rule 54)
 	Declaration -> 'def' PIdent . ListParamClause ':' TypeSpec '=' Exp ';'    (rule 55)
 	Declaration -> 'def' PIdent . ListParamClause '=' Block    (rule 56)
+	Declaration -> 'def' PIdent . ListParamClause '=' Exp ';'    (rule 57)
 
 	'('            shift, and enter state 128
 
@@ -3211,7 +3214,7 @@ State 158
 
 State 159
 
-	Stm -> LExp '=' . Exp ';'                           (rule 69)
+	Stm -> LExp '=' . Exp ';'                           (rule 70)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
@@ -3249,15 +3252,15 @@ State 159
 
 State 160
 
-	Stm -> PIdent ListParams . ';'                      (rule 76)
+	Stm -> PIdent ListParams . ';'                      (rule 77)
 
 	';'            shift, and enter state 198
 
 
 State 161
 
-	Stm -> PReturn Exp . ';'                            (rule 75)
-	Exp -> Exp . Op Exp1                                (rule 103)
+	Stm -> PReturn Exp . ';'                            (rule 76)
+	Exp -> Exp . Op Exp1                                (rule 104)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
@@ -3285,59 +3288,59 @@ State 161
 
 State 162
 
-	Stm -> PReturn ';' .                                (rule 74)
+	Stm -> PReturn ';' .                                (rule 75)
 
-	'('            reduce using rule 74
-	'*'            reduce using rule 74
-	'def'          reduce using rule 74
-	'do'           reduce using rule 74
-	'else'         reduce using rule 74
-	'if'           reduce using rule 74
-	'var'          reduce using rule 74
-	'while'        reduce using rule 74
-	'{'            reduce using rule 74
-	'}'            reduce using rule 74
-	L_PReturn      reduce using rule 74
-	L_PIdent       reduce using rule 74
-	%eof           reduce using rule 74
+	'('            reduce using rule 75
+	'*'            reduce using rule 75
+	'def'          reduce using rule 75
+	'do'           reduce using rule 75
+	'else'         reduce using rule 75
+	'if'           reduce using rule 75
+	'var'          reduce using rule 75
+	'while'        reduce using rule 75
+	'{'            reduce using rule 75
+	'}'            reduce using rule 75
+	L_PReturn      reduce using rule 75
+	L_PIdent       reduce using rule 75
+	%eof           reduce using rule 75
 
 
 State 163
 
-	Params -> '(' ListExp . ')'                         (rule 77)
+	Params -> '(' ListExp . ')'                         (rule 78)
 
 	')'            shift, and enter state 196
 
 
 State 164
 
-	ListParams -> Params ListParams .                   (rule 79)
+	ListParams -> Params ListParams .                   (rule 80)
 
-	'!='           reduce using rule 79
-	'%'            reduce using rule 79
-	'&&'           reduce using rule 79
-	'('            reduce using rule 79
-	')'            reduce using rule 79
-	'*'            reduce using rule 79
-	'+'            reduce using rule 79
-	','            reduce using rule 79
-	'-'            reduce using rule 79
-	'/'            reduce using rule 79
-	';'            reduce using rule 79
-	'<'            reduce using rule 79
-	'<='           reduce using rule 79
-	'=='           reduce using rule 79
-	'>'            reduce using rule 79
-	'>='           reduce using rule 79
-	']'            reduce using rule 79
-	'^'            reduce using rule 79
-	'||'           reduce using rule 79
-	%eof           reduce using rule 79
+	'!='           reduce using rule 80
+	'%'            reduce using rule 80
+	'&&'           reduce using rule 80
+	'('            reduce using rule 80
+	')'            reduce using rule 80
+	'*'            reduce using rule 80
+	'+'            reduce using rule 80
+	','            reduce using rule 80
+	'-'            reduce using rule 80
+	'/'            reduce using rule 80
+	';'            reduce using rule 80
+	'<'            reduce using rule 80
+	'<='           reduce using rule 80
+	'=='           reduce using rule 80
+	'>'            reduce using rule 80
+	'>='           reduce using rule 80
+	']'            reduce using rule 80
+	'^'            reduce using rule 80
+	'||'           reduce using rule 80
+	%eof           reduce using rule 80
 
 
 State 165
 
-	Exp -> Exp Op . Exp1                                (rule 103)
+	Exp -> Exp Op . Exp1                                (rule 104)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
@@ -3374,12 +3377,12 @@ State 165
 
 State 166
 
-	ListExp -> Exp ',' . ListExp                        (rule 82)
+	ListExp -> Exp ',' . ListExp                        (rule 83)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
 	'('            shift, and enter state 51
-	')'            reduce using rule 80
+	')'            reduce using rule 81
 	'*'            shift, and enter state 39
 	'-'            shift, and enter state 62
 	'Array'        shift, and enter state 52
@@ -3391,7 +3394,7 @@ State 166
 	L_PInteger     shift, and enter state 57
 	L_PString      shift, and enter state 58
 	L_PChar        shift, and enter state 59
-	%eof           reduce using rule 80
+	%eof           reduce using rule 81
 
 	PTrue          goto state 40
 	PFalse         goto state 41
@@ -3415,14 +3418,14 @@ State 166
 
 State 167
 
-	Op5 -> '(' Op . ')'                                 (rule 102)
+	Op5 -> '(' Op . ')'                                 (rule 103)
 
 	')'            shift, and enter state 193
 
 
 State 168
 
-	Exp1 -> Exp1 Op1 . Exp2                             (rule 105)
+	Exp1 -> Exp1 Op1 . Exp2                             (rule 106)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
@@ -3458,33 +3461,33 @@ State 168
 
 State 169
 
-	Exp2 -> '!' Exp2 .                                  (rule 107)
+	Exp2 -> '!' Exp2 .                                  (rule 108)
 
-	'!='           reduce using rule 107
-	'%'            reduce using rule 107
-	'&&'           reduce using rule 107
-	'('            reduce using rule 107
-	')'            reduce using rule 107
-	'*'            reduce using rule 107
-	'+'            reduce using rule 107
-	','            reduce using rule 107
-	'-'            reduce using rule 107
-	'/'            reduce using rule 107
-	';'            reduce using rule 107
-	'<'            reduce using rule 107
-	'<='           reduce using rule 107
-	'=='           reduce using rule 107
-	'>'            reduce using rule 107
-	'>='           reduce using rule 107
-	']'            reduce using rule 107
-	'^'            reduce using rule 107
-	'||'           reduce using rule 107
-	%eof           reduce using rule 107
+	'!='           reduce using rule 108
+	'%'            reduce using rule 108
+	'&&'           reduce using rule 108
+	'('            reduce using rule 108
+	')'            reduce using rule 108
+	'*'            reduce using rule 108
+	'+'            reduce using rule 108
+	','            reduce using rule 108
+	'-'            reduce using rule 108
+	'/'            reduce using rule 108
+	';'            reduce using rule 108
+	'<'            reduce using rule 108
+	'<='           reduce using rule 108
+	'=='           reduce using rule 108
+	'>'            reduce using rule 108
+	'>='           reduce using rule 108
+	']'            reduce using rule 108
+	'^'            reduce using rule 108
+	'||'           reduce using rule 108
+	%eof           reduce using rule 108
 
 
 State 170
 
-	Exp2 -> Exp3 Op2 . Exp3                             (rule 108)
+	Exp2 -> Exp3 Op2 . Exp3                             (rule 109)
 
 	'&'            shift, and enter state 50
 	'('            shift, and enter state 51
@@ -3518,47 +3521,47 @@ State 170
 
 State 171
 
-	Op2 -> Op3 .                                        (rule 93)
-	Exp3 -> Exp3 Op3 . Exp4                             (rule 110)
+	Op2 -> Op3 .                                        (rule 94)
+	Exp3 -> Exp3 Op3 . Exp4                             (rule 111)
 
 	'&'            shift, and enter state 50
-			(reduce using rule 93)
+			(reduce using rule 94)
 
 	'('            shift, and enter state 51
-			(reduce using rule 93)
+			(reduce using rule 94)
 
 	'*'            shift, and enter state 39
-			(reduce using rule 93)
+			(reduce using rule 94)
 
 	'-'            shift, and enter state 62
-			(reduce using rule 93)
+			(reduce using rule 94)
 
 	'Array'        shift, and enter state 52
-			(reduce using rule 93)
+			(reduce using rule 94)
 
 	L_PTrue        shift, and enter state 53
-			(reduce using rule 93)
+			(reduce using rule 94)
 
 	L_PFalse       shift, and enter state 54
-			(reduce using rule 93)
+			(reduce using rule 94)
 
 	L_PNull        shift, and enter state 55
-			(reduce using rule 93)
+			(reduce using rule 94)
 
 	L_PIdent       shift, and enter state 36
-			(reduce using rule 93)
+			(reduce using rule 94)
 
 	L_PFloat       shift, and enter state 56
-			(reduce using rule 93)
+			(reduce using rule 94)
 
 	L_PInteger     shift, and enter state 57
-			(reduce using rule 93)
+			(reduce using rule 94)
 
 	L_PString      shift, and enter state 58
-			(reduce using rule 93)
+			(reduce using rule 94)
 
 	L_PChar        shift, and enter state 59
-			(reduce using rule 93)
+			(reduce using rule 94)
 
 
 	PTrue          goto state 40
@@ -3578,7 +3581,7 @@ State 171
 
 State 172
 
-	Exp4 -> Exp4 Op4 . Exp5                             (rule 112)
+	Exp4 -> Exp4 Op4 . Exp5                             (rule 113)
 
 	'&'            shift, and enter state 50
 	'('            shift, and enter state 51
@@ -3610,7 +3613,7 @@ State 172
 
 State 173
 
-	Exp3 -> Exp3 Op3 . Exp4                             (rule 110)
+	Exp3 -> Exp3 Op3 . Exp4                             (rule 111)
 
 	'&'            shift, and enter state 50
 	'('            shift, and enter state 51
@@ -3643,7 +3646,7 @@ State 173
 
 State 174
 
-	Exp5 -> Exp6 Op5 . Exp7                             (rule 114)
+	Exp5 -> Exp6 Op5 . Exp7                             (rule 115)
 
 	'&'            shift, and enter state 50
 	'('            shift, and enter state 51
@@ -3672,38 +3675,38 @@ State 174
 
 State 175
 
-	Exp6 -> '-' Exp7 .                                  (rule 116)
+	Exp6 -> '-' Exp7 .                                  (rule 117)
 
-	'!='           reduce using rule 116
-	'%'            reduce using rule 116
-	'&&'           reduce using rule 116
-	'('            reduce using rule 116
-	')'            reduce using rule 116
-	'*'            reduce using rule 116
-	'+'            reduce using rule 116
-	','            reduce using rule 116
-	'-'            reduce using rule 116
-	'/'            reduce using rule 116
-	';'            reduce using rule 116
-	'<'            reduce using rule 116
-	'<='           reduce using rule 116
-	'=='           reduce using rule 116
-	'>'            reduce using rule 116
-	'>='           reduce using rule 116
-	']'            reduce using rule 116
-	'^'            reduce using rule 116
-	'||'           reduce using rule 116
-	%eof           reduce using rule 116
+	'!='           reduce using rule 117
+	'%'            reduce using rule 117
+	'&&'           reduce using rule 117
+	'('            reduce using rule 117
+	')'            reduce using rule 117
+	'*'            reduce using rule 117
+	'+'            reduce using rule 117
+	','            reduce using rule 117
+	'-'            reduce using rule 117
+	'/'            reduce using rule 117
+	';'            reduce using rule 117
+	'<'            reduce using rule 117
+	'<='           reduce using rule 117
+	'=='           reduce using rule 117
+	'>'            reduce using rule 117
+	'>='           reduce using rule 117
+	']'            reduce using rule 117
+	'^'            reduce using rule 117
+	'||'           reduce using rule 117
+	%eof           reduce using rule 117
 
 
 State 176
 
-	Exp7 -> 'Array' '(' . ListExp ')'                   (rule 127)
+	Exp7 -> 'Array' '(' . ListExp ')'                   (rule 128)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
 	'('            shift, and enter state 51
-	')'            reduce using rule 80
+	')'            reduce using rule 81
 	'*'            shift, and enter state 39
 	'-'            shift, and enter state 62
 	'Array'        shift, and enter state 52
@@ -3738,8 +3741,8 @@ State 176
 
 State 177
 
-	Exp -> Exp . Op Exp1                                (rule 103)
-	Exp7 -> '(' Exp . ')'                               (rule 129)
+	Exp -> Exp . Op Exp1                                (rule 104)
+	Exp7 -> '(' Exp . ')'                               (rule 130)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
@@ -3767,111 +3770,111 @@ State 177
 
 State 178
 
-	Exp7 -> LExp .                                      (rule 118)
-	LExp1 -> '(' LExp . ')'                             (rule 134)
-
-	'!='           reduce using rule 118
-	'%'            reduce using rule 118
-	'&&'           reduce using rule 118
-	'('            reduce using rule 118
-	')'            shift, and enter state 184
-			(reduce using rule 118)
-
-	'*'            reduce using rule 118
-	'+'            reduce using rule 118
-	'-'            reduce using rule 118
-	'/'            reduce using rule 118
-	'<'            reduce using rule 118
-	'<='           reduce using rule 118
-	'=='           reduce using rule 118
-	'>'            reduce using rule 118
-	'>='           reduce using rule 118
-	'^'            reduce using rule 118
-	'||'           reduce using rule 118
-
-
-State 179
-
-	Exp7 -> '&' LExp .                                  (rule 119)
+	Exp7 -> LExp .                                      (rule 119)
+	LExp1 -> '(' LExp . ')'                             (rule 135)
 
 	'!='           reduce using rule 119
 	'%'            reduce using rule 119
 	'&&'           reduce using rule 119
 	'('            reduce using rule 119
-	')'            reduce using rule 119
+	')'            shift, and enter state 184
+			(reduce using rule 119)
+
 	'*'            reduce using rule 119
 	'+'            reduce using rule 119
-	','            reduce using rule 119
 	'-'            reduce using rule 119
 	'/'            reduce using rule 119
-	';'            reduce using rule 119
 	'<'            reduce using rule 119
 	'<='           reduce using rule 119
 	'=='           reduce using rule 119
 	'>'            reduce using rule 119
 	'>='           reduce using rule 119
-	']'            reduce using rule 119
 	'^'            reduce using rule 119
 	'||'           reduce using rule 119
-	%eof           reduce using rule 119
+
+
+State 179
+
+	Exp7 -> '&' LExp .                                  (rule 120)
+
+	'!='           reduce using rule 120
+	'%'            reduce using rule 120
+	'&&'           reduce using rule 120
+	'('            reduce using rule 120
+	')'            reduce using rule 120
+	'*'            reduce using rule 120
+	'+'            reduce using rule 120
+	','            reduce using rule 120
+	'-'            reduce using rule 120
+	'/'            reduce using rule 120
+	';'            reduce using rule 120
+	'<'            reduce using rule 120
+	'<='           reduce using rule 120
+	'=='           reduce using rule 120
+	'>'            reduce using rule 120
+	'>='           reduce using rule 120
+	']'            reduce using rule 120
+	'^'            reduce using rule 120
+	'||'           reduce using rule 120
+	%eof           reduce using rule 120
 
 
 State 180
 
-	Exp7 -> PIdent ListParams .                         (rule 128)
+	Exp7 -> PIdent ListParams .                         (rule 129)
 
-	'!='           reduce using rule 128
-	'%'            reduce using rule 128
-	'&&'           reduce using rule 128
-	'('            reduce using rule 128
-	')'            reduce using rule 128
-	'*'            reduce using rule 128
-	'+'            reduce using rule 128
-	','            reduce using rule 128
-	'-'            reduce using rule 128
-	'/'            reduce using rule 128
-	';'            reduce using rule 128
-	'<'            reduce using rule 128
-	'<='           reduce using rule 128
-	'=='           reduce using rule 128
-	'>'            reduce using rule 128
-	'>='           reduce using rule 128
-	']'            reduce using rule 128
-	'^'            reduce using rule 128
-	'||'           reduce using rule 128
-	%eof           reduce using rule 128
+	'!='           reduce using rule 129
+	'%'            reduce using rule 129
+	'&&'           reduce using rule 129
+	'('            reduce using rule 129
+	')'            reduce using rule 129
+	'*'            reduce using rule 129
+	'+'            reduce using rule 129
+	','            reduce using rule 129
+	'-'            reduce using rule 129
+	'/'            reduce using rule 129
+	';'            reduce using rule 129
+	'<'            reduce using rule 129
+	'<='           reduce using rule 129
+	'=='           reduce using rule 129
+	'>'            reduce using rule 129
+	'>='           reduce using rule 129
+	']'            reduce using rule 129
+	'^'            reduce using rule 129
+	'||'           reduce using rule 129
+	%eof           reduce using rule 129
 
 
 State 181
 
-	LExp -> '*' LExp .                                  (rule 130)
+	LExp -> '*' LExp .                                  (rule 131)
 
-	'!='           reduce using rule 130
-	'%'            reduce using rule 130
-	'&&'           reduce using rule 130
-	'('            reduce using rule 130
-	')'            reduce using rule 130
-	'*'            reduce using rule 130
-	'+'            reduce using rule 130
-	','            reduce using rule 130
-	'-'            reduce using rule 130
-	'/'            reduce using rule 130
-	';'            reduce using rule 130
-	'<'            reduce using rule 130
-	'<='           reduce using rule 130
-	'='            reduce using rule 130
-	'=='           reduce using rule 130
-	'>'            reduce using rule 130
-	'>='           reduce using rule 130
-	']'            reduce using rule 130
-	'^'            reduce using rule 130
-	'||'           reduce using rule 130
-	%eof           reduce using rule 130
+	'!='           reduce using rule 131
+	'%'            reduce using rule 131
+	'&&'           reduce using rule 131
+	'('            reduce using rule 131
+	')'            reduce using rule 131
+	'*'            reduce using rule 131
+	'+'            reduce using rule 131
+	','            reduce using rule 131
+	'-'            reduce using rule 131
+	'/'            reduce using rule 131
+	';'            reduce using rule 131
+	'<'            reduce using rule 131
+	'<='           reduce using rule 131
+	'='            reduce using rule 131
+	'=='           reduce using rule 131
+	'>'            reduce using rule 131
+	'>='           reduce using rule 131
+	']'            reduce using rule 131
+	'^'            reduce using rule 131
+	'||'           reduce using rule 131
+	%eof           reduce using rule 131
 
 
 State 182
 
-	LExp1 -> LExp1 '[' . Exp ']'                        (rule 132)
+	LExp1 -> LExp1 '[' . Exp ']'                        (rule 133)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
@@ -3909,43 +3912,43 @@ State 182
 
 State 183
 
-	LExp1 -> '(' LExp . ')'                             (rule 134)
+	LExp1 -> '(' LExp . ')'                             (rule 135)
 
 	')'            shift, and enter state 184
 
 
 State 184
 
-	LExp1 -> '(' LExp ')' .                             (rule 134)
+	LExp1 -> '(' LExp ')' .                             (rule 135)
 
-	'!='           reduce using rule 134
-	'%'            reduce using rule 134
-	'&&'           reduce using rule 134
-	'('            reduce using rule 134
-	')'            reduce using rule 134
-	'*'            reduce using rule 134
-	'+'            reduce using rule 134
-	','            reduce using rule 134
-	'-'            reduce using rule 134
-	'/'            reduce using rule 134
-	';'            reduce using rule 134
-	'<'            reduce using rule 134
-	'<='           reduce using rule 134
-	'='            reduce using rule 134
-	'=='           reduce using rule 134
-	'>'            reduce using rule 134
-	'>='           reduce using rule 134
-	'['            reduce using rule 134
-	']'            reduce using rule 134
-	'^'            reduce using rule 134
-	'||'           reduce using rule 134
-	%eof           reduce using rule 134
+	'!='           reduce using rule 135
+	'%'            reduce using rule 135
+	'&&'           reduce using rule 135
+	'('            reduce using rule 135
+	')'            reduce using rule 135
+	'*'            reduce using rule 135
+	'+'            reduce using rule 135
+	','            reduce using rule 135
+	'-'            reduce using rule 135
+	'/'            reduce using rule 135
+	';'            reduce using rule 135
+	'<'            reduce using rule 135
+	'<='           reduce using rule 135
+	'='            reduce using rule 135
+	'=='           reduce using rule 135
+	'>'            reduce using rule 135
+	'>='           reduce using rule 135
+	'['            reduce using rule 135
+	']'            reduce using rule 135
+	'^'            reduce using rule 135
+	'||'           reduce using rule 135
+	%eof           reduce using rule 135
 
 
 State 185
 
-	Exp -> Exp . Op Exp1                                (rule 103)
-	LExp1 -> LExp1 '[' Exp . ']'                        (rule 132)
+	Exp -> Exp . Op Exp1                                (rule 104)
+	LExp1 -> LExp1 '[' Exp . ']'                        (rule 133)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
@@ -3973,167 +3976,167 @@ State 185
 
 State 186
 
-	Exp7 -> '(' Exp ')' .                               (rule 129)
+	Exp7 -> '(' Exp ')' .                               (rule 130)
 
-	'!='           reduce using rule 129
-	'%'            reduce using rule 129
-	'&&'           reduce using rule 129
-	'('            reduce using rule 129
-	')'            reduce using rule 129
-	'*'            reduce using rule 129
-	'+'            reduce using rule 129
-	','            reduce using rule 129
-	'-'            reduce using rule 129
-	'/'            reduce using rule 129
-	';'            reduce using rule 129
-	'<'            reduce using rule 129
-	'<='           reduce using rule 129
-	'=='           reduce using rule 129
-	'>'            reduce using rule 129
-	'>='           reduce using rule 129
-	']'            reduce using rule 129
-	'^'            reduce using rule 129
-	'||'           reduce using rule 129
-	%eof           reduce using rule 129
+	'!='           reduce using rule 130
+	'%'            reduce using rule 130
+	'&&'           reduce using rule 130
+	'('            reduce using rule 130
+	')'            reduce using rule 130
+	'*'            reduce using rule 130
+	'+'            reduce using rule 130
+	','            reduce using rule 130
+	'-'            reduce using rule 130
+	'/'            reduce using rule 130
+	';'            reduce using rule 130
+	'<'            reduce using rule 130
+	'<='           reduce using rule 130
+	'=='           reduce using rule 130
+	'>'            reduce using rule 130
+	'>='           reduce using rule 130
+	']'            reduce using rule 130
+	'^'            reduce using rule 130
+	'||'           reduce using rule 130
+	%eof           reduce using rule 130
 
 
 State 187
 
-	Exp7 -> 'Array' '(' ListExp . ')'                   (rule 127)
+	Exp7 -> 'Array' '(' ListExp . ')'                   (rule 128)
 
 	')'            shift, and enter state 218
 
 
 State 188
 
-	Exp5 -> Exp6 Op5 Exp7 .                             (rule 114)
+	Exp5 -> Exp6 Op5 Exp7 .                             (rule 115)
 
-	'!='           reduce using rule 114
-	'%'            reduce using rule 114
-	'&&'           reduce using rule 114
-	'('            reduce using rule 114
-	')'            reduce using rule 114
-	'*'            reduce using rule 114
-	'+'            reduce using rule 114
-	','            reduce using rule 114
-	'-'            reduce using rule 114
-	'/'            reduce using rule 114
-	';'            reduce using rule 114
-	'<'            reduce using rule 114
-	'<='           reduce using rule 114
-	'=='           reduce using rule 114
-	'>'            reduce using rule 114
-	'>='           reduce using rule 114
-	']'            reduce using rule 114
-	'^'            reduce using rule 114
-	'||'           reduce using rule 114
-	%eof           reduce using rule 114
+	'!='           reduce using rule 115
+	'%'            reduce using rule 115
+	'&&'           reduce using rule 115
+	'('            reduce using rule 115
+	')'            reduce using rule 115
+	'*'            reduce using rule 115
+	'+'            reduce using rule 115
+	','            reduce using rule 115
+	'-'            reduce using rule 115
+	'/'            reduce using rule 115
+	';'            reduce using rule 115
+	'<'            reduce using rule 115
+	'<='           reduce using rule 115
+	'=='           reduce using rule 115
+	'>'            reduce using rule 115
+	'>='           reduce using rule 115
+	']'            reduce using rule 115
+	'^'            reduce using rule 115
+	'||'           reduce using rule 115
+	%eof           reduce using rule 115
 
 
 State 189
 
-	Exp3 -> Exp3 Op3 Exp4 .                             (rule 110)
-	Exp4 -> Exp4 . Op4 Exp5                             (rule 112)
+	Exp3 -> Exp3 Op3 Exp4 .                             (rule 111)
+	Exp4 -> Exp4 . Op4 Exp5                             (rule 113)
 
-	'!='           reduce using rule 110
+	'!='           reduce using rule 111
 	'%'            shift, and enter state 81
-			(reduce using rule 110)
+			(reduce using rule 111)
 
-	'&&'           reduce using rule 110
+	'&&'           reduce using rule 111
 	'('            shift, and enter state 77
-			(reduce using rule 110)
+			(reduce using rule 111)
 
-	')'            reduce using rule 110
+	')'            reduce using rule 111
 	'*'            shift, and enter state 82
-			(reduce using rule 110)
+			(reduce using rule 111)
 
-	'+'            reduce using rule 110
-	','            reduce using rule 110
-	'-'            reduce using rule 110
+	'+'            reduce using rule 111
+	','            reduce using rule 111
+	'-'            reduce using rule 111
 	'/'            shift, and enter state 83
-			(reduce using rule 110)
+			(reduce using rule 111)
 
-	';'            reduce using rule 110
-	'<'            reduce using rule 110
-	'<='           reduce using rule 110
-	'=='           reduce using rule 110
-	'>'            reduce using rule 110
-	'>='           reduce using rule 110
-	']'            reduce using rule 110
+	';'            reduce using rule 111
+	'<'            reduce using rule 111
+	'<='           reduce using rule 111
+	'=='           reduce using rule 111
+	'>'            reduce using rule 111
+	'>='           reduce using rule 111
+	']'            reduce using rule 111
 	'^'            shift, and enter state 78
-			(reduce using rule 110)
+			(reduce using rule 111)
 
-	'||'           reduce using rule 110
-	%eof           reduce using rule 110
+	'||'           reduce using rule 111
+	%eof           reduce using rule 111
 
 	Op4            goto state 172
 	Op5            goto state 80
 
 State 190
 
-	Exp4 -> Exp4 Op4 Exp5 .                             (rule 112)
+	Exp4 -> Exp4 Op4 Exp5 .                             (rule 113)
 
-	'!='           reduce using rule 112
-	'%'            reduce using rule 112
-	'&&'           reduce using rule 112
-	'('            reduce using rule 112
-	')'            reduce using rule 112
-	'*'            reduce using rule 112
-	'+'            reduce using rule 112
-	','            reduce using rule 112
-	'-'            reduce using rule 112
-	'/'            reduce using rule 112
-	';'            reduce using rule 112
-	'<'            reduce using rule 112
-	'<='           reduce using rule 112
-	'=='           reduce using rule 112
-	'>'            reduce using rule 112
-	'>='           reduce using rule 112
-	']'            reduce using rule 112
-	'^'            reduce using rule 112
-	'||'           reduce using rule 112
-	%eof           reduce using rule 112
+	'!='           reduce using rule 113
+	'%'            reduce using rule 113
+	'&&'           reduce using rule 113
+	'('            reduce using rule 113
+	')'            reduce using rule 113
+	'*'            reduce using rule 113
+	'+'            reduce using rule 113
+	','            reduce using rule 113
+	'-'            reduce using rule 113
+	'/'            reduce using rule 113
+	';'            reduce using rule 113
+	'<'            reduce using rule 113
+	'<='           reduce using rule 113
+	'=='           reduce using rule 113
+	'>'            reduce using rule 113
+	'>='           reduce using rule 113
+	']'            reduce using rule 113
+	'^'            reduce using rule 113
+	'||'           reduce using rule 113
+	%eof           reduce using rule 113
 
 
 State 191
 
-	Exp2 -> Exp3 Op2 Exp3 .                             (rule 108)
-	Exp3 -> Exp3 . Op3 Exp4                             (rule 110)
+	Exp2 -> Exp3 Op2 Exp3 .                             (rule 109)
+	Exp3 -> Exp3 . Op3 Exp4                             (rule 111)
 
-	'!='           reduce using rule 108
+	'!='           reduce using rule 109
 	'%'            shift, and enter state 81
-			(reduce using rule 108)
+			(reduce using rule 109)
 
-	'&&'           reduce using rule 108
+	'&&'           reduce using rule 109
 	'('            shift, and enter state 77
-			(reduce using rule 108)
+			(reduce using rule 109)
 
-	')'            reduce using rule 108
+	')'            reduce using rule 109
 	'*'            shift, and enter state 82
-			(reduce using rule 108)
+			(reduce using rule 109)
 
 	'+'            shift, and enter state 86
-			(reduce using rule 108)
+			(reduce using rule 109)
 
-	','            reduce using rule 108
+	','            reduce using rule 109
 	'-'            shift, and enter state 87
-			(reduce using rule 108)
+			(reduce using rule 109)
 
 	'/'            shift, and enter state 83
-			(reduce using rule 108)
+			(reduce using rule 109)
 
-	';'            reduce using rule 108
-	'<'            reduce using rule 108
-	'<='           reduce using rule 108
-	'=='           reduce using rule 108
-	'>'            reduce using rule 108
-	'>='           reduce using rule 108
-	']'            reduce using rule 108
+	';'            reduce using rule 109
+	'<'            reduce using rule 109
+	'<='           reduce using rule 109
+	'=='           reduce using rule 109
+	'>'            reduce using rule 109
+	'>='           reduce using rule 109
+	']'            reduce using rule 109
 	'^'            shift, and enter state 78
-			(reduce using rule 108)
+			(reduce using rule 109)
 
-	'||'           reduce using rule 108
-	%eof           reduce using rule 108
+	'||'           reduce using rule 109
+	%eof           reduce using rule 109
 
 	Op3            goto state 173
 	Op4            goto state 85
@@ -4141,113 +4144,113 @@ State 191
 
 State 192
 
-	Exp1 -> Exp1 Op1 Exp2 .                             (rule 105)
+	Exp1 -> Exp1 Op1 Exp2 .                             (rule 106)
 
-	'!='           reduce using rule 105
-	'%'            reduce using rule 105
-	'&&'           reduce using rule 105
-	'('            reduce using rule 105
-	')'            reduce using rule 105
-	'*'            reduce using rule 105
-	'+'            reduce using rule 105
-	','            reduce using rule 105
-	'-'            reduce using rule 105
-	'/'            reduce using rule 105
-	';'            reduce using rule 105
-	'<'            reduce using rule 105
-	'<='           reduce using rule 105
-	'=='           reduce using rule 105
-	'>'            reduce using rule 105
-	'>='           reduce using rule 105
-	']'            reduce using rule 105
-	'^'            reduce using rule 105
-	'||'           reduce using rule 105
-	%eof           reduce using rule 105
+	'!='           reduce using rule 106
+	'%'            reduce using rule 106
+	'&&'           reduce using rule 106
+	'('            reduce using rule 106
+	')'            reduce using rule 106
+	'*'            reduce using rule 106
+	'+'            reduce using rule 106
+	','            reduce using rule 106
+	'-'            reduce using rule 106
+	'/'            reduce using rule 106
+	';'            reduce using rule 106
+	'<'            reduce using rule 106
+	'<='           reduce using rule 106
+	'=='           reduce using rule 106
+	'>'            reduce using rule 106
+	'>='           reduce using rule 106
+	']'            reduce using rule 106
+	'^'            reduce using rule 106
+	'||'           reduce using rule 106
+	%eof           reduce using rule 106
 
 
 State 193
 
-	Op5 -> '(' Op ')' .                                 (rule 102)
+	Op5 -> '(' Op ')' .                                 (rule 103)
 
-	'!'            reduce using rule 102
-	'&'            reduce using rule 102
-	'('            reduce using rule 102
-	')'            reduce using rule 102
-	'*'            reduce using rule 102
-	'-'            reduce using rule 102
-	'Array'        reduce using rule 102
-	L_PTrue        reduce using rule 102
-	L_PFalse       reduce using rule 102
-	L_PNull        reduce using rule 102
-	L_PIdent       reduce using rule 102
-	L_PFloat       reduce using rule 102
-	L_PInteger     reduce using rule 102
-	L_PString      reduce using rule 102
-	L_PChar        reduce using rule 102
-	%eof           reduce using rule 102
+	'!'            reduce using rule 103
+	'&'            reduce using rule 103
+	'('            reduce using rule 103
+	')'            reduce using rule 103
+	'*'            reduce using rule 103
+	'-'            reduce using rule 103
+	'Array'        reduce using rule 103
+	L_PTrue        reduce using rule 103
+	L_PFalse       reduce using rule 103
+	L_PNull        reduce using rule 103
+	L_PIdent       reduce using rule 103
+	L_PFloat       reduce using rule 103
+	L_PInteger     reduce using rule 103
+	L_PString      reduce using rule 103
+	L_PChar        reduce using rule 103
+	%eof           reduce using rule 103
 
 
 State 194
 
-	ListExp -> Exp ',' ListExp .                        (rule 82)
+	ListExp -> Exp ',' ListExp .                        (rule 83)
 
-	')'            reduce using rule 82
-	%eof           reduce using rule 82
+	')'            reduce using rule 83
+	%eof           reduce using rule 83
 
 
 State 195
 
-	Exp -> Exp Op Exp1 .                                (rule 103)
-	Exp1 -> Exp1 . Op1 Exp2                             (rule 105)
+	Exp -> Exp Op Exp1 .                                (rule 104)
+	Exp1 -> Exp1 . Op1 Exp2                             (rule 106)
 
 	'!='           shift, and enter state 90
-			(reduce using rule 103)
+			(reduce using rule 104)
 
 	'%'            shift, and enter state 81
-			(reduce using rule 103)
+			(reduce using rule 104)
 
 	'&&'           shift, and enter state 98
-			(reduce using rule 103)
+			(reduce using rule 104)
 
 	'('            shift, and enter state 77
-			(reduce using rule 103)
+			(reduce using rule 104)
 
-	')'            reduce using rule 103
+	')'            reduce using rule 104
 	'*'            shift, and enter state 82
-			(reduce using rule 103)
+			(reduce using rule 104)
 
 	'+'            shift, and enter state 86
-			(reduce using rule 103)
+			(reduce using rule 104)
 
-	','            reduce using rule 103
+	','            reduce using rule 104
 	'-'            shift, and enter state 87
-			(reduce using rule 103)
+			(reduce using rule 104)
 
 	'/'            shift, and enter state 83
-			(reduce using rule 103)
+			(reduce using rule 104)
 
-	';'            reduce using rule 103
+	';'            reduce using rule 104
 	'<'            shift, and enter state 91
-			(reduce using rule 103)
+			(reduce using rule 104)
 
 	'<='           shift, and enter state 92
-			(reduce using rule 103)
+			(reduce using rule 104)
 
 	'=='           shift, and enter state 93
-			(reduce using rule 103)
+			(reduce using rule 104)
 
 	'>'            shift, and enter state 94
-			(reduce using rule 103)
+			(reduce using rule 104)
 
 	'>='           shift, and enter state 95
-			(reduce using rule 103)
+			(reduce using rule 104)
 
-	']'            reduce using rule 103
+	']'            reduce using rule 104
 	'^'            shift, and enter state 78
-			(reduce using rule 103)
+			(reduce using rule 104)
 
-	'||'           reduce using rule 103
-	%eof           reduce using rule 103
+	'||'           reduce using rule 104
+	%eof           reduce using rule 104
 
 	Op1            goto state 168
 	Op2            goto state 97
@@ -4257,52 +4260,33 @@ State 195
 
 State 196
 
-	Params -> '(' ListExp ')' .                         (rule 77)
+	Params -> '(' ListExp ')' .                         (rule 78)
 
-	'!='           reduce using rule 77
-	'%'            reduce using rule 77
-	'&&'           reduce using rule 77
-	'('            reduce using rule 77
-	')'            reduce using rule 77
-	'*'            reduce using rule 77
-	'+'            reduce using rule 77
-	','            reduce using rule 77
-	'-'            reduce using rule 77
-	'/'            reduce using rule 77
-	';'            reduce using rule 77
-	'<'            reduce using rule 77
-	'<='           reduce using rule 77
-	'=='           reduce using rule 77
-	'>'            reduce using rule 77
-	'>='           reduce using rule 77
-	']'            reduce using rule 77
-	'^'            reduce using rule 77
-	'||'           reduce using rule 77
-	%eof           reduce using rule 77
+	'!='           reduce using rule 78
+	'%'            reduce using rule 78
+	'&&'           reduce using rule 78
+	'('            reduce using rule 78
+	')'            reduce using rule 78
+	'*'            reduce using rule 78
+	'+'            reduce using rule 78
+	','            reduce using rule 78
+	'-'            reduce using rule 78
+	'/'            reduce using rule 78
+	';'            reduce using rule 78
+	'<'            reduce using rule 78
+	'<='           reduce using rule 78
+	'=='           reduce using rule 78
+	'>'            reduce using rule 78
+	'>='           reduce using rule 78
+	']'            reduce using rule 78
+	'^'            reduce using rule 78
+	'||'           reduce using rule 78
+	%eof           reduce using rule 78
 
 
 State 197
 
-	Stm -> PReturn Exp ';' .                            (rule 75)
-
-	'('            reduce using rule 75
-	'*'            reduce using rule 75
-	'def'          reduce using rule 75
-	'do'           reduce using rule 75
-	'else'         reduce using rule 75
-	'if'           reduce using rule 75
-	'var'          reduce using rule 75
-	'while'        reduce using rule 75
-	'{'            reduce using rule 75
-	'}'            reduce using rule 75
-	L_PReturn      reduce using rule 75
-	L_PIdent       reduce using rule 75
-	%eof           reduce using rule 75
-
-
-State 198
-
-	Stm -> PIdent ListParams ';' .                      (rule 76)
+	Stm -> PReturn Exp ';' .                            (rule 76)
 
 	'('            reduce using rule 76
 	'*'            reduce using rule 76
@@ -4319,10 +4303,29 @@ State 198
 	%eof           reduce using rule 76
 
 
+State 198
+
+	Stm -> PIdent ListParams ';' .                      (rule 77)
+
+	'('            reduce using rule 77
+	'*'            reduce using rule 77
+	'def'          reduce using rule 77
+	'do'           reduce using rule 77
+	'else'         reduce using rule 77
+	'if'           reduce using rule 77
+	'var'          reduce using rule 77
+	'while'        reduce using rule 77
+	'{'            reduce using rule 77
+	'}'            reduce using rule 77
+	L_PReturn      reduce using rule 77
+	L_PIdent       reduce using rule 77
+	%eof           reduce using rule 77
+
+
 State 199
 
-	Stm -> LExp '=' Exp . ';'                           (rule 69)
-	Exp -> Exp . Op Exp1                                (rule 103)
+	Stm -> LExp '=' Exp . ';'                           (rule 70)
+	Exp -> Exp . Op Exp1                                (rule 104)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
@@ -4353,6 +4356,7 @@ State 200
 	Declaration -> 'def' PIdent ListParamClause . ':' TypeSpec '=' Block    (rule 54)
 	Declaration -> 'def' PIdent ListParamClause . ':' TypeSpec '=' Exp ';'    (rule 55)
 	Declaration -> 'def' PIdent ListParamClause . '=' Block    (rule 56)
+	Declaration -> 'def' PIdent ListParamClause . '=' Exp ';'    (rule 57)
 
 	':'            shift, and enter state 215
 	'='            shift, and enter state 216
@@ -4360,16 +4364,16 @@ State 200
 
 State 201
 
-	Stm -> 'do' Stm 'while' . '(' Exp ')' ';'           (rule 73)
+	Stm -> 'do' Stm 'while' . '(' Exp ')' ';'           (rule 74)
 
 	'('            shift, and enter state 214
 
 
 State 202
 
-	Stm -> 'if' '(' Exp . ')' Stm 'else' Stm            (rule 71)
-	Stm -> 'if' '(' Exp . ')' Stm                       (rule 72)
-	Exp -> Exp . Op Exp1                                (rule 103)
+	Stm -> 'if' '(' Exp . ')' Stm 'else' Stm            (rule 72)
+	Stm -> 'if' '(' Exp . ')' Stm                       (rule 73)
+	Exp -> Exp . Op Exp1                                (rule 104)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
@@ -4413,8 +4417,8 @@ State 203
 
 State 204
 
-	Stm -> 'while' '(' Exp . ')' Stm                    (rule 70)
-	Exp -> Exp . Op Exp1                                (rule 103)
+	Stm -> 'while' '(' Exp . ')' Stm                    (rule 71)
+	Exp -> Exp . Op Exp1                                (rule 104)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
@@ -4442,48 +4446,48 @@ State 204
 
 State 205
 
-	Block -> '{' ListStm '}' .                          (rule 64)
+	Block -> '{' ListStm '}' .                          (rule 65)
 
-	'('            reduce using rule 64
-	'*'            reduce using rule 64
-	'def'          reduce using rule 64
-	'do'           reduce using rule 64
-	'else'         reduce using rule 64
-	'if'           reduce using rule 64
-	'var'          reduce using rule 64
-	'while'        reduce using rule 64
-	'{'            reduce using rule 64
-	'}'            reduce using rule 64
-	L_PReturn      reduce using rule 64
-	L_PIdent       reduce using rule 64
-	%eof           reduce using rule 64
+	'('            reduce using rule 65
+	'*'            reduce using rule 65
+	'def'          reduce using rule 65
+	'do'           reduce using rule 65
+	'else'         reduce using rule 65
+	'if'           reduce using rule 65
+	'var'          reduce using rule 65
+	'while'        reduce using rule 65
+	'{'            reduce using rule 65
+	'}'            reduce using rule 65
+	L_PReturn      reduce using rule 65
+	L_PIdent       reduce using rule 65
+	%eof           reduce using rule 65
 
 
 State 206
 
-	Arg -> PIdent ':' TypeSpec .                        (rule 63)
+	Arg -> PIdent ':' TypeSpec .                        (rule 64)
 
-	')'            reduce using rule 63
-	','            reduce using rule 63
-	%eof           reduce using rule 63
+	')'            reduce using rule 64
+	','            reduce using rule 64
+	%eof           reduce using rule 64
 
 
 State 207
 
-	ListArg -> Arg ',' ListArg .                        (rule 62)
+	ListArg -> Arg ',' ListArg .                        (rule 63)
 
-	')'            reduce using rule 62
-	%eof           reduce using rule 62
+	')'            reduce using rule 63
+	%eof           reduce using rule 63
 
 
 State 208
 
-	ParamClause -> '(' ListArg ')' .                    (rule 59)
+	ParamClause -> '(' ListArg ')' .                    (rule 60)
 
-	'('            reduce using rule 59
-	':'            reduce using rule 59
-	'='            reduce using rule 59
-	%eof           reduce using rule 59
+	'('            reduce using rule 60
+	':'            reduce using rule 60
+	'='            reduce using rule 60
+	%eof           reduce using rule 60
 
 
 State 209
@@ -4497,12 +4501,12 @@ State 210
 
 	TypeSpec -> 'Array' '[' TypeSpec ']' . '(' PInteger ')'    (rule 46)
 
-	'('            shift, and enter state 227
+	'('            shift, and enter state 228
 
 
 State 211
 
-	Stm -> 'while' '(' Exp ')' . Stm                    (rule 70)
+	Stm -> 'while' '(' Exp ')' . Stm                    (rule 71)
 
 	'('            shift, and enter state 35
 	'*'            shift, and enter state 39
@@ -4519,7 +4523,7 @@ State 211
 	PIdent         goto state 109
 	Declaration    goto state 110
 	Block          goto state 111
-	Stm            goto state 226
+	Stm            goto state 227
 	LExp           goto state 113
 	LExp1          goto state 38
 
@@ -4528,14 +4532,14 @@ State 212
 	Declaration -> 'var' PIdent ':' TypeSpec . '=' Exp ';'    (rule 52)
 	Declaration -> 'var' PIdent ':' TypeSpec . ';'      (rule 53)
 
-	';'            shift, and enter state 224
-	'='            shift, and enter state 225
+	';'            shift, and enter state 225
+	'='            shift, and enter state 226
 
 
 State 213
 
-	Stm -> 'if' '(' Exp ')' . Stm 'else' Stm            (rule 71)
-	Stm -> 'if' '(' Exp ')' . Stm                       (rule 72)
+	Stm -> 'if' '(' Exp ')' . Stm 'else' Stm            (rule 72)
+	Stm -> 'if' '(' Exp ')' . Stm                       (rule 73)
 
 	'('            shift, and enter state 35
 	'*'            shift, and enter state 39
@@ -4552,13 +4556,13 @@ State 213
 	PIdent         goto state 109
 	Declaration    goto state 110
 	Block          goto state 111
-	Stm            goto state 223
+	Stm            goto state 224
 	LExp           goto state 113
 	LExp1          goto state 38
 
 State 214
 
-	Stm -> 'do' Stm 'while' '(' . Exp ')' ';'           (rule 73)
+	Stm -> 'do' Stm 'while' '(' . Exp ')' ';'           (rule 74)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
@@ -4583,7 +4587,7 @@ State 214
 	PInteger       goto state 45
 	PString        goto state 46
 	PChar          goto state 47
-	Exp            goto state 222
+	Exp            goto state 223
 	Exp1           goto state 75
 	Exp2           goto state 73
 	Exp3           goto state 70
@@ -4607,88 +4611,121 @@ State 215
 	'Int'          shift, and enter state 136
 	'String'       shift, and enter state 137
 
-	TypeSpec       goto state 221
+	TypeSpec       goto state 222
 	SType          goto state 139
 
 State 216
 
 	Declaration -> 'def' PIdent ListParamClause '=' . Block    (rule 56)
+	Declaration -> 'def' PIdent ListParamClause '=' . Exp ';'    (rule 57)
 
+	'!'            shift, and enter state 71
+	'&'            shift, and enter state 50
+	'('            shift, and enter state 51
+	'*'            shift, and enter state 39
+	'-'            shift, and enter state 62
+	'Array'        shift, and enter state 52
 	'{'            shift, and enter state 119
+	L_PTrue        shift, and enter state 53
+	L_PFalse       shift, and enter state 54
+	L_PNull        shift, and enter state 55
+	L_PIdent       shift, and enter state 36
+	L_PFloat       shift, and enter state 56
+	L_PInteger     shift, and enter state 57
+	L_PString      shift, and enter state 58
+	L_PChar        shift, and enter state 59
 
+	PTrue          goto state 40
+	PFalse         goto state 41
+	PNull          goto state 42
+	PIdent         goto state 43
+	PFloat         goto state 44
+	PInteger       goto state 45
+	PString        goto state 46
+	PChar          goto state 47
 	Block          goto state 220
+	Exp            goto state 221
+	Exp1           goto state 75
+	Exp2           goto state 73
+	Exp3           goto state 70
+	Exp4           goto state 68
+	Exp5           goto state 66
+	Exp6           goto state 64
+	Exp7           goto state 61
+	LExp           goto state 49
+	LExp1          goto state 38
 
 State 217
 
-	Stm -> LExp '=' Exp ';' .                           (rule 69)
+	Stm -> LExp '=' Exp ';' .                           (rule 70)
 
-	'('            reduce using rule 69
-	'*'            reduce using rule 69
-	'def'          reduce using rule 69
-	'do'           reduce using rule 69
-	'else'         reduce using rule 69
-	'if'           reduce using rule 69
-	'var'          reduce using rule 69
-	'while'        reduce using rule 69
-	'{'            reduce using rule 69
-	'}'            reduce using rule 69
-	L_PReturn      reduce using rule 69
-	L_PIdent       reduce using rule 69
-	%eof           reduce using rule 69
+	'('            reduce using rule 70
+	'*'            reduce using rule 70
+	'def'          reduce using rule 70
+	'do'           reduce using rule 70
+	'else'         reduce using rule 70
+	'if'           reduce using rule 70
+	'var'          reduce using rule 70
+	'while'        reduce using rule 70
+	'{'            reduce using rule 70
+	'}'            reduce using rule 70
+	L_PReturn      reduce using rule 70
+	L_PIdent       reduce using rule 70
+	%eof           reduce using rule 70
 
 
 State 218
 
-	Exp7 -> 'Array' '(' ListExp ')' .                   (rule 127)
+	Exp7 -> 'Array' '(' ListExp ')' .                   (rule 128)
 
-	'!='           reduce using rule 127
-	'%'            reduce using rule 127
-	'&&'           reduce using rule 127
-	'('            reduce using rule 127
-	')'            reduce using rule 127
-	'*'            reduce using rule 127
-	'+'            reduce using rule 127
-	','            reduce using rule 127
-	'-'            reduce using rule 127
-	'/'            reduce using rule 127
-	';'            reduce using rule 127
-	'<'            reduce using rule 127
-	'<='           reduce using rule 127
-	'=='           reduce using rule 127
-	'>'            reduce using rule 127
-	'>='           reduce using rule 127
-	']'            reduce using rule 127
-	'^'            reduce using rule 127
-	'||'           reduce using rule 127
-	%eof           reduce using rule 127
+	'!='           reduce using rule 128
+	'%'            reduce using rule 128
+	'&&'           reduce using rule 128
+	'('            reduce using rule 128
+	')'            reduce using rule 128
+	'*'            reduce using rule 128
+	'+'            reduce using rule 128
+	','            reduce using rule 128
+	'-'            reduce using rule 128
+	'/'            reduce using rule 128
+	';'            reduce using rule 128
+	'<'            reduce using rule 128
+	'<='           reduce using rule 128
+	'=='           reduce using rule 128
+	'>'            reduce using rule 128
+	'>='           reduce using rule 128
+	']'            reduce using rule 128
+	'^'            reduce using rule 128
+	'||'           reduce using rule 128
+	%eof           reduce using rule 128
 
 
 State 219
 
-	LExp1 -> LExp1 '[' Exp ']' .                        (rule 132)
+	LExp1 -> LExp1 '[' Exp ']' .                        (rule 133)
 
-	'!='           reduce using rule 132
-	'%'            reduce using rule 132
-	'&&'           reduce using rule 132
-	'('            reduce using rule 132
-	')'            reduce using rule 132
-	'*'            reduce using rule 132
-	'+'            reduce using rule 132
-	','            reduce using rule 132
-	'-'            reduce using rule 132
-	'/'            reduce using rule 132
-	';'            reduce using rule 132
-	'<'            reduce using rule 132
-	'<='           reduce using rule 132
-	'='            reduce using rule 132
-	'=='           reduce using rule 132
-	'>'            reduce using rule 132
-	'>='           reduce using rule 132
-	'['            reduce using rule 132
-	']'            reduce using rule 132
-	'^'            reduce using rule 132
-	'||'           reduce using rule 132
-	%eof           reduce using rule 132
+	'!='           reduce using rule 133
+	'%'            reduce using rule 133
+	'&&'           reduce using rule 133
+	'('            reduce using rule 133
+	')'            reduce using rule 133
+	'*'            reduce using rule 133
+	'+'            reduce using rule 133
+	','            reduce using rule 133
+	'-'            reduce using rule 133
+	'/'            reduce using rule 133
+	';'            reduce using rule 133
+	'<'            reduce using rule 133
+	'<='           reduce using rule 133
+	'='            reduce using rule 133
+	'=='           reduce using rule 133
+	'>'            reduce using rule 133
+	'>='           reduce using rule 133
+	'['            reduce using rule 133
+	']'            reduce using rule 133
+	'^'            reduce using rule 133
+	'||'           reduce using rule 133
+	%eof           reduce using rule 133
 
 
 State 220
@@ -4712,22 +4749,51 @@ State 220
 
 State 221
 
-	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec . '=' Block    (rule 54)
-	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec . '=' Exp ';'    (rule 55)
-
-	'='            shift, and enter state 232
-
-
-State 222
-
-	Stm -> 'do' Stm 'while' '(' Exp . ')' ';'           (rule 73)
-	Exp -> Exp . Op Exp1                                (rule 103)
+	Declaration -> 'def' PIdent ListParamClause '=' Exp . ';'    (rule 57)
+	Exp -> Exp . Op Exp1                                (rule 104)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
 	'&&'           shift, and enter state 98
 	'('            shift, and enter state 77
-	')'            shift, and enter state 231
+	'*'            shift, and enter state 82
+	'+'            shift, and enter state 86
+	'-'            shift, and enter state 87
+	'/'            shift, and enter state 83
+	';'            shift, and enter state 234
+	'<'            shift, and enter state 91
+	'<='           shift, and enter state 92
+	'=='           shift, and enter state 93
+	'>'            shift, and enter state 94
+	'>='           shift, and enter state 95
+	'^'            shift, and enter state 78
+	'||'           shift, and enter state 101
+
+	Op             goto state 165
+	Op1            goto state 100
+	Op2            goto state 97
+	Op3            goto state 89
+	Op4            goto state 85
+	Op5            goto state 80
+
+State 222
+
+	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec . '=' Block    (rule 54)
+	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec . '=' Exp ';'    (rule 55)
+
+	'='            shift, and enter state 233
+
+
+State 223
+
+	Stm -> 'do' Stm 'while' '(' Exp . ')' ';'           (rule 74)
+	Exp -> Exp . Op Exp1                                (rule 104)
+
+	'!='           shift, and enter state 90
+	'%'            shift, and enter state 81
+	'&&'           shift, and enter state 98
+	'('            shift, and enter state 77
+	')'            shift, and enter state 232
 	'*'            shift, and enter state 82
 	'+'            shift, and enter state 86
 	'-'            shift, and enter state 87
@@ -4747,29 +4813,29 @@ State 222
 	Op4            goto state 85
 	Op5            goto state 80
 
-State 223
-
-	Stm -> 'if' '(' Exp ')' Stm . 'else' Stm            (rule 71)
-	Stm -> 'if' '(' Exp ')' Stm .                       (rule 72)
-
-	'('            reduce using rule 72
-	'*'            reduce using rule 72
-	'def'          reduce using rule 72
-	'do'           reduce using rule 72
-	'else'         shift, and enter state 230
-			(reduce using rule 72)
-
-	'if'           reduce using rule 72
-	'var'          reduce using rule 72
-	'while'        reduce using rule 72
-	'{'            reduce using rule 72
-	'}'            reduce using rule 72
-	L_PReturn      reduce using rule 72
-	L_PIdent       reduce using rule 72
-	%eof           reduce using rule 72
-
-
 State 224
+
+	Stm -> 'if' '(' Exp ')' Stm . 'else' Stm            (rule 72)
+	Stm -> 'if' '(' Exp ')' Stm .                       (rule 73)
+
+	'('            reduce using rule 73
+	'*'            reduce using rule 73
+	'def'          reduce using rule 73
+	'do'           reduce using rule 73
+	'else'         shift, and enter state 231
+			(reduce using rule 73)
+
+	'if'           reduce using rule 73
+	'var'          reduce using rule 73
+	'while'        reduce using rule 73
+	'{'            reduce using rule 73
+	'}'            reduce using rule 73
+	L_PReturn      reduce using rule 73
+	L_PIdent       reduce using rule 73
+	%eof           reduce using rule 73
+
+
+State 225
 
 	Declaration -> 'var' PIdent ':' TypeSpec ';' .      (rule 53)
 
@@ -4788,7 +4854,7 @@ State 224
 	%eof           reduce using rule 53
 
 
-State 225
+State 226
 
 	Declaration -> 'var' PIdent ':' TypeSpec '=' . Exp ';'    (rule 52)
 
@@ -4815,7 +4881,7 @@ State 225
 	PInteger       goto state 45
 	PString        goto state 46
 	PChar          goto state 47
-	Exp            goto state 229
+	Exp            goto state 230
 	Exp1           goto state 75
 	Exp2           goto state 73
 	Exp3           goto state 70
@@ -4826,44 +4892,44 @@ State 225
 	LExp           goto state 49
 	LExp1          goto state 38
 
-State 226
-
-	Stm -> 'while' '(' Exp ')' Stm .                    (rule 70)
-
-	'('            reduce using rule 70
-	'*'            reduce using rule 70
-	'def'          reduce using rule 70
-	'do'           reduce using rule 70
-	'else'         reduce using rule 70
-	'if'           reduce using rule 70
-	'var'          reduce using rule 70
-	'while'        reduce using rule 70
-	'{'            reduce using rule 70
-	'}'            reduce using rule 70
-	L_PReturn      reduce using rule 70
-	L_PIdent       reduce using rule 70
-	%eof           reduce using rule 70
-
-
 State 227
+
+	Stm -> 'while' '(' Exp ')' Stm .                    (rule 71)
+
+	'('            reduce using rule 71
+	'*'            reduce using rule 71
+	'def'          reduce using rule 71
+	'do'           reduce using rule 71
+	'else'         reduce using rule 71
+	'if'           reduce using rule 71
+	'var'          reduce using rule 71
+	'while'        reduce using rule 71
+	'{'            reduce using rule 71
+	'}'            reduce using rule 71
+	L_PReturn      reduce using rule 71
+	L_PIdent       reduce using rule 71
+	%eof           reduce using rule 71
+
+
+State 228
 
 	TypeSpec -> 'Array' '[' TypeSpec ']' '(' . PInteger ')'    (rule 46)
 
 	L_PInteger     shift, and enter state 57
 
-	PInteger       goto state 228
-
-State 228
-
-	TypeSpec -> 'Array' '[' TypeSpec ']' '(' PInteger . ')'    (rule 46)
-
-	')'            shift, and enter state 238
-
+	PInteger       goto state 229
 
 State 229
 
+	TypeSpec -> 'Array' '[' TypeSpec ']' '(' PInteger . ')'    (rule 46)
+
+	')'            shift, and enter state 240
+
+
+State 230
+
 	Declaration -> 'var' PIdent ':' TypeSpec '=' Exp . ';'    (rule 52)
-	Exp -> Exp . Op Exp1                                (rule 103)
+	Exp -> Exp . Op Exp1                                (rule 104)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
@@ -4873,7 +4939,7 @@ State 229
 	'+'            shift, and enter state 86
 	'-'            shift, and enter state 87
 	'/'            shift, and enter state 83
-	';'            shift, and enter state 237
+	';'            shift, and enter state 239
 	'<'            shift, and enter state 91
 	'<='           shift, and enter state 92
 	'=='           shift, and enter state 93
@@ -4889,9 +4955,9 @@ State 229
 	Op4            goto state 85
 	Op5            goto state 80
 
-State 230
+State 231
 
-	Stm -> 'if' '(' Exp ')' Stm 'else' . Stm            (rule 71)
+	Stm -> 'if' '(' Exp ')' Stm 'else' . Stm            (rule 72)
 
 	'('            shift, and enter state 35
 	'*'            shift, and enter state 39
@@ -4908,18 +4974,18 @@ State 230
 	PIdent         goto state 109
 	Declaration    goto state 110
 	Block          goto state 111
-	Stm            goto state 236
+	Stm            goto state 238
 	LExp           goto state 113
 	LExp1          goto state 38
 
-State 231
-
-	Stm -> 'do' Stm 'while' '(' Exp ')' . ';'           (rule 73)
-
-	';'            shift, and enter state 235
-
-
 State 232
+
+	Stm -> 'do' Stm 'while' '(' Exp ')' . ';'           (rule 74)
+
+	';'            shift, and enter state 237
+
+
+State 233
 
 	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' . Block    (rule 54)
 	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' . Exp ';'    (rule 55)
@@ -4948,8 +5014,8 @@ State 232
 	PInteger       goto state 45
 	PString        goto state 46
 	PChar          goto state 47
-	Block          goto state 233
-	Exp            goto state 234
+	Block          goto state 235
+	Exp            goto state 236
 	Exp1           goto state 75
 	Exp2           goto state 73
 	Exp3           goto state 70
@@ -4960,7 +5026,26 @@ State 232
 	LExp           goto state 49
 	LExp1          goto state 38
 
-State 233
+State 234
+
+	Declaration -> 'def' PIdent ListParamClause '=' Exp ';' .    (rule 57)
+
+	'('            reduce using rule 57
+	'*'            reduce using rule 57
+	'def'          reduce using rule 57
+	'do'           reduce using rule 57
+	'else'         reduce using rule 57
+	'if'           reduce using rule 57
+	'var'          reduce using rule 57
+	'while'        reduce using rule 57
+	'{'            reduce using rule 57
+	'}'            reduce using rule 57
+	L_PReturn      reduce using rule 57
+	L_PIdent       reduce using rule 57
+	%eof           reduce using rule 57
+
+
+State 235
 
 	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' Block .    (rule 54)
 
@@ -4979,10 +5064,10 @@ State 233
 	%eof           reduce using rule 54
 
 
-State 234
+State 236
 
 	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' Exp . ';'    (rule 55)
-	Exp -> Exp . Op Exp1                                (rule 103)
+	Exp -> Exp . Op Exp1                                (rule 104)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
@@ -4992,7 +5077,7 @@ State 234
 	'+'            shift, and enter state 86
 	'-'            shift, and enter state 87
 	'/'            shift, and enter state 83
-	';'            shift, and enter state 239
+	';'            shift, and enter state 241
 	'<'            shift, and enter state 91
 	'<='           shift, and enter state 92
 	'=='           shift, and enter state 93
@@ -5008,45 +5093,45 @@ State 234
 	Op4            goto state 85
 	Op5            goto state 80
 
-State 235
-
-	Stm -> 'do' Stm 'while' '(' Exp ')' ';' .           (rule 73)
-
-	'('            reduce using rule 73
-	'*'            reduce using rule 73
-	'def'          reduce using rule 73
-	'do'           reduce using rule 73
-	'else'         reduce using rule 73
-	'if'           reduce using rule 73
-	'var'          reduce using rule 73
-	'while'        reduce using rule 73
-	'{'            reduce using rule 73
-	'}'            reduce using rule 73
-	L_PReturn      reduce using rule 73
-	L_PIdent       reduce using rule 73
-	%eof           reduce using rule 73
-
-
-State 236
-
-	Stm -> 'if' '(' Exp ')' Stm 'else' Stm .            (rule 71)
-
-	'('            reduce using rule 71
-	'*'            reduce using rule 71
-	'def'          reduce using rule 71
-	'do'           reduce using rule 71
-	'else'         reduce using rule 71
-	'if'           reduce using rule 71
-	'var'          reduce using rule 71
-	'while'        reduce using rule 71
-	'{'            reduce using rule 71
-	'}'            reduce using rule 71
-	L_PReturn      reduce using rule 71
-	L_PIdent       reduce using rule 71
-	%eof           reduce using rule 71
-
-
 State 237
+
+	Stm -> 'do' Stm 'while' '(' Exp ')' ';' .           (rule 74)
+
+	'('            reduce using rule 74
+	'*'            reduce using rule 74
+	'def'          reduce using rule 74
+	'do'           reduce using rule 74
+	'else'         reduce using rule 74
+	'if'           reduce using rule 74
+	'var'          reduce using rule 74
+	'while'        reduce using rule 74
+	'{'            reduce using rule 74
+	'}'            reduce using rule 74
+	L_PReturn      reduce using rule 74
+	L_PIdent       reduce using rule 74
+	%eof           reduce using rule 74
+
+
+State 238
+
+	Stm -> 'if' '(' Exp ')' Stm 'else' Stm .            (rule 72)
+
+	'('            reduce using rule 72
+	'*'            reduce using rule 72
+	'def'          reduce using rule 72
+	'do'           reduce using rule 72
+	'else'         reduce using rule 72
+	'if'           reduce using rule 72
+	'var'          reduce using rule 72
+	'while'        reduce using rule 72
+	'{'            reduce using rule 72
+	'}'            reduce using rule 72
+	L_PReturn      reduce using rule 72
+	L_PIdent       reduce using rule 72
+	%eof           reduce using rule 72
+
+
+State 239
 
 	Declaration -> 'var' PIdent ':' TypeSpec '=' Exp ';' .    (rule 52)
 
@@ -5065,7 +5150,7 @@ State 237
 	%eof           reduce using rule 52
 
 
-State 238
+State 240
 
 	TypeSpec -> 'Array' '[' TypeSpec ']' '(' PInteger ')' .    (rule 46)
 
@@ -5077,7 +5162,7 @@ State 238
 	%eof           reduce using rule 46
 
 
-State 239
+State 241
 
 	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' Exp ';' .    (rule 55)
 
@@ -5099,7 +5184,7 @@ State 239
 -----------------------------------------------------------------------------
 Grammar Totals
 -----------------------------------------------------------------------------
-Number of rules: 135
+Number of rules: 136
 Number of terminals: 48
 Number of non-terminals: 72
-Number of states: 240
+Number of states: 242

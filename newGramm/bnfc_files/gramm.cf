@@ -29,6 +29,7 @@ DecVar. Declaration ::= "var" PIdent ":" TypeSpec ";";
 DefFun. Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Block;
 DefFunInLine. Declaration ::= "def" PIdent [ParamClause] ":" TypeSpec "=" Exp ";"; 
 dproc. Declaration ::= "def" PIdent [ParamClause] "=" Block;
+dprocinline. Declaration ::= "def" PIdent [ParamClause] "=" Exp ";";
 separator nonempty ParamClause "";
 
 PArg. ParamClause ::= "(" [Arg] ")";
@@ -125,6 +126,7 @@ internal LExpTyped. LExp ::= "[" LExp ":" TypeSpec ":" "(" Integer "," Integer "
 define op e1 o e2 = EOp e1 o e2;
 --define decVar id typ  = DefVar id typ DummyExp ;
 define dproc id params block = DefFun id params (TSimple TypeVoid) (block);
+define dprocinline id params exp = DefFunInLine id params (TSimple TypeVoid) exp;
 define sdo st ex = SBlock (DBlock [st, (SWhile ex st)]);
 define sif exp stm = SIfElse exp stm (SBlock (DBlock []));
 position token PString ( '"' ((char - ["\"\\"]) | ('\\' ["\"\\nt"]))* '"' );

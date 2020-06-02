@@ -128,13 +128,34 @@ inferDecl decl env = case decl of
         functionHandler env
       where 
         functionHandler e = do
-          texp <- inferExp exp (startFunScope e id params typ)
-          if isTypeError texp || isCompatible texp typ 
-            then
+          case (exp, isTypeVoid typ) of
+            -- PROCEDURA con assegnata FUNZIONE
+            (EFunCall id' params', True) -> do
+              (stmt, e') <- inferStm (SProcCall id' params') e
+              return (DefFun id params typ (DBlock [stmt]), e')
+            -- PROCEDURA con assegnata EXP
+            (_,True) -> do
+              texp <- inferExp exp (startFunScope e id params typ)
+              saveLog $ launchError loc UnexpectedReturn
               return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
-            else do
-              saveLog $ launchError loc (WrongExpType exp texp typ)
-              return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
+            -- FUNZIONE
+            (_,False) -> do
+              texp <- inferExp exp (startFunScope e id params typ)
+              if isTypeError texp || isCompatible texp typ 
+                then
+                  return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
+                else do
+                  saveLog $ launchError loc (WrongExpType exp texp typ)
+                  return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
+          --    saveLog $ launchError loc (WrongReturnValue typ)
+          --  (_, True) -> do
+          --texp <- inferExp exp (startFunScope e id params typ)
+          --if isTypeError texp || isCompatible texp typ 
+          --  then
+          --    return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
+          --  else do
+          --    saveLog $ launchError loc (WrongExpType exp texp typ)
+          --    return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
 
 
 

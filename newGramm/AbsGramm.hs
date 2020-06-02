@@ -117,18 +117,16 @@ data Exp
     | ENull PNull
     | EArray [Exp]
     | EFunCall PIdent [Params]
-    | EOp Exp Op Exp
     | ETyped Exp TypeSpec Loc
+    | EOp Exp Op Exp
   deriving (Eq, Ord, Show, Read)
 
 data LExp
     = LRef LExp
     | LArr LExp Exp
     | LIdent PIdent
-    -- La prima è la loc la seconda è la dloc.
     | LExpTyped LExp TypeSpec Loc Loc
   deriving (Eq, Ord, Show, Read)
-
 
 class Typed a where
   getType :: a -> TypeSpec
@@ -145,4 +143,3 @@ instance Typed LExp where
     getType (LExpTyped _ typ _ _ ) = typ
     getLoc (LExpTyped _ _ loc _ ) = loc
     isTypeError tlexp = getType tlexp == (TSimple TypeError)
-  

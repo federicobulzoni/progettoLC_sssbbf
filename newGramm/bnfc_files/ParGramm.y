@@ -145,6 +145,7 @@ Declaration : 'var' PIdent ':' TypeSpec '=' Exp ';' { AbsGramm.DefVar $2 $4 $6 }
             | 'def' PIdent ListParamClause ':' TypeSpec '=' Block { AbsGramm.DefFun $2 $3 $5 $7 }
             | 'def' PIdent ListParamClause ':' TypeSpec '=' Exp ';' { AbsGramm.DefFunInLine $2 $3 $5 $7 }
             | 'def' PIdent ListParamClause '=' Block { dproc_ $2 $3 $5 }
+            | 'def' PIdent ListParamClause '=' Exp ';' { dprocinline_ $2 $3 $5 }
 ListParamClause :: { [ParamClause] }
 ListParamClause : ParamClause { (:[]) $1 }
                 | ParamClause ListParamClause { (:) $1 $2 }
@@ -254,6 +255,7 @@ happyError ts =
 myLexer = tokens
 op_ e1_ o_ e2_ = EOp e1_ o_ e2_
 dproc_ id_ params_ block_ = DefFun id_ params_ (TSimple TypeVoid) block_
+dprocinline_ id_ params_ exp_ = DefFunInLine id_ params_ (TSimple TypeVoid) exp_
 sdo_ st_ ex_ = SBlock (DBlock [st_, SWhile ex_ st_])
 sif_ exp_ stm_ = SIfElse exp_ stm_ (SBlock (DBlock []))
 }
