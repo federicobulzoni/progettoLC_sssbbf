@@ -10,4 +10,7 @@
 *.hi
 *.log
 *.o
+*.exe
+*.out
+*.gz
 
