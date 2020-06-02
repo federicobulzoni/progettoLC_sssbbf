@@ -144,55 +144,10 @@ buildLabel label = case label of
     LabFun ident (r,c)       ->  ident ++ "@(" ++ show r ++ "," ++ show c ++ ")"
 
 buildLabelDefaultFun :: Label -> String
-buildLabelDefaultFun (LabFun ident _) = ident ++ "@(defaultFun)"
+buildLabelDefaultFun (LabFun ident _) = ident ++ "@default"
 
 buildInstrLabel :: Label -> String
 buildInstrLabel label = (buildLabel label) ++ ":" 
 
 padStringLabel :: String -> String
 padStringLabel x = x ++ concat ( replicate (max 1 (columnWidth - length x)) " " )
-
-
--- TODO: qua sotto non serve.
-printTAC2 :: [TAC] -> IO ()
-printTAC2 [] = putStrLn "\n"
-printTAC2 (istr:istrs) = do
-    printTACInstruction istr
-    printTAC2 istrs
-
-
-printTACInstruction :: TAC -> IO ()
-printTACInstruction istr = case istr of
-    AssignBinOp addr1 addr2 op addr3 typ -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ buildAddr addr2 ++ " " ++ buildBinOpr op ++ " " ++ buildAddr addr3
-    
-    AssignUnOp addr1 op addr2 typ -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ buildUnOpr op ++ " " ++ buildAddr addr2
-    
-    Assign addr1 addr2 typ -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ buildAddr addr2
-
-    AssignFromArray addr1 addr2 addr3 typ -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++  buildAddr addr2 ++ "[" ++ buildAddr addr3 ++ "]"
-
-    AssignToArray addr1 addr2 addr3 typ -> putStrLn $ buildAddr addr1 ++ "[" ++ buildAddr addr2 ++ "]" ++ "\t=\t" ++ buildAddr addr3 
-
-    AssignFromRef addr1 addr2 typ -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ "&" ++ buildAddr addr2
-
-    AssignFromPointer addr1 addr2 typ -> putStrLn $ buildAddr addr1 ++ "\t=\t" ++ "*" ++ buildAddr addr2
-
-    AssignToPointer addr1 addr2 typ -> putStrLn $ "*" ++ buildAddr addr1 ++ "\t=\t" ++ buildAddr addr2
-
-    AssignFromFunction addr1 label  n typ-> putStrLn $  buildAddr addr1 ++ "\t=\t" ++ "call " ++ buildLabel label ++ ", n = " ++ show n
-
-    Goto label -> putStrLn $ "goto " ++ buildLabel label
-    
-    IfBool addr1 label -> putStrLn $ "IfBool " ++ buildAddr addr1 ++ " goto " ++  buildLabel label
-
-    IfRel op addr1 addr2 label -> putStrLn $ "IfRel " ++ buildAddr addr1 ++ buildBinOpr op ++ buildAddr addr2 ++ " goto " ++ buildLabel label
-
-    IfFalse addr1 label -> putStrLn $ "IfFalse " ++ buildAddr addr1 ++ " goto " ++ buildLabel label
-
-    Lab label -> putStrLn $ "\nlabel " ++  buildLabel label
-    
-    ReturnVoid -> putStrLn $ "ReturnVoid" ++ "\n---------"
-
-    ReturnAddr addr1 -> putStrLn $ "Return " ++ buildAddr addr1
-
-    Param addr1 -> putStrLn $ "Param " ++ buildAddr addr1

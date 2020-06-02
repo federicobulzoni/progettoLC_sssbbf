@@ -32,9 +32,8 @@ Errori da risolvere:
         l'errore non lo da se mettiamo un'espressione corretta perché con lo zucchero gli mettiamo a forza il return. Vedere test3.scala
 
 Cose da discutere:
-	[] è giusto che il TAC negli addr usi Ident, Loc e in generale cose di AbsGramm che non gli appartengono?
-	   Non dovrebbero forse essere solo stringhe? Ad esempio l'identificatore@numero è una cosa proprio della struttura TAC,
-       non solo un modo di stamparlo carino forse.  
     [] il TypeChecker da errore se non trova un return nelle funzioni (anche se c'è un return in un if), è corretto? es. test2.scala
         probabilmente non è un problema
+        Secondo me va bene così com'è con il warning, avvisa che non c'è un return in tutti i percorsi e questo potrebbe essere non voluto. Sara.
     [] Aggiungere warning se manca il main?
+       Io lo farei. Sara.
