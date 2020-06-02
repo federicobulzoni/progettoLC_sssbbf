@@ -112,11 +112,12 @@ transExp x = case x of
   ENull pnull -> failure x
   EArray exps -> failure x
   EFunCall pident paramss -> failure x
+  ETyped exp typespec integer1 integer2 -> failure x
   EOp exp1 op exp2 -> failure x
 transLExp :: LExp -> Result
 transLExp x = case x of
   LRef lexp -> failure x
   LArr lexp exp -> failure x
   LIdent pident -> failure x
-  LExpTyped lexp typespec loc1 loc2 -> failure x
+  LExpTyped lexp typespec integer1 integer2 integer3 integer4 -> failure x
 

@@ -14,7 +14,6 @@ state 189 contains 5 shift/reduce conflicts.
 state 191 contains 7 shift/reduce conflicts.
 state 195 contains 14 shift/reduce conflicts.
 state 223 contains 1 shift/reduce conflicts.
-state 234 contains 2 shift/reduce conflicts.
 
 rule 31 is unused
 
@@ -76,7 +75,7 @@ Grammar
 	Declaration -> 'var' PIdent ':' TypeSpec '=' Exp ';'   (52)
 	Declaration -> 'var' PIdent ':' TypeSpec ';'       (53)
 	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' Block   (54)
-	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' Exp   (55)
+	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' Exp ';'   (55)
 	Declaration -> 'def' PIdent ListParamClause '=' Block   (56)
 	ListParamClause -> ParamClause                     (57)
 	ListParamClause -> ParamClause ListParamClause     (58)
@@ -151,7 +150,7 @@ Grammar
 	Exp7 -> 'Array' '(' ListExp ')'                    (127)
 	Exp7 -> PIdent ListParams                          (128)
 	Exp7 -> '(' Exp ')'                                (129)
-	LExp -> '*' LExp1                                  (130)
+	LExp -> '*' LExp                                   (130)
 	LExp -> LExp1                                      (131)
 	LExp1 -> LExp1 '[' Exp ']'                         (132)
 	LExp1 -> PIdent                                    (133)
@@ -898,17 +897,7 @@ State 33
 	'['            reduce using rule 133
 	']'            reduce using rule 133
 	'^'            reduce using rule 133
-	'def'          reduce using rule 133
-	'do'           reduce using rule 133
-	'else'         reduce using rule 133
-	'if'           reduce using rule 133
-	'var'          reduce using rule 133
-	'while'        reduce using rule 133
-	'{'            reduce using rule 133
 	'||'           reduce using rule 133
-	'}'            reduce using rule 133
-	L_PReturn      reduce using rule 133
-	L_PIdent       reduce using rule 133
 	%eof           reduce using rule 133
 
 
@@ -958,17 +947,7 @@ State 36
 	'['            reduce using rule 36
 	']'            reduce using rule 36
 	'^'            reduce using rule 36
-	'def'          reduce using rule 36
-	'do'           reduce using rule 36
-	'else'         reduce using rule 36
-	'if'           reduce using rule 36
-	'var'          reduce using rule 36
-	'while'        reduce using rule 36
-	'{'            reduce using rule 36
 	'||'           reduce using rule 36
-	'}'            reduce using rule 36
-	L_PReturn      reduce using rule 36
-	L_PIdent       reduce using rule 36
 	%eof           reduce using rule 36
 
 
@@ -1004,29 +983,21 @@ State 38
 	'['            shift, and enter state 182
 	']'            reduce using rule 131
 	'^'            reduce using rule 131
-	'def'          reduce using rule 131
-	'do'           reduce using rule 131
-	'else'         reduce using rule 131
-	'if'           reduce using rule 131
-	'var'          reduce using rule 131
-	'while'        reduce using rule 131
-	'{'            reduce using rule 131
 	'||'           reduce using rule 131
-	'}'            reduce using rule 131
-	L_PReturn      reduce using rule 131
-	L_PIdent       reduce using rule 131
 	%eof           reduce using rule 131
 
 
 State 39
 
-	LExp -> '*' . LExp1                                 (rule 130)
+	LExp -> '*' . LExp                                  (rule 130)
 
 	'('            shift, and enter state 35
+	'*'            shift, and enter state 39
 	L_PIdent       shift, and enter state 36
 
 	PIdent         goto state 33
-	LExp1          goto state 181
+	LExp           goto state 181
+	LExp1          goto state 38
 
 State 40
 
@@ -1050,17 +1021,7 @@ State 40
 	'>='           reduce using rule 124
 	']'            reduce using rule 124
 	'^'            reduce using rule 124
-	'def'          reduce using rule 124
-	'do'           reduce using rule 124
-	'else'         reduce using rule 124
-	'if'           reduce using rule 124
-	'var'          reduce using rule 124
-	'while'        reduce using rule 124
-	'{'            reduce using rule 124
 	'||'           reduce using rule 124
-	'}'            reduce using rule 124
-	L_PReturn      reduce using rule 124
-	L_PIdent       reduce using rule 124
 	%eof           reduce using rule 124
 
 
@@ -1086,17 +1047,7 @@ State 41
 	'>='           reduce using rule 125
 	']'            reduce using rule 125
 	'^'            reduce using rule 125
-	'def'          reduce using rule 125
-	'do'           reduce using rule 125
-	'else'         reduce using rule 125
-	'if'           reduce using rule 125
-	'var'          reduce using rule 125
-	'while'        reduce using rule 125
-	'{'            reduce using rule 125
 	'||'           reduce using rule 125
-	'}'            reduce using rule 125
-	L_PReturn      reduce using rule 125
-	L_PIdent       reduce using rule 125
 	%eof           reduce using rule 125
 
 
@@ -1122,17 +1073,7 @@ State 42
 	'>='           reduce using rule 126
 	']'            reduce using rule 126
 	'^'            reduce using rule 126
-	'def'          reduce using rule 126
-	'do'           reduce using rule 126
-	'else'         reduce using rule 126
-	'if'           reduce using rule 126
-	'var'          reduce using rule 126
-	'while'        reduce using rule 126
-	'{'            reduce using rule 126
 	'||'           reduce using rule 126
-	'}'            reduce using rule 126
-	L_PReturn      reduce using rule 126
-	L_PIdent       reduce using rule 126
 	%eof           reduce using rule 126
 
 
@@ -1162,17 +1103,7 @@ State 43
 	'['            reduce using rule 133
 	']'            reduce using rule 133
 	'^'            reduce using rule 133
-	'def'          reduce using rule 133
-	'do'           reduce using rule 133
-	'else'         reduce using rule 133
-	'if'           reduce using rule 133
-	'var'          reduce using rule 133
-	'while'        reduce using rule 133
-	'{'            reduce using rule 133
 	'||'           reduce using rule 133
-	'}'            reduce using rule 133
-	L_PReturn      reduce using rule 133
-	L_PIdent       reduce using rule 133
 	%eof           reduce using rule 133
 
 	Params         goto state 104
@@ -1200,17 +1131,7 @@ State 44
 	'>='           reduce using rule 121
 	']'            reduce using rule 121
 	'^'            reduce using rule 121
-	'def'          reduce using rule 121
-	'do'           reduce using rule 121
-	'else'         reduce using rule 121
-	'if'           reduce using rule 121
-	'var'          reduce using rule 121
-	'while'        reduce using rule 121
-	'{'            reduce using rule 121
 	'||'           reduce using rule 121
-	'}'            reduce using rule 121
-	L_PReturn      reduce using rule 121
-	L_PIdent       reduce using rule 121
 	%eof           reduce using rule 121
 
 
@@ -1236,17 +1157,7 @@ State 45
 	'>='           reduce using rule 120
 	']'            reduce using rule 120
 	'^'            reduce using rule 120
-	'def'          reduce using rule 120
-	'do'           reduce using rule 120
-	'else'         reduce using rule 120
-	'if'           reduce using rule 120
-	'var'          reduce using rule 120
-	'while'        reduce using rule 120
-	'{'            reduce using rule 120
 	'||'           reduce using rule 120
-	'}'            reduce using rule 120
-	L_PReturn      reduce using rule 120
-	L_PIdent       reduce using rule 120
 	%eof           reduce using rule 120
 
 
@@ -1272,17 +1183,7 @@ State 46
 	'>='           reduce using rule 123
 	']'            reduce using rule 123
 	'^'            reduce using rule 123
-	'def'          reduce using rule 123
-	'do'           reduce using rule 123
-	'else'         reduce using rule 123
-	'if'           reduce using rule 123
-	'var'          reduce using rule 123
-	'while'        reduce using rule 123
-	'{'            reduce using rule 123
 	'||'           reduce using rule 123
-	'}'            reduce using rule 123
-	L_PReturn      reduce using rule 123
-	L_PIdent       reduce using rule 123
 	%eof           reduce using rule 123
 
 
@@ -1308,17 +1209,7 @@ State 47
 	'>='           reduce using rule 122
 	']'            reduce using rule 122
 	'^'            reduce using rule 122
-	'def'          reduce using rule 122
-	'do'           reduce using rule 122
-	'else'         reduce using rule 122
-	'if'           reduce using rule 122
-	'var'          reduce using rule 122
-	'while'        reduce using rule 122
-	'{'            reduce using rule 122
 	'||'           reduce using rule 122
-	'}'            reduce using rule 122
-	L_PReturn      reduce using rule 122
-	L_PIdent       reduce using rule 122
 	%eof           reduce using rule 122
 
 
@@ -1351,17 +1242,7 @@ State 49
 	'>='           reduce using rule 118
 	']'            reduce using rule 118
 	'^'            reduce using rule 118
-	'def'          reduce using rule 118
-	'do'           reduce using rule 118
-	'else'         reduce using rule 118
-	'if'           reduce using rule 118
-	'var'          reduce using rule 118
-	'while'        reduce using rule 118
-	'{'            reduce using rule 118
 	'||'           reduce using rule 118
-	'}'            reduce using rule 118
-	L_PReturn      reduce using rule 118
-	L_PIdent       reduce using rule 118
 	%eof           reduce using rule 118
 
 
@@ -1445,17 +1326,7 @@ State 53
 	'>='           reduce using rule 32
 	']'            reduce using rule 32
 	'^'            reduce using rule 32
-	'def'          reduce using rule 32
-	'do'           reduce using rule 32
-	'else'         reduce using rule 32
-	'if'           reduce using rule 32
-	'var'          reduce using rule 32
-	'while'        reduce using rule 32
-	'{'            reduce using rule 32
 	'||'           reduce using rule 32
-	'}'            reduce using rule 32
-	L_PReturn      reduce using rule 32
-	L_PIdent       reduce using rule 32
 	%eof           reduce using rule 32
 
 
@@ -1481,17 +1352,7 @@ State 54
 	'>='           reduce using rule 33
 	']'            reduce using rule 33
 	'^'            reduce using rule 33
-	'def'          reduce using rule 33
-	'do'           reduce using rule 33
-	'else'         reduce using rule 33
-	'if'           reduce using rule 33
-	'var'          reduce using rule 33
-	'while'        reduce using rule 33
-	'{'            reduce using rule 33
 	'||'           reduce using rule 33
-	'}'            reduce using rule 33
-	L_PReturn      reduce using rule 33
-	L_PIdent       reduce using rule 33
 	%eof           reduce using rule 33
 
 
@@ -1517,17 +1378,7 @@ State 55
 	'>='           reduce using rule 35
 	']'            reduce using rule 35
 	'^'            reduce using rule 35
-	'def'          reduce using rule 35
-	'do'           reduce using rule 35
-	'else'         reduce using rule 35
-	'if'           reduce using rule 35
-	'var'          reduce using rule 35
-	'while'        reduce using rule 35
-	'{'            reduce using rule 35
 	'||'           reduce using rule 35
-	'}'            reduce using rule 35
-	L_PReturn      reduce using rule 35
-	L_PIdent       reduce using rule 35
 	%eof           reduce using rule 35
 
 
@@ -1553,17 +1404,7 @@ State 56
 	'>='           reduce using rule 37
 	']'            reduce using rule 37
 	'^'            reduce using rule 37
-	'def'          reduce using rule 37
-	'do'           reduce using rule 37
-	'else'         reduce using rule 37
-	'if'           reduce using rule 37
-	'var'          reduce using rule 37
-	'while'        reduce using rule 37
-	'{'            reduce using rule 37
 	'||'           reduce using rule 37
-	'}'            reduce using rule 37
-	L_PReturn      reduce using rule 37
-	L_PIdent       reduce using rule 37
 	%eof           reduce using rule 37
 
 
@@ -1589,17 +1430,7 @@ State 57
 	'>='           reduce using rule 38
 	']'            reduce using rule 38
 	'^'            reduce using rule 38
-	'def'          reduce using rule 38
-	'do'           reduce using rule 38
-	'else'         reduce using rule 38
-	'if'           reduce using rule 38
-	'var'          reduce using rule 38
-	'while'        reduce using rule 38
-	'{'            reduce using rule 38
 	'||'           reduce using rule 38
-	'}'            reduce using rule 38
-	L_PReturn      reduce using rule 38
-	L_PIdent       reduce using rule 38
 	%eof           reduce using rule 38
 
 
@@ -1625,17 +1456,7 @@ State 58
 	'>='           reduce using rule 39
 	']'            reduce using rule 39
 	'^'            reduce using rule 39
-	'def'          reduce using rule 39
-	'do'           reduce using rule 39
-	'else'         reduce using rule 39
-	'if'           reduce using rule 39
-	'var'          reduce using rule 39
-	'while'        reduce using rule 39
-	'{'            reduce using rule 39
 	'||'           reduce using rule 39
-	'}'            reduce using rule 39
-	L_PReturn      reduce using rule 39
-	L_PIdent       reduce using rule 39
 	%eof           reduce using rule 39
 
 
@@ -1661,17 +1482,7 @@ State 59
 	'>='           reduce using rule 40
 	']'            reduce using rule 40
 	'^'            reduce using rule 40
-	'def'          reduce using rule 40
-	'do'           reduce using rule 40
-	'else'         reduce using rule 40
-	'if'           reduce using rule 40
-	'var'          reduce using rule 40
-	'while'        reduce using rule 40
-	'{'            reduce using rule 40
 	'||'           reduce using rule 40
-	'}'            reduce using rule 40
-	L_PReturn      reduce using rule 40
-	L_PIdent       reduce using rule 40
 	%eof           reduce using rule 40
 
 
@@ -1704,17 +1515,7 @@ State 61
 	'>='           reduce using rule 117
 	']'            reduce using rule 117
 	'^'            reduce using rule 117
-	'def'          reduce using rule 117
-	'do'           reduce using rule 117
-	'else'         reduce using rule 117
-	'if'           reduce using rule 117
-	'var'          reduce using rule 117
-	'while'        reduce using rule 117
-	'{'            reduce using rule 117
 	'||'           reduce using rule 117
-	'}'            reduce using rule 117
-	L_PReturn      reduce using rule 117
-	L_PIdent       reduce using rule 117
 	%eof           reduce using rule 117
 
 
@@ -1781,17 +1582,7 @@ State 64
 	'^'            shift, and enter state 78
 			(reduce using rule 115)
 
-	'def'          reduce using rule 115
-	'do'           reduce using rule 115
-	'else'         reduce using rule 115
-	'if'           reduce using rule 115
-	'var'          reduce using rule 115
-	'while'        reduce using rule 115
-	'{'            reduce using rule 115
 	'||'           reduce using rule 115
-	'}'            reduce using rule 115
-	L_PReturn      reduce using rule 115
-	L_PIdent       reduce using rule 115
 	%eof           reduce using rule 115
 
 	Op5            goto state 174
@@ -1833,17 +1624,7 @@ State 66
 	'>='           reduce using rule 113
 	']'            reduce using rule 113
 	'^'            reduce using rule 113
-	'def'          reduce using rule 113
-	'do'           reduce using rule 113
-	'else'         reduce using rule 113
-	'if'           reduce using rule 113
-	'var'          reduce using rule 113
-	'while'        reduce using rule 113
-	'{'            reduce using rule 113
 	'||'           reduce using rule 113
-	'}'            reduce using rule 113
-	L_PReturn      reduce using rule 113
-	L_PIdent       reduce using rule 113
 	%eof           reduce using rule 113
 
 
@@ -1898,17 +1679,7 @@ State 68
 	'^'            shift, and enter state 78
 			(reduce using rule 111)
 
-	'def'          reduce using rule 111
-	'do'           reduce using rule 111
-	'else'         reduce using rule 111
-	'if'           reduce using rule 111
-	'var'          reduce using rule 111
-	'while'        reduce using rule 111
-	'{'            reduce using rule 111
 	'||'           reduce using rule 111
-	'}'            reduce using rule 111
-	L_PReturn      reduce using rule 111
-	L_PIdent       reduce using rule 111
 	%eof           reduce using rule 111
 
 	Op4            goto state 172
@@ -1971,17 +1742,7 @@ State 70
 	'^'            shift, and enter state 78
 			(reduce using rule 109)
 
-	'def'          reduce using rule 109
-	'do'           reduce using rule 109
-	'else'         reduce using rule 109
-	'if'           reduce using rule 109
-	'var'          reduce using rule 109
-	'while'        reduce using rule 109
-	'{'            reduce using rule 109
 	'||'           reduce using rule 109
-	'}'            reduce using rule 109
-	L_PReturn      reduce using rule 109
-	L_PIdent       reduce using rule 109
 	%eof           reduce using rule 109
 
 	Op2            goto state 170
@@ -2074,17 +1835,7 @@ State 73
 	'>='           reduce using rule 106
 	']'            reduce using rule 106
 	'^'            reduce using rule 106
-	'def'          reduce using rule 106
-	'do'           reduce using rule 106
-	'else'         reduce using rule 106
-	'if'           reduce using rule 106
-	'var'          reduce using rule 106
-	'while'        reduce using rule 106
-	'{'            reduce using rule 106
 	'||'           reduce using rule 106
-	'}'            reduce using rule 106
-	L_PReturn      reduce using rule 106
-	L_PIdent       reduce using rule 106
 	%eof           reduce using rule 106
 
 
@@ -2168,17 +1919,7 @@ State 75
 	'^'            shift, and enter state 78
 			(reduce using rule 104)
 
-	'def'          reduce using rule 104
-	'do'           reduce using rule 104
-	'else'         reduce using rule 104
-	'if'           reduce using rule 104
-	'var'          reduce using rule 104
-	'while'        reduce using rule 104
-	'{'            reduce using rule 104
 	'||'           reduce using rule 104
-	'}'            reduce using rule 104
-	L_PReturn      reduce using rule 104
-	L_PIdent       reduce using rule 104
 	%eof           reduce using rule 104
 
 	Op1            goto state 168
@@ -2738,17 +2479,7 @@ State 104
 	'>='           reduce using rule 78
 	']'            reduce using rule 78
 	'^'            reduce using rule 78
-	'def'          reduce using rule 78
-	'do'           reduce using rule 78
-	'else'         reduce using rule 78
-	'if'           reduce using rule 78
-	'var'          reduce using rule 78
-	'while'        reduce using rule 78
-	'{'            reduce using rule 78
 	'||'           reduce using rule 78
-	'}'            reduce using rule 78
-	L_PReturn      reduce using rule 78
-	L_PIdent       reduce using rule 78
 	%eof           reduce using rule 78
 
 	Params         goto state 104
@@ -2915,7 +2646,7 @@ State 113
 State 114
 
 	Declaration -> 'def' . PIdent ListParamClause ':' TypeSpec '=' Block    (rule 54)
-	Declaration -> 'def' . PIdent ListParamClause ':' TypeSpec '=' Exp    (rule 55)
+	Declaration -> 'def' . PIdent ListParamClause ':' TypeSpec '=' Exp ';'    (rule 55)
 	Declaration -> 'def' . PIdent ListParamClause '=' Block    (rule 56)
 
 	L_PIdent       shift, and enter state 36
@@ -3470,7 +3201,7 @@ State 157
 State 158
 
 	Declaration -> 'def' PIdent . ListParamClause ':' TypeSpec '=' Block    (rule 54)
-	Declaration -> 'def' PIdent . ListParamClause ':' TypeSpec '=' Exp    (rule 55)
+	Declaration -> 'def' PIdent . ListParamClause ':' TypeSpec '=' Exp ';'    (rule 55)
 	Declaration -> 'def' PIdent . ListParamClause '=' Block    (rule 56)
 
 	'('            shift, and enter state 128
@@ -3600,17 +3331,7 @@ State 164
 	'>='           reduce using rule 79
 	']'            reduce using rule 79
 	'^'            reduce using rule 79
-	'def'          reduce using rule 79
-	'do'           reduce using rule 79
-	'else'         reduce using rule 79
-	'if'           reduce using rule 79
-	'var'          reduce using rule 79
-	'while'        reduce using rule 79
-	'{'            reduce using rule 79
 	'||'           reduce using rule 79
-	'}'            reduce using rule 79
-	L_PReturn      reduce using rule 79
-	L_PIdent       reduce using rule 79
 	%eof           reduce using rule 79
 
 
@@ -3757,17 +3478,7 @@ State 169
 	'>='           reduce using rule 107
 	']'            reduce using rule 107
 	'^'            reduce using rule 107
-	'def'          reduce using rule 107
-	'do'           reduce using rule 107
-	'else'         reduce using rule 107
-	'if'           reduce using rule 107
-	'var'          reduce using rule 107
-	'while'        reduce using rule 107
-	'{'            reduce using rule 107
 	'||'           reduce using rule 107
-	'}'            reduce using rule 107
-	L_PReturn      reduce using rule 107
-	L_PIdent       reduce using rule 107
 	%eof           reduce using rule 107
 
 
@@ -3981,17 +3692,7 @@ State 175
 	'>='           reduce using rule 116
 	']'            reduce using rule 116
 	'^'            reduce using rule 116
-	'def'          reduce using rule 116
-	'do'           reduce using rule 116
-	'else'         reduce using rule 116
-	'if'           reduce using rule 116
-	'var'          reduce using rule 116
-	'while'        reduce using rule 116
-	'{'            reduce using rule 116
 	'||'           reduce using rule 116
-	'}'            reduce using rule 116
-	L_PReturn      reduce using rule 116
-	L_PIdent       reduce using rule 116
 	%eof           reduce using rule 116
 
 
@@ -4111,17 +3812,7 @@ State 179
 	'>='           reduce using rule 119
 	']'            reduce using rule 119
 	'^'            reduce using rule 119
-	'def'          reduce using rule 119
-	'do'           reduce using rule 119
-	'else'         reduce using rule 119
-	'if'           reduce using rule 119
-	'var'          reduce using rule 119
-	'while'        reduce using rule 119
-	'{'            reduce using rule 119
 	'||'           reduce using rule 119
-	'}'            reduce using rule 119
-	L_PReturn      reduce using rule 119
-	L_PIdent       reduce using rule 119
 	%eof           reduce using rule 119
 
 
@@ -4147,24 +3838,13 @@ State 180
 	'>='           reduce using rule 128
 	']'            reduce using rule 128
 	'^'            reduce using rule 128
-	'def'          reduce using rule 128
-	'do'           reduce using rule 128
-	'else'         reduce using rule 128
-	'if'           reduce using rule 128
-	'var'          reduce using rule 128
-	'while'        reduce using rule 128
-	'{'            reduce using rule 128
 	'||'           reduce using rule 128
-	'}'            reduce using rule 128
-	L_PReturn      reduce using rule 128
-	L_PIdent       reduce using rule 128
 	%eof           reduce using rule 128
 
 
 State 181
 
-	LExp -> '*' LExp1 .                                 (rule 130)
-	LExp1 -> LExp1 . '[' Exp ']'                        (rule 132)
+	LExp -> '*' LExp .                                  (rule 130)
 
 	'!='           reduce using rule 130
 	'%'            reduce using rule 130
@@ -4183,20 +3863,9 @@ State 181
 	'=='           reduce using rule 130
 	'>'            reduce using rule 130
 	'>='           reduce using rule 130
-	'['            shift, and enter state 182
 	']'            reduce using rule 130
 	'^'            reduce using rule 130
-	'def'          reduce using rule 130
-	'do'           reduce using rule 130
-	'else'         reduce using rule 130
-	'if'           reduce using rule 130
-	'var'          reduce using rule 130
-	'while'        reduce using rule 130
-	'{'            reduce using rule 130
 	'||'           reduce using rule 130
-	'}'            reduce using rule 130
-	L_PReturn      reduce using rule 130
-	L_PIdent       reduce using rule 130
 	%eof           reduce using rule 130
 
 
@@ -4269,17 +3938,7 @@ State 184
 	'['            reduce using rule 134
 	']'            reduce using rule 134
 	'^'            reduce using rule 134
-	'def'          reduce using rule 134
-	'do'           reduce using rule 134
-	'else'         reduce using rule 134
-	'if'           reduce using rule 134
-	'var'          reduce using rule 134
-	'while'        reduce using rule 134
-	'{'            reduce using rule 134
 	'||'           reduce using rule 134
-	'}'            reduce using rule 134
-	L_PReturn      reduce using rule 134
-	L_PIdent       reduce using rule 134
 	%eof           reduce using rule 134
 
 
@@ -4334,17 +3993,7 @@ State 186
 	'>='           reduce using rule 129
 	']'            reduce using rule 129
 	'^'            reduce using rule 129
-	'def'          reduce using rule 129
-	'do'           reduce using rule 129
-	'else'         reduce using rule 129
-	'if'           reduce using rule 129
-	'var'          reduce using rule 129
-	'while'        reduce using rule 129
-	'{'            reduce using rule 129
 	'||'           reduce using rule 129
-	'}'            reduce using rule 129
-	L_PReturn      reduce using rule 129
-	L_PIdent       reduce using rule 129
 	%eof           reduce using rule 129
 
 
@@ -4377,17 +4026,7 @@ State 188
 	'>='           reduce using rule 114
 	']'            reduce using rule 114
 	'^'            reduce using rule 114
-	'def'          reduce using rule 114
-	'do'           reduce using rule 114
-	'else'         reduce using rule 114
-	'if'           reduce using rule 114
-	'var'          reduce using rule 114
-	'while'        reduce using rule 114
-	'{'            reduce using rule 114
 	'||'           reduce using rule 114
-	'}'            reduce using rule 114
-	L_PReturn      reduce using rule 114
-	L_PIdent       reduce using rule 114
 	%eof           reduce using rule 114
 
 
@@ -4424,17 +4063,7 @@ State 189
 	'^'            shift, and enter state 78
 			(reduce using rule 110)
 
-	'def'          reduce using rule 110
-	'do'           reduce using rule 110
-	'else'         reduce using rule 110
-	'if'           reduce using rule 110
-	'var'          reduce using rule 110
-	'while'        reduce using rule 110
-	'{'            reduce using rule 110
 	'||'           reduce using rule 110
-	'}'            reduce using rule 110
-	L_PReturn      reduce using rule 110
-	L_PIdent       reduce using rule 110
 	%eof           reduce using rule 110
 
 	Op4            goto state 172
@@ -4462,17 +4091,7 @@ State 190
 	'>='           reduce using rule 112
 	']'            reduce using rule 112
 	'^'            reduce using rule 112
-	'def'          reduce using rule 112
-	'do'           reduce using rule 112
-	'else'         reduce using rule 112
-	'if'           reduce using rule 112
-	'var'          reduce using rule 112
-	'while'        reduce using rule 112
-	'{'            reduce using rule 112
 	'||'           reduce using rule 112
-	'}'            reduce using rule 112
-	L_PReturn      reduce using rule 112
-	L_PIdent       reduce using rule 112
 	%eof           reduce using rule 112
 
 
@@ -4513,17 +4132,7 @@ State 191
 	'^'            shift, and enter state 78
 			(reduce using rule 108)
 
-	'def'          reduce using rule 108
-	'do'           reduce using rule 108
-	'else'         reduce using rule 108
-	'if'           reduce using rule 108
-	'var'          reduce using rule 108
-	'while'        reduce using rule 108
-	'{'            reduce using rule 108
 	'||'           reduce using rule 108
-	'}'            reduce using rule 108
-	L_PReturn      reduce using rule 108
-	L_PIdent       reduce using rule 108
 	%eof           reduce using rule 108
 
 	Op3            goto state 173
@@ -4552,17 +4161,7 @@ State 192
 	'>='           reduce using rule 105
 	']'            reduce using rule 105
 	'^'            reduce using rule 105
-	'def'          reduce using rule 105
-	'do'           reduce using rule 105
-	'else'         reduce using rule 105
-	'if'           reduce using rule 105
-	'var'          reduce using rule 105
-	'while'        reduce using rule 105
-	'{'            reduce using rule 105
 	'||'           reduce using rule 105
-	'}'            reduce using rule 105
-	L_PReturn      reduce using rule 105
-	L_PIdent       reduce using rule 105
 	%eof           reduce using rule 105
 
 
@@ -4647,17 +4246,7 @@ State 195
 	'^'            shift, and enter state 78
 			(reduce using rule 103)
 
-	'def'          reduce using rule 103
-	'do'           reduce using rule 103
-	'else'         reduce using rule 103
-	'if'           reduce using rule 103
-	'var'          reduce using rule 103
-	'while'        reduce using rule 103
-	'{'            reduce using rule 103
 	'||'           reduce using rule 103
-	'}'            reduce using rule 103
-	L_PReturn      reduce using rule 103
-	L_PIdent       reduce using rule 103
 	%eof           reduce using rule 103
 
 	Op1            goto state 168
@@ -4688,17 +4277,7 @@ State 196
 	'>='           reduce using rule 77
 	']'            reduce using rule 77
 	'^'            reduce using rule 77
-	'def'          reduce using rule 77
-	'do'           reduce using rule 77
-	'else'         reduce using rule 77
-	'if'           reduce using rule 77
-	'var'          reduce using rule 77
-	'while'        reduce using rule 77
-	'{'            reduce using rule 77
 	'||'           reduce using rule 77
-	'}'            reduce using rule 77
-	L_PReturn      reduce using rule 77
-	L_PIdent       reduce using rule 77
 	%eof           reduce using rule 77
 
 
@@ -4772,7 +4351,7 @@ State 199
 State 200
 
 	Declaration -> 'def' PIdent ListParamClause . ':' TypeSpec '=' Block    (rule 54)
-	Declaration -> 'def' PIdent ListParamClause . ':' TypeSpec '=' Exp    (rule 55)
+	Declaration -> 'def' PIdent ListParamClause . ':' TypeSpec '=' Exp ';'    (rule 55)
 	Declaration -> 'def' PIdent ListParamClause . '=' Block    (rule 56)
 
 	':'            shift, and enter state 215
@@ -5018,7 +4597,7 @@ State 214
 State 215
 
 	Declaration -> 'def' PIdent ListParamClause ':' . TypeSpec '=' Block    (rule 54)
-	Declaration -> 'def' PIdent ListParamClause ':' . TypeSpec '=' Exp    (rule 55)
+	Declaration -> 'def' PIdent ListParamClause ':' . TypeSpec '=' Exp ';'    (rule 55)
 
 	'*'            shift, and enter state 140
 	'Array'        shift, and enter state 141
@@ -5080,17 +4659,7 @@ State 218
 	'>='           reduce using rule 127
 	']'            reduce using rule 127
 	'^'            reduce using rule 127
-	'def'          reduce using rule 127
-	'do'           reduce using rule 127
-	'else'         reduce using rule 127
-	'if'           reduce using rule 127
-	'var'          reduce using rule 127
-	'while'        reduce using rule 127
-	'{'            reduce using rule 127
 	'||'           reduce using rule 127
-	'}'            reduce using rule 127
-	L_PReturn      reduce using rule 127
-	L_PIdent       reduce using rule 127
 	%eof           reduce using rule 127
 
 
@@ -5118,17 +4687,7 @@ State 219
 	'['            reduce using rule 132
 	']'            reduce using rule 132
 	'^'            reduce using rule 132
-	'def'          reduce using rule 132
-	'do'           reduce using rule 132
-	'else'         reduce using rule 132
-	'if'           reduce using rule 132
-	'var'          reduce using rule 132
-	'while'        reduce using rule 132
-	'{'            reduce using rule 132
 	'||'           reduce using rule 132
-	'}'            reduce using rule 132
-	L_PReturn      reduce using rule 132
-	L_PIdent       reduce using rule 132
 	%eof           reduce using rule 132
 
 
@@ -5154,7 +4713,7 @@ State 220
 State 221
 
 	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec . '=' Block    (rule 54)
-	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec . '=' Exp    (rule 55)
+	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec . '=' Exp ';'    (rule 55)
 
 	'='            shift, and enter state 232
 
@@ -5363,7 +4922,7 @@ State 231
 State 232
 
 	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' . Block    (rule 54)
-	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' . Exp    (rule 55)
+	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' . Exp ';'    (rule 55)
 
 	'!'            shift, and enter state 71
 	'&'            shift, and enter state 50
@@ -5422,39 +4981,25 @@ State 233
 
 State 234
 
-	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' Exp .    (rule 55)
+	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' Exp . ';'    (rule 55)
 	Exp -> Exp . Op Exp1                                (rule 103)
 
 	'!='           shift, and enter state 90
 	'%'            shift, and enter state 81
 	'&&'           shift, and enter state 98
 	'('            shift, and enter state 77
-			(reduce using rule 55)
-
 	'*'            shift, and enter state 82
-			(reduce using rule 55)
-
 	'+'            shift, and enter state 86
 	'-'            shift, and enter state 87
 	'/'            shift, and enter state 83
+	';'            shift, and enter state 239
 	'<'            shift, and enter state 91
 	'<='           shift, and enter state 92
 	'=='           shift, and enter state 93
 	'>'            shift, and enter state 94
 	'>='           shift, and enter state 95
 	'^'            shift, and enter state 78
-	'def'          reduce using rule 55
-	'do'           reduce using rule 55
-	'else'         reduce using rule 55
-	'if'           reduce using rule 55
-	'var'          reduce using rule 55
-	'while'        reduce using rule 55
-	'{'            reduce using rule 55
 	'||'           shift, and enter state 101
-	'}'            reduce using rule 55
-	L_PReturn      reduce using rule 55
-	L_PIdent       reduce using rule 55
-	%eof           reduce using rule 55
 
 	Op             goto state 165
 	Op1            goto state 100
@@ -5532,10 +5077,29 @@ State 238
 	%eof           reduce using rule 46
 
 
+State 239
+
+	Declaration -> 'def' PIdent ListParamClause ':' TypeSpec '=' Exp ';' .    (rule 55)
+
+	'('            reduce using rule 55
+	'*'            reduce using rule 55
+	'def'          reduce using rule 55
+	'do'           reduce using rule 55
+	'else'         reduce using rule 55
+	'if'           reduce using rule 55
+	'var'          reduce using rule 55
+	'while'        reduce using rule 55
+	'{'            reduce using rule 55
+	'}'            reduce using rule 55
+	L_PReturn      reduce using rule 55
+	L_PIdent       reduce using rule 55
+	%eof           reduce using rule 55
+
+
 -----------------------------------------------------------------------------
 Grammar Totals
 -----------------------------------------------------------------------------
 Number of rules: 135
 Number of terminals: 48
 Number of non-terminals: 72
-Number of states: 239
+Number of states: 240

@@ -72,8 +72,6 @@ data Arg = DArg PIdent TypeSpec
 data Block = DBlock [Stm]
   deriving (Eq, Ord, Show, Read)
 
---SReturnTyped Stm TypeSpec
-
 data Stm
     = SDecl Declaration
     | SBlock Block
@@ -83,7 +81,6 @@ data Stm
     | SReturn PReturn
     | SReturnExp PReturn Exp
     | SProcCall PIdent [Params]
-    -- Tipizzare solo i return.
   deriving (Eq, Ord, Show, Read)
 
 data Params = ParExp [Exp]
@@ -144,16 +141,6 @@ instance Typed Exp where
     getLoc (ETyped _ _ loc) = loc
     isTypeError texp = getType texp == (TSimple TypeError)
 
-
--- StmTyped Stm TypeSpec
-{-
-instance Typed Stm where
-    getType (SReturnTyped _ typ) = typ
-    isTypeError tstm = getType tstm == (TSimple TypeError)
--}
-
--- LExpTyped LExp TypeSpec Integer Integer
--- LIdentTyped PIdent TypeSpec Integer Integer
 instance Typed LExp where
     getType (LExpTyped _ typ _ _ ) = typ
     getLoc (LExpTyped _ _ loc _ ) = loc
