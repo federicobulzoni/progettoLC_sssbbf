@@ -79,6 +79,9 @@ hasReturn (scope:stack') = let(_, _, hasReturn) = scope in hasReturn
 getScopeType :: Env -> TypeSpec
 getScopeType (scope:stack') = let(_, ftyp, _) = scope in ftyp
 
+isGlobalScope :: Env -> Bool
+isGlobalScope [scope] = True
+isGlobalScope _ = False
 
 
 

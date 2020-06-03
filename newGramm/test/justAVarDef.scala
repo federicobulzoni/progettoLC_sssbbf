@@ -21,7 +21,7 @@ def foo () = {
 var h : Float;
 var k : Array[*Int](4);
 
-def main3() = {
+def main1() = {
     var x : Int;
     def main (a : Int) : Int = {
         return 1;

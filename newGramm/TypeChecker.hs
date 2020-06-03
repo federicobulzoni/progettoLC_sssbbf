@@ -47,17 +47,21 @@ startingEnv =
 -- Restituisce una lista di log ed un programma annotato.
 typeCheck :: Program -> Writer [LogElement] Program
 typeCheck (Prog decls) = do
-  tdecls <- inferDecls decls startingEnv
-  return $ Prog tdecls
+  (tdecls, env) <- inferDecls decls startingEnv
+  if not $ Env.hasReturn env then do
+    saveLog $ launchWarning (0,0) MissingMain
+    return $ Prog tdecls
+  else
+    return $ Prog tdecls
 
 
 -- Prende una lista di dichiarazioni del programma e la ritorna annotata.
-inferDecls :: [Declaration] -> Env -> Writer [LogElement] [Declaration]
-inferDecls [] env = return []
+inferDecls :: [Declaration] -> Env -> Writer [LogElement] ([Declaration], Env)
+inferDecls [] env = return ([], env)
 inferDecls (decl:decls) env = do
- (tdecl , env') <-  inferDecl decl env
- tdecls <- inferDecls decls env'
- return (tdecl:tdecls)
+  (tdecl , env') <-  inferDecl decl env
+  (tdecls, env'') <- inferDecls decls env'
+  return ((tdecl:tdecls), env'')
 
 inferDecl :: Declaration -> Env -> Writer [LogElement] (Declaration, Env)
 inferDecl decl env = case decl of
@@ -86,7 +90,10 @@ inferDecl decl env = case decl of
   DefFun id@(PIdent (loc, ident)) params typ block@(DBlock stms) -> 
     case update env ident (FunInfo loc typ params) of
       Success env' -> do
-        functionHandler env'
+        if ident == "main" && Env.isGlobalScope env' then
+          functionHandler (Env.setReturnFound env')
+        else
+          functionHandler env'
       Failure except -> do
         saveLog $ launchError loc except
         functionHandler env
@@ -104,7 +111,11 @@ inferDecl decl env = case decl of
   DefFunInLine id@(PIdent (loc, ident)) params typ exp -> 
     case update env ident (FunInfo loc typ params) of
       Success env' -> do
-        functionHandler env'
+        if ident == "main" && Env.isGlobalScope env' then do
+          saveLog $ launchWarning loc MainDefinedInLine
+          functionHandler (Env.setReturnFound env')
+        else
+          functionHandler env'
       Failure except -> do
         saveLog $ launchError loc except
         functionHandler env
