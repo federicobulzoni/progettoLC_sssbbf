@@ -29,6 +29,7 @@ def main12() = {
         return 1;
     }
     var y : Int;
+    foo ();
 }
 
 def bar() : Bool = {

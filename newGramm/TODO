@@ -7,8 +7,8 @@ Cose da fare:
     [X] le dichiarazioni delle variabili globali vanno in testa al tac
     [X] Distinguere stampa errori e warning
     [X] modificare ordine delle funzioni quando si trova un main (che ora va in testa al tac, dopo le dichiarazioni di variabile) ma le sue funzioni interne rimangono nell'ordine sbagliato
-    [] sistemare errori e togliere dipendenze da Typed in Errors BF. SB
-    [] fate tanti test                      BF    
+    [] sistemare errori e togliere dipendenze da Typed in Errors. SB
+    [] fare tanti test                      BF    
     [] pulizia codice                       SS/BF   
     [X] Aggiungere: *= -= += /= %=           SS
     [] una funzione può anche essere dichiarata senza parentesi in Scala     SB
@@ -18,7 +18,7 @@ Cose da fare:
     [X] Aggiungere nella grammatica un ; alla fine delle dichiarazioni di funzione inline.
     [] Aggiungere commenti al TAC, per far capire che sappiamo quali sono gli argomenti di una funzione. SB
     [X] Type Error e Type Void sono brutti scritti in modo diverso dagli altri tipi base. @critical SS
-    [] Finire di commentare le funzioni in environment. BF
+    [X] Finire di commentare le funzioni in environment. BF
     [] Controllare se tutti gli import in TestGramm.hs servono veramente. BF
     [X] Aggiungere statement vuoto per evitare brutture nell-if nel tac.
     [X] Controllare se genLExp per gli array array è giusto. Non sembra, l'indice dovrebbe essere convertito.

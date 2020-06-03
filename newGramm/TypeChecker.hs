@@ -1,31 +1,46 @@
+-- Modulo SemanticAnalysis.hs
+-- Il modulo partendo da un programma scritto nella sintassi astratta definita in AbsGramm.hs
+-- verifica la presenza di errori statici all'interno di esso (incompatibilità di tipi, operazioni non consentite)
+-- e nel frattempo si occupa di arricchire l'albero di sintassi astratta in input con informazioni aggiuntive,
+-- quali ad esempio il tipo delle R-espressioni e delle L-espressioni.
+-- La funzione principale del modulo è typeCheck che preso in input un programma in sintassi astratta
+-- ritorna in output tale programma annotato e gli eventuali Warning ed Errori (LogElement) scovati durante l'annotazione.
+
 module TypeChecker where
 
 import AbsGramm
 import Environment as Env
-import PrintGramm
 import Control.Monad.Writer
 import Errors
 import Typed
 
+-- Utilities 
+-- saveLog
+-- salva un elemento di log nella lista di elementi di log che sarà ritornata da typeCheck.
 saveLog:: LogElement -> Writer [LogElement] ()
 saveLog logelem = do 
   tell [logelem]
   return ()
 
+-- isTypeVoid
+-- preso un tipo ritorna True se tale tipo è Void, False altrimenti.
 isTypeVoid :: TypeSpec -> Bool
 isTypeVoid typ = typ == (TSimple SType_Void)
 
+
+-- isCompatible
+-- Presa una espressione tipata texp, ed un tipo richiesto typ, ritorna True se la espressione tipata
+-- è compatibile con il tipo richiesto; altrimenti ritorna False.
+-- All'interno di questa funzione è possibile differenziare le compatibilità per i diversi tipi presenti
+-- nella grammatica astratta.
 isCompatible :: Exp -> TypeSpec -> Bool
 isCompatible texp typ = case typ of
   (TPointer typ') -> getType texp == (TPointer (TSimple SType_Void)) || getType texp == typ
   _               -> getType texp == typ
 
-paramsToStms :: [ParamClause] -> [Stm]
-paramsToStms params = argsToStms (concat ( map (\(PArg args) -> args) params ) )
-  where
-    argsToStms [] = []  
-    argsToStms (arg@(DArg id typ):args) = (SDecl (DecVar id typ)):(argsToStms args)
-
+-- startingEnv
+-- Definizione dell'environment iniziale di un programma. Contiene le informazioni a riguardo delle
+-- funzioni native presenti nel linguaggio.
 startingEnv :: Env
 startingEnv = 
   let (Success env) = foldM (\x (ident, info) -> Env.update x ident info) (Env.emptyEnv) initialFuns
@@ -43,8 +58,10 @@ startingEnv =
       ("readChar",    FunInfo (0,0) (TSimple SType_Char)   [PArg []]),
       ("readString",  FunInfo (0,0) (TSimple SType_String) [PArg []]) ]
 
+------------------------------------------------------------------------------------------------------------------------
 
--- Restituisce una lista di log ed un programma annotato.
+-- typeCheck
+-- Dato un programma scritto in sintassi astratta restituisce una lista di log ed un programma annotato.
 typeCheck :: Program -> Writer [LogElement] Program
 typeCheck (Prog decls) = do
   (tdecls, env) <- inferDecls decls startingEnv
@@ -55,7 +72,6 @@ typeCheck (Prog decls) = do
     return $ Prog tdecls
 
 
--- Prende una lista di dichiarazioni del programma e la ritorna annotata.
 inferDecls :: [Declaration] -> Env -> Writer [LogElement] ([Declaration], Env)
 inferDecls [] env = return ([], env)
 inferDecls (decl:decls) env = do
@@ -256,27 +272,30 @@ inferStm stm env = case stm of
     tparams <- mapM (\(ParExp x) -> (mapM (\y -> (inferExp y env)) x)) params
     let typ_params = map (map getType) tparams in
       case Env.lookup env id of
-        Success (VarInfo dloc _) ->
+        Success (VarInfo dloc _) -> do
          saveLog $ launchError loc (DuplicateVariable ident dloc)
-        Failure except ->
+         return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
+        Failure except -> do
           saveLog $ launchError loc except
+          return (SProcCall (PIdent ((0,0), ident)) (map (\x -> (ParExp x)) tparams) , env)
         Success (FunInfo dloc typ paramclauses) -> 
           let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
-            if not (any (isTypeError) (concat tparams))
+          do
+            if any (isTypeError) (concat tparams)
               then
-                if typ_args == typ_params 
-                  then
-                    if not (isTypeVoid typ)
-                      then
-                        saveLog $ launchWarning loc (MissingAssignVariable ident)
-                      else
-                        return ()
-                  else 
-                    saveLog $ launchError loc (WrongProcParams ident typ_args typ_params)
+                return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
               else
-                return ()
-    return (SProcCall id (map (\x -> (ParExp x)) tparams) , env)
-
+                if not (isTypeVoid typ)
+                  then do
+                    saveLog $ launchWarning loc (MissingAssignVariable ident)
+                    return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
+                  else
+                    if not (typ_args == typ_params)
+                      then do
+                        saveLog $ launchError loc (WrongProcParams ident typ_args typ_params)
+                        return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
+                      else
+                        return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
 
 
 getDLoc :: LExp -> Loc
@@ -319,7 +338,7 @@ inferLExp lexp env = case lexp of
      Failure except -> do
        saveLog $ launchError loc except
        return $ LExpTyped lexp (TSimple SType_Error) loc (0,0)
-     Success (VarInfo dloc typ) -> return $ LExpTyped (LIdent id) typ loc dloc
+     Success (VarInfo dloc typ) -> return $ LExpTyped (LIdent (PIdent (dloc, ident))) typ loc dloc
      Success (FunInfo dloc _ _) -> do
        saveLog $ launchError loc (DuplicateFunction ident dloc)
        return $ LExpTyped lexp (TSimple SType_Error) loc dloc
@@ -358,27 +377,27 @@ inferExp exp env = case exp of
       case Env.lookup env id of
         Success (VarInfo dloc _) -> do
          saveLog $ launchError loc (DuplicateVariable ident dloc)
-         return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) dloc
+         return $ ETyped (EFunCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
         Failure except -> do
           saveLog $ launchError loc except
-          return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
+          return $ ETyped (EFunCall (PIdent ((0,0), ident)) (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
         Success (FunInfo dloc typ paramclauses) ->
           let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
             if any (isTypeError) (concat tparams)
               then 
-                return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) dloc
+                return $ ETyped (EFunCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
               else
                 if typ_args == typ_params 
                   then 
                     if isTypeVoid typ
                       then do
                         saveLog $ launchError loc (UnexpectedProc ident)
-                        return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) dloc
+                        return $ ETyped (EFunCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
                       else
-                        return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) typ dloc
+                        return $ ETyped (EFunCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams)) typ loc
                   else do
                     saveLog $ launchError loc (WrongFunctionParams ident typ_args typ_params typ)
-                    return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) dloc
+                    return $ ETyped (EFunCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
 
   ENot exp -> do
     texp <- inferExp exp env
