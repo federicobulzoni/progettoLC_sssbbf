@@ -30,6 +30,8 @@ data LogElement
 
 data TCException
     = MissingReturn Ident
+    | MainDefinedInLine
+    | MissingMain
     | WrongExpType Exp Exp TypeSpec
     | WrongExpAssignType Exp Exp LExp LExp
     | WrongWhileCondition Exp Exp
@@ -75,7 +77,9 @@ getExceptionMsg :: TCException -> String
 getExceptionMsg except = case except of
     MissingReturn ident -> "Not every code path returns a value in function " 
                                     ++ color Default Italic (printTree ident) ++ "."
+    MainDefinedInLine -> "Main definito come una funzione inline."
 
+    MissingMain -> "Main non definito."
     WrongExpType exp texp typ -> "L'espressione " ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) 
                                                     ++ ", ma il tipo atteso e' " ++ printTree typ ++ "."
 
