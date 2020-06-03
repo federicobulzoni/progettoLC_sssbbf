@@ -50,6 +50,12 @@ SReturn. 	Stm ::= PReturn ";";
 SReturnExp. Stm ::= PReturn Exp ";" ;
 SProcCall.  Stm ::= PIdent [Params] ";";
 
+prodAssign.  Stm ::= LExp "*=" Exp ";" ;
+divAssign.   Stm ::= LExp "/=" Exp ";" ;
+modAssign.   Stm ::= LExp "%=" Exp ";" ;
+plusAssign.  Stm ::= LExp "+=" Exp ";" ;
+minusAssign. Stm ::= LExp "-=" Exp ";" ;
+
 ParExp. Params ::= "(" [Exp] ")";
 separator nonempty Params "";
 separator Exp ",";
@@ -118,6 +124,11 @@ define dprocinline id params exp = DefFunInLine id params (TSimple TypeVoid) exp
 define sdo st ex = SBlock (DBlock [st, (SWhile ex st)]);
 define sif exp stm = SIfElse exp stm (SBlock (DBlock []));
 
+define prodAssign  lexp exp = SAssign lexp (op (ELExp lexp) Prod exp );
+define divAssign   lexp exp = SAssign lexp (op (ELExp lexp) Div exp  );
+define modAssign   lexp exp = SAssign lexp (op (ELExp lexp) Mod exp  );
+define plusAssign  lexp exp = SAssign lexp (op (ELExp lexp) Plus exp );
+define minusAssign lexp exp = SAssign lexp (op (ELExp lexp) Minus exp);
 position token PString ( '"' ((char - ["\"\\"]) | ('\\' ["\"\\nt"]))* '"' );
 position token PChar ('\'' ((char - ["'\\"]) | ('\\' ["'\\nt"])) '\'' );
 

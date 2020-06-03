@@ -16,41 +16,46 @@ import ErrM
   '!' { PT _ (TS _ 1) }
   '!=' { PT _ (TS _ 2) }
   '%' { PT _ (TS _ 3) }
-  '&' { PT _ (TS _ 4) }
-  '&&' { PT _ (TS _ 5) }
-  '(' { PT _ (TS _ 6) }
-  ')' { PT _ (TS _ 7) }
-  '*' { PT _ (TS _ 8) }
-  '+' { PT _ (TS _ 9) }
-  ',' { PT _ (TS _ 10) }
-  '-' { PT _ (TS _ 11) }
-  '/' { PT _ (TS _ 12) }
-  ':' { PT _ (TS _ 13) }
-  ';' { PT _ (TS _ 14) }
-  '<' { PT _ (TS _ 15) }
-  '<=' { PT _ (TS _ 16) }
-  '=' { PT _ (TS _ 17) }
-  '==' { PT _ (TS _ 18) }
-  '>' { PT _ (TS _ 19) }
-  '>=' { PT _ (TS _ 20) }
-  'Array' { PT _ (TS _ 21) }
-  'Bool' { PT _ (TS _ 22) }
-  'Char' { PT _ (TS _ 23) }
-  'Float' { PT _ (TS _ 24) }
-  'Int' { PT _ (TS _ 25) }
-  'String' { PT _ (TS _ 26) }
-  '[' { PT _ (TS _ 27) }
-  ']' { PT _ (TS _ 28) }
-  '^' { PT _ (TS _ 29) }
-  'def' { PT _ (TS _ 30) }
-  'do' { PT _ (TS _ 31) }
-  'else' { PT _ (TS _ 32) }
-  'if' { PT _ (TS _ 33) }
-  'var' { PT _ (TS _ 34) }
-  'while' { PT _ (TS _ 35) }
-  '{' { PT _ (TS _ 36) }
-  '||' { PT _ (TS _ 37) }
-  '}' { PT _ (TS _ 38) }
+  '%=' { PT _ (TS _ 4) }
+  '&' { PT _ (TS _ 5) }
+  '&&' { PT _ (TS _ 6) }
+  '(' { PT _ (TS _ 7) }
+  ')' { PT _ (TS _ 8) }
+  '*' { PT _ (TS _ 9) }
+  '*=' { PT _ (TS _ 10) }
+  '+' { PT _ (TS _ 11) }
+  '+=' { PT _ (TS _ 12) }
+  ',' { PT _ (TS _ 13) }
+  '-' { PT _ (TS _ 14) }
+  '-=' { PT _ (TS _ 15) }
+  '/' { PT _ (TS _ 16) }
+  '/=' { PT _ (TS _ 17) }
+  ':' { PT _ (TS _ 18) }
+  ';' { PT _ (TS _ 19) }
+  '<' { PT _ (TS _ 20) }
+  '<=' { PT _ (TS _ 21) }
+  '=' { PT _ (TS _ 22) }
+  '==' { PT _ (TS _ 23) }
+  '>' { PT _ (TS _ 24) }
+  '>=' { PT _ (TS _ 25) }
+  'Array' { PT _ (TS _ 26) }
+  'Bool' { PT _ (TS _ 27) }
+  'Char' { PT _ (TS _ 28) }
+  'Float' { PT _ (TS _ 29) }
+  'Int' { PT _ (TS _ 30) }
+  'String' { PT _ (TS _ 31) }
+  '[' { PT _ (TS _ 32) }
+  ']' { PT _ (TS _ 33) }
+  '^' { PT _ (TS _ 34) }
+  'def' { PT _ (TS _ 35) }
+  'do' { PT _ (TS _ 36) }
+  'else' { PT _ (TS _ 37) }
+  'if' { PT _ (TS _ 38) }
+  'var' { PT _ (TS _ 39) }
+  'while' { PT _ (TS _ 40) }
+  '{' { PT _ (TS _ 41) }
+  '||' { PT _ (TS _ 42) }
+  '}' { PT _ (TS _ 43) }
   L_integ  { PT _ (TI $$) }
   L_PTrue { PT _ (T_PTrue _) }
   L_PFalse { PT _ (T_PFalse _) }
@@ -142,6 +147,11 @@ Stm : Declaration { AbsGramm.SDecl $1 }
     | PReturn ';' { AbsGramm.SReturn $1 }
     | PReturn Exp ';' { AbsGramm.SReturnExp $1 $2 }
     | PIdent ListParams ';' { AbsGramm.SProcCall $1 $2 }
+    | LExp '*=' Exp ';' { prodAssign_ $1 $3 }
+    | LExp '/=' Exp ';' { divAssign_ $1 $3 }
+    | LExp '%=' Exp ';' { modAssign_ $1 $3 }
+    | LExp '+=' Exp ';' { plusAssign_ $1 $3 }
+    | LExp '-=' Exp ';' { minusAssign_ $1 $3 }
 Params :: { Params }
 Params : '(' ListExp ')' { AbsGramm.ParExp $2 }
 ListParams :: { [Params] }
@@ -228,5 +238,10 @@ dproc_ id_ params_ block_ = DefFun id_ params_ (TSimple TypeVoid) block_
 dprocinline_ id_ params_ exp_ = DefFunInLine id_ params_ (TSimple TypeVoid) exp_
 sdo_ st_ ex_ = SBlock (DBlock [st_, SWhile ex_ st_])
 sif_ exp_ stm_ = SIfElse exp_ stm_ (SBlock (DBlock []))
+prodAssign_ lexp_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Prod exp_)
+divAssign_ lexp_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Div exp_)
+modAssign_ lexp_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Mod exp_)
+plusAssign_ lexp_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Plus exp_)
+minusAssign_ lexp_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Minus exp_)
 }
 
