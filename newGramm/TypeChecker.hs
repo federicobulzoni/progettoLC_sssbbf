@@ -111,7 +111,7 @@ inferDecl decl env = case decl of
           then
             return $ (DefVar id typ texp, env')
           else do
-            saveLog $ launchError loc (WrongExpType exp (getType texp) typ)
+            saveLog $ launchError (getLoc texp) (WrongExpType exp (getType texp) typ)
             return $ (DefVar id typ texp, env)
       Failure except -> do
         -- Se qualcosa è andato storto si lancia l'errore.

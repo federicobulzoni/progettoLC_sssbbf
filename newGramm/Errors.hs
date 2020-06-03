@@ -83,14 +83,19 @@ isNotNull _ = True
 
 getExceptionMsg :: TCException -> String
 getExceptionMsg except = case except of
-    MissingReturn ident -> "Not every code path returns a value in function " 
-                                    ++ color Default Italic (printTree ident) ++ "."
-    MainDefinedInLine -> "Main definito come una funzione inline."
+    MissingReturn ident -> 
+        "Not every code path returns a value in function " ++ color Default Italic (printTree ident) ++ "."
+    MainDefinedInLine -> 
+        "Main definito come una funzione inline."
+    MissingMain -> 
+        "Undefined " ++ color Default Italic "main" ++ " function."
 
-    MissingMain -> "Main non definito."
-    WrongExpType exp texpTyp typ -> "L'espressione " ++ printTree exp ++ if (isNotNull exp) 
-      then " ha tipo " ++ printTree texpTyp ++ ", ma il tipo atteso e' " ++ printTree typ ++ "."
-      else " non può essere applicata. Tipo richiesto: " ++  printTree typ ++ "."
+    WrongExpType exp texpTyp typ -> 
+        "Expected expression of type " ++ printTree typ ++ ", but found " ++ printTree exp 
+        ++ if (isNotNull exp) then " which has type " ++ printTree texpTyp ++ "." else "."
+    -- WrongExpType exp texpTyp typ -> "L'espressione " ++ printTree exp ++ if (isNotNull exp) 
+    --   then " ha tipo " ++ printTree texpTyp ++ ", ma il tipo atteso e' " ++ printTree typ ++ "."
+    --   else " non può essere applicata. Tipo richiesto: " ++  printTree typ ++ "."
 
     WrongExpAssignType exp texpTyp tlexpTyp lexp -> "L'espressione " ++ printTree exp ++" ha tipo " ++ printTree texpTyp ++ ", ma " 
                                                                 ++ printTree lexp ++ " ha tipo " 
