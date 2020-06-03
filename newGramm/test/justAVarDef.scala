@@ -12,6 +12,10 @@ var emptyArr : Array[Int](0) = Array();
 def foo () = {
     y = 4;
     
+    {
+        y = 6;
+        y = 8;
+    }
     def foo2() = {
         var t : Int;
     }

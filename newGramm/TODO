@@ -8,6 +8,7 @@ Cose da fare:
     [X] Distinguere stampa errori e warning
     [X] modificare ordine delle funzioni quando si trova un main (che ora va in testa al tac, dopo le dichiarazioni di variabile) ma le sue funzioni interne rimangono nell'ordine sbagliato
     [] all'interno del TAC va gestito il caso in EArray di un array vuoto. @critical
+    [] gestire la stampa dell'albero annotato @critical
     [] sistemare errori SB
     [X] togliere dipendenze da Typed in Errors. SS
     [] fare tanti test                      BF    

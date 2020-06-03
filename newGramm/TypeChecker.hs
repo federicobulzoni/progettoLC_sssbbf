@@ -62,6 +62,17 @@ startingEnv =
       ("readChar",    FunInfo (0,0) (TSimple SType_Char)   [PArg []]),
       ("readString",  FunInfo (0,0) (TSimple SType_String) [PArg []]) ]
 
+-- startFunScope
+-- Si occupa di inizializzare l'environment prima dell'inferenza degli statement contenuti nel suo body.
+startFunScope :: Env -> PIdent -> [ParamClause] -> TypeSpec -> Env
+startFunScope env id@(PIdent (loc, ident)) params typ = 
+  let 
+    (Success env') = foldM (\x (ident', info) -> Env.update x ident' info) (Env.addScope env typ) funInfo
+  in
+    env'
+  where
+    argsInfo = map (\(DArg argId@(PIdent (argLoc, argIdent)) argTyp) -> (argIdent, VarInfo argLoc argTyp)) (concat ( map (\(PArg args) -> args) params ))
+    funInfo = (ident, FunInfo loc typ params):argsInfo
 ------------------------------------------------------------------------------------------------------------------------
 
 -- typeCheck
@@ -88,10 +99,14 @@ inferDecls (decl:decls) env = do
 inferDecl :: Declaration -> Env -> Writer [LogElement] (Declaration, Env)
 inferDecl decl env = case decl of
   DefVar id@(PIdent (loc, ident)) typ exp -> 
-    -- Si prova ad inserire i dati della variabile nell'environment
+    -- Si prova ad inserire i dati della variabile nell'environment ...
     case (Env.update env ident (VarInfo loc typ)) of
       Success env' -> do
+        -- ... se è stato possibile, ...
         texp <- inferExp exp env
+        -- ... allora si verifica che la espressione che si sta cercando di assegnare
+        -- è compatibile con il tipo della variabile. Se il tipo della espressione è un typeError
+        -- non abbiamo bisogno di lanciare nuovi errori (questa è una costante lungo tutto il codice).
         if isTypeError texp || isCompatible texp typ
           then
             return $ (DefVar id typ texp, env')
@@ -99,6 +114,7 @@ inferDecl decl env = case decl of
             saveLog $ launchError loc (WrongExpType exp (getType texp) typ)
             return $ (DefVar id typ texp, env)
       Failure except -> do
+        -- Se qualcosa è andato storto si lancia l'errore.
         saveLog $ launchError loc except
         texp <- inferExp exp env
         return $ (DefVar id typ texp, env)
@@ -113,6 +129,9 @@ inferDecl decl env = case decl of
   DefFun id@(PIdent (loc, ident)) params typ block@(DBlock stms) -> 
     case update env ident (FunInfo loc typ params) of
       Success env' -> do
+        -- Se la dichiarazione che abbiamo appena inserito nello scope è la funzione main
+        -- e se lo scope corrente è quello globale, allora abbiamo trovato il main del programma,
+        -- lo notifichiamo grazie alla funzione Env.setReturnFound.
         if ident == "main" && Env.isGlobalScope env' then
           functionHandler (Env.setReturnFound env')
         else
@@ -124,6 +143,8 @@ inferDecl decl env = case decl of
         functionHandler e = do
           -- Creare nuovo scope avviato con i parametri e il nome della fun.
           (tstms, e') <- inferStms stms (startFunScope e id params typ)
+          -- Nel caso in cui stiam trattando una funzione, ma non è presente alcun
+          -- return nel suo scope lo notifichiamo.
           if Env.hasReturn e' || isTypeVoid typ
             then
               return $ (DefFun id params typ (DBlock tstms), e)
@@ -165,23 +186,15 @@ inferDecl decl env = case decl of
                   return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
 
 
-startFunScope :: Env -> PIdent -> [ParamClause] -> TypeSpec -> Env
-startFunScope env id@(PIdent (loc, ident)) params typ = 
-  let 
-    (Success env') = foldM (\x (ident', info) -> Env.update x ident' info) (Env.addScope env typ) funInfo
-  in
-    env'
-  where
-    argsInfo = map (\(DArg argId@(PIdent (argLoc, argIdent)) argTyp) -> (argIdent, VarInfo argLoc argTyp)) (concat ( map (\(PArg args) -> args) params ))
-    funInfo = (ident, FunInfo loc typ params):argsInfo
   
-
+{-
 inferBlock :: Block -> TypeSpec -> Env -> Writer [LogElement] (Block, Env)
 inferBlock (DBlock []) _ env = return $ (DBlock [], env)
 inferBlock (DBlock stms) ftyp env = do
   (tstms, env') <- inferStms stms (Env.addScope env ftyp) 
   return $ (DBlock tstms, env')
-      
+-}
+
 inferStms :: [Stm] -> Env -> Writer [LogElement] ([Stm], Env)
 inferStms [] env = return ([], env)
 inferStms (stm:stms) env = do
@@ -189,18 +202,22 @@ inferStms (stm:stms) env = do
   (tstms, env'') <- inferStms stms env'
   return $ (tstm:tstms, env'') 
 
+
 inferStm :: Stm  -> Env -> Writer [LogElement] (Stm, Env)
 inferStm stm env = case stm of
   SWhile exp stm' -> do
     -- texp è l'espressione annotata col tipo.
     texp <- inferExp exp env
+    -- Se la condizione non ha tipo compatibile con Bool, allora si lancia un errore.
     if not (isTypeError texp || isCompatible texp (TSimple SType_Bool))
       then
         saveLog $ launchError (getLoc texp) (WrongWhileCondition exp (getType texp))
       else
         return ()
-
+    -- viene inferito lo stm del while.
     (tstm', env') <- inferStm stm' env
+    -- e nel caso in cui un return sia stato trovato all'interno del corpo del while
+    -- si segnala che è stato trovato anche nello scope in cui il while è contenuto.
     if Env.hasReturn env' 
       then
         return $ (SWhile texp tstm', Env.setReturnFound env)
@@ -217,6 +234,9 @@ inferStm stm env = case stm of
 
     (tstmif, envif) <- inferStm stmif env
     (tstmelse, envelse) <- inferStm stmelse env
+    -- Solo nel caso in cui sia il corpo dell'if che quello dell'else contengono
+    -- una istruzione return viene segnalata la presenza di un return nello scope in 
+    -- cui la istruzione if...else è contenuta.
     if Env.hasReturn envif && Env.hasReturn envelse then
       return $ (SIfElse texp tstmif tstmelse, Env.setReturnFound env)
     else 
@@ -235,6 +255,11 @@ inferStm stm env = case stm of
         return $ (SBlock tblock, Env.setReturnFound env)
       else
         return $ (SBlock tblock, env)
+    where
+      inferBlock (DBlock []) _ env = return $ (DBlock [], env)
+      inferBlock (DBlock stms) ftyp env = do
+        (tstms, env') <- inferStms stms (Env.addScope env ftyp) 
+        return $ (DBlock tstms, env')
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   SAssign lexp exp -> do
@@ -255,19 +280,28 @@ inferStm stm env = case stm of
         then
           return $ (SReturnExp preturn texp, env)
         else
-          case ((isCompatible texp ftyp), (isTypeVoid ftyp)) of
-            (True,_) -> 
+          -- Nel caso in cui l'espressione ritornata sia compatibile con il tipo
+          -- dello scope viene segnalato che un return adeguato nello scope è stato trovato.
+          if isCompatible texp ftyp
+            then
               return $ (SReturnExp preturn texp, Env.setReturnFound env)
-            (False, True) -> do
-              saveLog $ launchError loc UnexpectedReturn
-              return $ (SReturnExp preturn texp, env)
-            (False, False) -> do
-              saveLog $ launchError loc (WrongExpType exp (getType texp) ftyp)
-              return $ (SReturnExp preturn texp, env)
+            else
+              -- Se il tipo dello scope è Void, allora ci troviamo all'interno di una procedura
+              -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
+              if isTypeVoid ftyp
+                then do
+                  saveLog $ launchError loc UnexpectedReturn
+                  return $ (SReturnExp preturn texp, env)
+                -- se il tipo dello scope non è void, ma è incompatibile con quello dell'espressione
+                -- allora si lancia un'errore.
+                else do
+                  saveLog $ launchError loc (WrongExpType exp (getType texp) ftyp)
+                  return $ (SReturnExp preturn texp, env)
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   SReturn preturn@(PReturn (loc, _))-> let ftyp = Env.getScopeType env in
     if not (isTypeVoid ftyp)
+      -- Se un return senza valore di ritorno viene utilizzato in una funzione lo si segnala come errore.
       then do
         saveLog $ launchError loc (WrongReturnValue ftyp)
         return $ (SReturn preturn, env)
@@ -283,28 +317,40 @@ inferStm stm env = case stm of
       -- 3. Le dimensioni combaciano, ma almeno un'espressione passata come argomento ha tipo diverso da quello del corrispondente parametro.
 
     -- [[TypeSpec]]
+
     tparams <- mapM (\(ParExp x) -> (mapM (\y -> (inferExp y env)) x)) params
+    -- typ_params è una lista di liste di TypeSpec contenente il tipo di ogni parametro.
     let typ_params = map (map getType) tparams in
       case Env.lookup env id of
+        -- Caso in cui l'identificatore usato nella chiamata di procedura sia assegnato ad una variabile.
         Success (VarInfo dloc _) -> do
          saveLog $ launchError loc (DuplicateVariable ident dloc)
+         -- Notare come l'identificatore che viene ritornato non sia lo stesso che ci arriva in input,
+         -- bensì la locazione dell'identificatore viene sostituita diventando quella di dichiarazione
+         -- dell'identificatore.
          return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
         Failure except -> do
           saveLog $ launchError loc except
           return (SProcCall (PIdent ((0,0), ident)) (map (\x -> (ParExp x)) tparams) , env)
         Success (FunInfo dloc typ paramclauses) -> 
+          -- typ_args è il corrispettivo di typ_params, i due devono combaciare per poter affermare
+          -- che la chiamata di procedura è valida.
           let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
           do
             if any (isTypeError) (concat tparams)
               then
                 return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
               else
+                -- Nel caso in cui quella considerata non sia una procedura viene lanciato un warning
+                --  dato che non viene utilizzato il valore di ritorno.
                 if not (isTypeVoid typ)
                   then do
                     saveLog $ launchWarning loc (MissingAssignVariable ident)
                     return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
                   else
                     if not (typ_args == typ_params)
+                      -- Se i tipi dei parametri non combaciano con quelli degli argomenti viene lanciato
+                      -- un errore.
                       then do
                         saveLog $ launchError loc (WrongProcParams ident typ_args typ_params)
                         return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
