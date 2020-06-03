@@ -89,7 +89,7 @@ inferDecl decl env = case decl of
           then
             return $ (DefVar id typ texp, env')
           else do
-            saveLog $ launchError loc (WrongExpType exp texp typ)
+            saveLog $ launchError loc (WrongExpType exp (getType texp) typ)
             return $ (DefVar id typ texp, env)
       Failure except -> do
         saveLog $ launchError loc except
@@ -154,7 +154,7 @@ inferDecl decl env = case decl of
                 then
                   return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
                 else do
-                  saveLog $ launchError loc (WrongExpType exp texp typ)
+                  saveLog $ launchError loc (WrongExpType exp (getType texp) typ)
                   return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
 
 
@@ -189,7 +189,7 @@ inferStm stm env = case stm of
     texp <- inferExp exp env
     if not (isTypeError texp || isCompatible texp (TSimple SType_Bool))
       then
-        saveLog $ launchError (getLoc texp) (WrongWhileCondition exp texp)
+        saveLog $ launchError (getLoc texp) (WrongWhileCondition exp (getType texp))
       else
         return ()
 
@@ -204,7 +204,7 @@ inferStm stm env = case stm of
     texp <- inferExp exp env
     if not (isTypeError texp || isCompatible texp (TSimple SType_Bool))
       then 
-        saveLog $ launchError (getLoc texp) (WrongIfCondition exp texp)
+        saveLog $ launchError (getLoc texp) (WrongIfCondition exp (getType texp))
       else return ()
 
     (tstmif, envif) <- inferStm stmif env
@@ -231,7 +231,7 @@ inferStm stm env = case stm of
     texp <- inferExp exp env
     if not (isTypeError tlexp || isTypeError texp || isCompatible texp (getType tlexp))
       then 
-        saveLog $ launchError (getLoc texp) (WrongExpAssignType exp texp tlexp lexp)
+        saveLog $ launchError (getLoc texp) (WrongExpAssignType exp (getType texp) (getType tlexp) lexp)
       else
         return ()
     return $ (SAssign tlexp texp, env)
@@ -250,7 +250,7 @@ inferStm stm env = case stm of
               saveLog $ launchError loc UnexpectedReturn
               return $ (SReturnExp preturn texp, env)
             (False, False) -> do
-              saveLog $ launchError loc (WrongExpType exp texp ftyp)
+              saveLog $ launchError loc (WrongExpType exp (getType texp) ftyp)
               return $ (SReturnExp preturn texp, env)
 
   SReturn preturn@(PReturn (loc, _))-> let ftyp = Env.getScopeType env in
@@ -321,11 +321,11 @@ inferLExp lexp env = case lexp of
        case (tlexp , isCompatible texp (TSimple SType_Int)) of
          (LExpTyped _ (TArray typ _) loc, True) -> return $ LExpTyped (LArr tlexp texp) typ loc
          (LExpTyped _ (TArray typ _) loc, False) -> do
-           saveLog $ launchError loc (WrongArrayIndex exp texp)
+           saveLog $ launchError loc (WrongArrayIndex exp (getType texp))
            return $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) loc
          (_, False) -> do
            saveLog $ launchError (getLoc texp) (WrongArrayAccess  lexp (getType tlexp))
-           saveLog $ launchError (getLoc texp) (WrongArrayIndex exp texp)
+           saveLog $ launchError (getLoc texp) (WrongArrayIndex exp (getType texp))
            return  $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) (getLoc tlexp)
          (_, True) -> do
            saveLog $ launchError (getLoc texp) (WrongArrayAccess lexp (getType tlexp))
@@ -401,7 +401,7 @@ inferExp exp env = case exp of
     if isTypeError texp || isCompatible texp (TSimple SType_Bool)
       then return (ETyped (ENot texp) (getType texp) (getLoc texp))
       else do
-        saveLog $ launchError (getLoc texp) (WrongNotApplication exp texp)
+        saveLog $ launchError (getLoc texp) (WrongNotApplication exp (getType texp))
         return $ ETyped (ENot texp) (TSimple SType_Error) (getLoc texp)
 
   ENeg exp -> do
@@ -409,7 +409,7 @@ inferExp exp env = case exp of
     if isTypeError texp || isCompatible texp (TSimple SType_Int) || isCompatible texp (TSimple SType_Float)
       then return $ ETyped (ENeg texp) (getType texp) (getLoc texp)
       else do
-        saveLog $ launchError (getLoc texp) (WrongNegApplication exp texp)
+        saveLog $ launchError (getLoc texp) (WrongNegApplication exp (getType texp))
         return $ (ETyped (ENeg texp) (TSimple SType_Error) (getLoc texp))
   
   ELExp lexp -> do
@@ -455,7 +455,7 @@ inferBinOp expl op expr env = do
 
 returnBinOpError :: Exp -> Op -> Exp -> Writer [LogElement] Exp
 returnBinOpError texpl op texpr = do
-  saveLog $ launchError (getLoc texpl) (WrongOpApplication op texpl texpr)
+  saveLog $ launchError (getLoc texpl) (WrongOpApplication op (getType texpl) (getType texpr))
   return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
 
 isConsistent :: TypeOp -> TypeSpec -> TypeSpec -> Bool
