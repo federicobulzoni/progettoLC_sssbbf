@@ -87,7 +87,7 @@ instance Print Integer where
 
 instance Print Int where
   prt _ x = doc (shows x)
-
+  
 instance Print Double where
   prt _ x = doc (shows x)
 
@@ -127,7 +127,7 @@ instance Print [AbsGramm.Declaration] where
 
 instance Print AbsGramm.Loc where
   prt i (line, column) =  (concatD [doc (showString "("), prt 0 line, doc (showString ","), prt 0 column, doc (showString ")")])
-  
+      
 instance Print AbsGramm.TypeSpec where
   prt i e = case e of
     AbsGramm.TSimple stype -> prPrec i 0 (concatD [prt 0 stype])
@@ -138,7 +138,8 @@ instance Print [AbsGramm.TypeSpec] where
   prt = prtList
 instance Print [[AbsGramm.TypeSpec]] where
   prt i e = concatD (map (\x -> concatD [doc (showString "("), prt 0 x, doc (showString ")") ] ) e )
-    
+        
+      
 instance Print AbsGramm.SType where
   prt i e = case e of
     AbsGramm.SType_Float -> prPrec i 0 (concatD [doc (showString "Float")])
@@ -146,8 +147,8 @@ instance Print AbsGramm.SType where
     AbsGramm.SType_Char -> prPrec i 0 (concatD [doc (showString "Char")])
     AbsGramm.SType_String -> prPrec i 0 (concatD [doc (showString "String")])
     AbsGramm.SType_Bool -> prPrec i 0 (concatD [doc (showString "Bool")])
-    AbsGramm.TypeError -> prPrec i 0 (concatD [doc (showString "Error")])
-    AbsGramm.TypeVoid -> prPrec i 0 (concatD [doc (showString "Void")])
+    AbsGramm.SType_Error -> prPrec i 0 (concatD [doc (showString "Error")])
+    AbsGramm.SType_Void -> prPrec i 0 (concatD [doc (showString "Void")])
 
 --instance Print AbsGramm.Program where
 --  prt i e = case e of
@@ -203,6 +204,14 @@ instance Print AbsGramm.Stm where
     AbsGramm.SProcCall pident paramss -> prPrec i 0 (concatD [prt 0 pident, prt 0 paramss, doc (showString ";")])
   prtList _ [] = concatD []
   prtList _ (x:xs) = concatD [prt 0 x, prt 0 xs]
+
+instance Print AbsGramm.OpAssign where
+  prt i e = case e of
+    AbsGramm.ProdEq -> prPrec i 0 (concatD [doc (showString "*=")])
+    AbsGramm.DivEq -> prPrec i 0 (concatD [doc (showString "/=")])
+    AbsGramm.ModEq -> prPrec i 0 (concatD [doc (showString "%=")])
+    AbsGramm.PlusEq -> prPrec i 0 (concatD [doc (showString "+=")])
+    AbsGramm.MinusEq -> prPrec i 0 (concatD [doc (showString "-=")])
 
 instance Print AbsGramm.Params where
   prt i e = case e of

@@ -13,11 +13,11 @@ saveLog logelem = do
   return ()
 
 isTypeVoid :: TypeSpec -> Bool
-isTypeVoid typ = typ == (TSimple TypeVoid)
+isTypeVoid typ = typ == (TSimple SType_Void)
 
 isCompatible :: Exp -> TypeSpec -> Bool
 isCompatible texp typ = case typ of
-  (TPointer typ') -> getType texp == (TPointer (TSimple TypeVoid)) || getType texp == typ
+  (TPointer typ') -> getType texp == (TPointer (TSimple SType_Void)) || getType texp == typ
   _               -> getType texp == typ
 
 paramsToStms :: [ParamClause] -> [Stm]
@@ -33,10 +33,10 @@ startingEnv =
     env
   where
     initialFuns = [
-      ("writeInt",    FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"i")) (TSimple SType_Int) ]]),
-      ("writeFloat",  FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"f")) (TSimple SType_Float) ]]),
-      ("writeChar",   FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"c")) (TSimple SType_Char) ]]),
-      ("writeString", FunInfo (0,0) (TSimple TypeVoid) [PArg [DArg (PIdent ((0,0),"s")) (TSimple SType_String) ]]),
+      ("writeInt",    FunInfo (0,0) (TSimple SType_Void) [PArg [DArg (PIdent ((0,0),"i")) (TSimple SType_Int) ]]),
+      ("writeFloat",  FunInfo (0,0) (TSimple SType_Void) [PArg [DArg (PIdent ((0,0),"f")) (TSimple SType_Float) ]]),
+      ("writeChar",   FunInfo (0,0) (TSimple SType_Void) [PArg [DArg (PIdent ((0,0),"c")) (TSimple SType_Char) ]]),
+      ("writeString", FunInfo (0,0) (TSimple SType_Void) [PArg [DArg (PIdent ((0,0),"s")) (TSimple SType_String) ]]),
 
       ("readInt",     FunInfo (0,0) (TSimple SType_Int)    [PArg []]),
       ("readFloat",   FunInfo (0,0) (TSimple SType_Float)  [PArg []]),
@@ -287,63 +287,63 @@ inferLExp lexp env = case lexp of
  LRef lexp' -> do
    tlexp' <- inferLExp lexp' env
    if isTypeError tlexp' 
-     then return $ LExpTyped (LRef tlexp') (TSimple TypeError) (getLoc tlexp') (getDLoc tlexp') 
+     then return $ LExpTyped (LRef tlexp') (TSimple SType_Error) (getLoc tlexp') (getDLoc tlexp') 
      else
        case tlexp' of
          (LExpTyped _ (TPointer typ) loc dloc) -> return $ LExpTyped (LRef tlexp') typ loc dloc
          (LExpTyped _ typ' loc dloc) -> do
            saveLog $ launchError loc (WrongPointerApplication lexp' typ')
-           return $ LExpTyped (LRef tlexp') (TSimple TypeError) loc dloc
+           return $ LExpTyped (LRef tlexp') (TSimple SType_Error) loc dloc
 
  LArr lexp exp -> do
    tlexp <- inferLExp lexp env
    texp <- inferExp exp env
    if isTypeError tlexp || isTypeError texp
      then
-       return $ LExpTyped (LArr tlexp texp) (TSimple TypeError) (getLoc tlexp) (getDLoc tlexp) 
+       return $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) (getLoc tlexp) (getDLoc tlexp) 
      else
        case (tlexp , isCompatible texp (TSimple SType_Int)) of
          (LExpTyped _ (TArray typ _) loc dloc, True) -> return $ LExpTyped (LArr tlexp texp) typ loc dloc
          (LExpTyped _ (TArray typ _) loc dloc, False) -> do
            saveLog $ launchError loc (WrongArrayIndex exp texp)
-           return $ LExpTyped (LArr tlexp texp) (TSimple TypeError) loc dloc
+           return $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) loc dloc
          (_, False) -> do
            saveLog $ launchError (getLoc texp) (WrongArrayAccess  lexp (getType tlexp))
            saveLog $ launchError (getLoc texp) (WrongArrayIndex exp texp)
-           return  $ LExpTyped (LArr tlexp texp) (TSimple TypeError) (getLoc tlexp) (getDLoc tlexp)
+           return  $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) (getLoc tlexp) (getDLoc tlexp)
          (_, True) -> do
            saveLog $ launchError (getLoc texp) (WrongArrayAccess lexp (getType tlexp))
-           return  $ LExpTyped (LArr tlexp texp) (TSimple TypeError) (getLoc tlexp) (getDLoc tlexp)
+           return  $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) (getLoc tlexp) (getDLoc tlexp)
  LIdent id@(PIdent (loc, ident)) -> let res = Env.lookup env id in
    case res of
      Failure except -> do
        saveLog $ launchError loc except
-       return $ LExpTyped lexp (TSimple TypeError) loc (0,0)
+       return $ LExpTyped lexp (TSimple SType_Error) loc (0,0)
      Success (VarInfo dloc typ) -> return $ LExpTyped (LIdent id) typ loc dloc
      Success (FunInfo dloc _ _) -> do
        saveLog $ launchError loc (DuplicateFunction ident dloc)
-       return $ LExpTyped lexp (TSimple TypeError) loc dloc
+       return $ LExpTyped lexp (TSimple SType_Error) loc dloc
 
 
 
 -- Prende una lista di espressioni tipate, un tipo, e ritorna una coppia con il primo elemento
--- che dice se si è trovato almeno un elemento con tipo (TSimple TypeError), ed il secondo elemento che dice
+-- che dice se si è trovato almeno un elemento con tipo (TSimple SType_Error), ed il secondo elemento che dice
 -- se tutte le espressioni hanno tipo type o meno.
 inferArrayAux :: [Exp] -> TypeSpec -> (Bool, Bool)
-inferArrayAux texps typ = ( (any (\x -> isCompatible x (TSimple TypeError)) texps),(all (\x -> isCompatible x typ) texps) )
+inferArrayAux texps typ = ( (any (\x -> isCompatible x (TSimple SType_Error)) texps),(all (\x -> isCompatible x typ) texps) )
 
 inferExp :: Exp -> Env -> Writer [LogElement] Exp
 inferExp exp env = case exp of
                                                                               -- posizione fittizia.
-  EArray [] -> return $ ETyped (exp) (TArray (TSimple TypeVoid) (PInteger ( (0,0), show (0)  ) )) (0,0) 
+  EArray [] -> return $ ETyped (exp) (TArray (TSimple SType_Void) (PInteger ( (0,0), show (0)  ) )) (0,0) 
   EArray exps -> do
     texps <- mapM (\x -> inferExp x env) exps
     case inferArrayAux texps (getType (head texps) ) of
-      (True, _) -> return $ ETyped (EArray texps) (TArray (TSimple TypeError) (PInteger ( (getLoc (head texps)) , show (length texps)  ) )) (getLoc (head texps)) 
+      (True, _) -> return $ ETyped (EArray texps) (TArray (TSimple SType_Error) (PInteger ( (getLoc (head texps)) , show (length texps)  ) )) (getLoc (head texps)) 
       (_, True) -> return $ ETyped (EArray texps) (TArray (getType (head texps) )  (PInteger ( (getLoc (head texps)), show (length texps)  ))) (getLoc (head texps))
       (_ , _) -> do
         saveLog $ launchError (getLoc (head texps)) ArrayInconsistency
-        return $ ETyped (EArray texps) (TSimple TypeError) (getLoc (head texps))
+        return $ ETyped (EArray texps) (TSimple SType_Error) (getLoc (head texps))
 
                                     -- lista di liste ParExp [Exp]
   EFunCall id@(PIdent (loc, ident)) params -> do
@@ -358,27 +358,27 @@ inferExp exp env = case exp of
       case Env.lookup env id of
         Success (VarInfo dloc _) -> do
          saveLog $ launchError loc (DuplicateVariable ident dloc)
-         return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc
+         return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) dloc
         Failure except -> do
           saveLog $ launchError loc except
-          return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) loc
+          return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
         Success (FunInfo dloc typ paramclauses) ->
           let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
             if any (isTypeError) (concat tparams)
               then 
-                return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc
+                return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) dloc
               else
                 if typ_args == typ_params 
                   then 
                     if isTypeVoid typ
                       then do
                         saveLog $ launchError loc (UnexpectedProc ident)
-                        return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc
+                        return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) dloc
                       else
                         return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) typ dloc
                   else do
                     saveLog $ launchError loc (WrongFunctionParams ident typ_args typ_params typ)
-                    return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple TypeError) dloc
+                    return $ ETyped (EFunCall id (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) dloc
 
   ENot exp -> do
     texp <- inferExp exp env
@@ -386,7 +386,7 @@ inferExp exp env = case exp of
       then return (ETyped (ENot texp) (getType texp) (getLoc texp))
       else do
         saveLog $ launchError (getLoc texp) (WrongNotApplication exp texp)
-        return $ ETyped (ENot texp) (TSimple TypeError) (getLoc texp)
+        return $ ETyped (ENot texp) (TSimple SType_Error) (getLoc texp)
 
   ENeg exp -> do
     texp <- inferExp exp env
@@ -394,7 +394,7 @@ inferExp exp env = case exp of
       then return $ ETyped (ENeg texp) (getType texp) (getLoc texp)
       else do
         saveLog $ launchError (getLoc texp) (WrongNegApplication exp texp)
-        return $ (ETyped (ENeg texp) (TSimple TypeError) (getLoc texp))
+        return $ (ETyped (ENeg texp) (TSimple SType_Error) (getLoc texp))
   
   ELExp lexp -> do
     tlexp <- inferLExp lexp env
@@ -403,7 +403,7 @@ inferExp exp env = case exp of
   EDeref lexp -> do
     tlexp <- inferLExp lexp env
     if isTypeError tlexp
-      then return $ ETyped (EDeref tlexp) (TSimple TypeError) (getLoc tlexp)
+      then return $ ETyped (EDeref tlexp) (TSimple SType_Error) (getLoc tlexp)
       else return $ ETyped (EDeref tlexp) (TPointer (getType tlexp)) (getLoc tlexp)
 
   EInt    const@(PInteger (loc, _)) -> return $ ETyped (EInt const) (TSimple SType_Int) (loc) 
@@ -412,7 +412,7 @@ inferExp exp env = case exp of
   EString const@(PString (loc, _))  -> return $ ETyped (EString const) (TSimple SType_String) (loc)
   ETrue   const@(PTrue (loc, _))    -> return $ ETyped (ETrue const) (TSimple SType_Bool) (loc)
   EFalse  const@(PFalse (loc, _))   -> return $ ETyped (EFalse const) (TSimple SType_Bool) (loc)
-  ENull const@(PNull (loc, _)) -> return $ ETyped (ENull const) (TPointer (TSimple TypeVoid)) loc 
+  ENull const@(PNull (loc, _)) -> return $ ETyped (ENull const) (TPointer (TSimple SType_Void)) loc 
   EOp expl op expr -> inferBinOp expl op expr env
 
 -- Prese due espressioni ed un operatore binario ritorna la corrispondente espressione tipizzata
@@ -422,8 +422,8 @@ inferBinOp expl op expr env = do
     texpr <- inferExp expr env
 
     case ((getTypeOp op), (getType texpl), (getType texpr) ) of
-      (_ , TSimple TypeError, _ ) -> return $ ETyped (EOp texpl op texpr) (TSimple TypeError) (getLoc texpl) 
-      (_ , _ , TSimple TypeError) -> return $ ETyped (EOp texpl op texpr) (TSimple TypeError) (getLoc texpl) 
+      (_ , TSimple SType_Error, _ ) -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
+      (_ , _ , TSimple SType_Error) -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
       (EqOp, typl, typr) ->
         if isConsistent EqOp typl typr
           then return $ ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
@@ -440,7 +440,7 @@ inferBinOp expl op expr env = do
 returnBinOpError :: Exp -> Op -> Exp -> Writer [LogElement] Exp
 returnBinOpError texpl op texpr = do
   saveLog $ launchError (getLoc texpl) (WrongOpApplication op texpl texpr)
-  return $ ETyped (EOp texpl op texpr) (TSimple TypeError) (getLoc texpl) 
+  return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
 
 isConsistent :: TypeOp -> TypeSpec -> TypeSpec -> Bool
 isConsistent NumericOp typl typr = (typl == typr) && (checkNumericTyp typl)

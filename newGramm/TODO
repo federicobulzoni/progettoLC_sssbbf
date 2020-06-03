@@ -7,27 +7,27 @@ Cose da fare:
     [X] le dichiarazioni delle variabili globali vanno in testa al tac
     [X] Distinguere stampa errori e warning
     [X] modificare ordine delle funzioni quando si trova un main (che ora va in testa al tac, dopo le dichiarazioni di variabile) ma le sue funzioni interne rimangono nell'ordine sbagliato
-    [] sistemare errori. SB
+    [] sistemare errori e togliere dipendenze da Typed in Errors BF. SB
     [] fate tanti test                      BF    
     [] pulizia codice                       SS/BF   
-    [] Aggiungere: *= -= += /= %=           SS
+    [X] Aggiungere: *= -= += /= %=           SS
     [] una funzione può anche essere dichiarata senza parentesi in Scala     SB
                             def foo : Int = {
                                 1
                             }
     [X] Aggiungere nella grammatica un ; alla fine delle dichiarazioni di funzione inline.
     [] Aggiungere commenti al TAC, per far capire che sappiamo quali sono gli argomenti di una funzione. SB
-    [] Type Error e Type Void sono brutti scritti in modo diverso dagli altri tipi base. @critical SS
+    [X] Type Error e Type Void sono brutti scritti in modo diverso dagli altri tipi base. @critical SS
     [] Finire di commentare le funzioni in environment. BF
     [] Controllare se tutti gli import in TestGramm.hs servono veramente. BF
     [X] Aggiungere statement vuoto per evitare brutture nell-if nel tac.
     [X] Controllare se genLExp per gli array array è giusto. Non sembra, l'indice dovrebbe essere convertito.
     [X] Riga 289 del tac. Si pu; lanciare l'errore? Si
-    [] Togliere dipendenze da Typed in Errors BF
-    [] Aggiungere gestione del main nel TypeChecker. BF
-    [] Aggiungere un'etichetta in fondo al tac (raggiungibile con goto dopo le decl globali), se manca il main
+    [X] Aggiungere gestione del main nel TypeChecker. BF
+    [X] Aggiungere un'etichetta in fondo al tac (raggiungibile con goto dopo le decl globali), se manca il main      SS
     [] Todo del typechecker: BF
   		[] fare in  modo che agli array si possano assegnare Array() di cardinalità minore rispetto a quella dell'array
+            Si vanno a creare problemi a livello di generazione del TAC, per l'assegnamento dei valori mancanti, se la dimensione dell'array assegnato è più piccola della dimensione dell'array che si sta inizializzando.
   		[X] controllare la grammatica e aggiungere le locazioni a tutti i typed che non ce l'hanno.
   		[X] controllare che la locazione negli statement serva veramente (sembra servire solo nella chiamata di funzione)
   		[X] ci serve la posizione di dichiarazione di tutto ciò che viene dichiarato (identificatori: var, fun) --> serve nel tac per identificare gli id

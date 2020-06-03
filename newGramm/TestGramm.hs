@@ -45,18 +45,23 @@ run v p s = let ts = myLLexer s in case p ts of
                           case (logs) of
                             [] -> do
                               printTypeCheckSuccess annotatedTree
-                              let code = genTAC annotatedTree
+                              let code = genTAC annotatedTree True
                               showTAC code
                             _ -> do
                               errors <- showErrors logs
                               if errors == True
                                 then do
-                                  let code = genTAC annotatedTree
+                                  let code = genTAC annotatedTree (hasMain logs)
                                   showTAC code
                                 else 
                                   return ()
                               
                           exitSuccess
+
+
+hasMain :: [LogElement] -> Bool
+hasMain [log] = not (getException log == MissingMain)
+hasMain logs = not (getException (last logs) == MissingMain)
 
 showErrors :: [LogElement] -> IO Bool
 showErrors logs = do

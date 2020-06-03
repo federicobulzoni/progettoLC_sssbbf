@@ -32,6 +32,11 @@ pushMain label = do
     (k, l, revcode, funs) <- get
     put (k, l, revcode ++ [Goto label], funs)
 
+pushLastLabel :: Label -> MyMon()
+pushLastLabel label = do
+    (k,l,revcode,funs) <- get
+    put (k, l, [Lab label] ++ revcode, funs)
+
 createStream :: MyMon ()
 createStream = do
     (k, l, revcode, funs) <- get
@@ -50,16 +55,39 @@ newLabel = do
     put (k, l+1, revcode, funs)
     return $ LabStm l
 
+defaultLabel :: MyMon Label
+defaultLabel = do
+    (k, l , revcode, funs) <- get
+    put (k, l, revcode, funs)
+    return $ LabStm l
+    
 getTACCode :: (Int, Int, [TAC], [[TAC]]) -> [TAC]
 getTACCode (k, l, code, _) = code
 
 -- Entry point. Called by TestGramm.
-genTAC :: Program -> [TAC]
-genTAC prog = reverse $ getTACCode $ execState ( genProg prog ) (0, 0 ,[], [[]])
+genTAC :: Program -> Bool -> [TAC]
+genTAC prog hasMain = reverse $ getTACCode $ execState ( genProg prog hasMain) (0, 0 ,[], [[]])
 
-genProg :: Program -> MyMon ()
-genProg (Prog decls) = do
+genProg :: Program -> Bool -> MyMon ()
+genProg (Prog decls) hasMain= do
+    -- create a defaut label (init)
+    mainLabel <- defaultLabel
+    -- check if a main exists
+    if not hasMain
+        then do
+            -- if not create a goto instruction after global decls
+            mainLabel <- newLabel
+            pushMain mainLabel
+        else
+            return()
+
     genDecls decls
+    
+    if not hasMain 
+        -- add the new label on the bottom
+        then pushLastLabel mainLabel
+        else return ()
+    
     pushCurrentStream
 
 genDecls :: [Declaration] -> MyMon ()
@@ -160,19 +188,25 @@ genDecl decl = case decl of
         out $ (Lab (buildFunLabel ident dloc))
         lastIsReturn <- genBlock block
         case (lastIsReturn,typ) of
-            (False, TSimple TypeVoid) -> out $ (ReturnVoid)
+            (False, TSimple SType_Void) -> out $ (ReturnVoid)
             (False, _ ) -> do
                 addrDef <- genExp $ buildDefaultValue typ
                 out $ (ReturnAddr addrDef)
             otherwise -> return ()
         pushCurrentStream
-        if ident == "main"
+        isGlobal <- isGlobalScope
+        -- check if this is the main function and if it is in the global scope
+        if ident == "main" && isGlobal
             then do
                 pushMain $ buildFunLabel ident dloc
                 return ()
             else
                 return ()
         
+isGlobalScope :: MyMon Bool
+isGlobalScope = do
+    (k, l, revcode, funs) <- get
+    return $ length funs == 1 
 
 sizeOf :: TypeSpec -> Int
 sizeOf (TSimple typ)  = case typ of
