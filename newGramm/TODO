@@ -7,7 +7,7 @@ Cose da fare:
     [X] le dichiarazioni delle variabili globali vanno in testa al tac
     [X] Distinguere stampa errori e warning
     [X] modificare ordine delle funzioni quando si trova un main (che ora va in testa al tac, dopo le dichiarazioni di variabile) ma le sue funzioni interne rimangono nell'ordine sbagliato
-    [] sistemare errori. SB
+    [] sistemare errori e togliere dipendenze da Typed in Errors BF. SB
     [] fate tanti test                      BF    
     [] pulizia codice                       SS/BF   
     [X] Aggiungere: *= -= += /= %=           SS
@@ -23,7 +23,6 @@ Cose da fare:
     [X] Aggiungere statement vuoto per evitare brutture nell-if nel tac.
     [X] Controllare se genLExp per gli array array è giusto. Non sembra, l'indice dovrebbe essere convertito.
     [X] Riga 289 del tac. Si pu; lanciare l'errore? Si
-    [] Togliere dipendenze da Typed in Errors BF
     [X] Aggiungere gestione del main nel TypeChecker. BF
     [X] Aggiungere un'etichetta in fondo al tac (raggiungibile con goto dopo le decl globali), se manca il main      SS
     [] Todo del typechecker: BF
