@@ -147,9 +147,9 @@ genExpAssign addr texp@(ETyped exp typ loc) = case exp of
         addrE1 <- genExp e1
         out $ AssignUnOp addr Not addrE1 (convertToTACType typ)
 
-    EFunCall id@(PIdent (_,ident)) params -> do
+    EFunCall id@(PIdent (floc,ident)) params -> do
         genParams params
-        out $ AssignFromFunction addr (buildFunLabel ident loc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
+        out $ AssignFromFunction addr (buildFunLabel ident floc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
 
     _ -> do
         addrTExp <- genExp texp
