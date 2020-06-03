@@ -46,8 +46,11 @@ data SType
     | SType_Char
     | SType_String
     | SType_Bool
-    | TypeError
-    | TypeVoid
+    | SType_Error
+    | SType_Void
+  deriving (Eq, Ord, Show, Read)
+
+data OpAssign = ProdEq | DivEq | ModEq | PlusEq | MinusEq
   deriving (Eq, Ord, Show, Read)
 
 data Declaration

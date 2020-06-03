@@ -52,7 +52,7 @@ updateScope (lookTable, ftyp, hasReturn) ident info = case Map.lookup ident look
 
 -- Costruisce un environment vuoto.
 emptyEnv :: Env
-emptyEnv = [emptyScope (TSimple TypeVoid)]
+emptyEnv = [emptyScope (TSimple SType_Void)]
 
 -- Aggiunge uno scope allo stack.
 addScope :: Env -> TypeSpec -> Env

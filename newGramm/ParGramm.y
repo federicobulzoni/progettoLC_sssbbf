@@ -147,11 +147,13 @@ Stm : Declaration { AbsGramm.SDecl $1 }
     | PReturn ';' { AbsGramm.SReturn $1 }
     | PReturn Exp ';' { AbsGramm.SReturnExp $1 $2 }
     | PIdent ListParams ';' { AbsGramm.SProcCall $1 $2 }
-    | LExp '*=' Exp ';' { prodAssign_ $1 $3 }
-    | LExp '/=' Exp ';' { divAssign_ $1 $3 }
-    | LExp '%=' Exp ';' { modAssign_ $1 $3 }
-    | LExp '+=' Exp ';' { plusAssign_ $1 $3 }
-    | LExp '-=' Exp ';' { minusAssign_ $1 $3 }
+    | LExp OpAssign Exp ';' { sugarAssign_ $1 $2 $3 }
+OpAssign :: { OpAssign }
+OpAssign : '*=' { AbsGramm.ProdEq }
+         | '/=' { AbsGramm.DivEq }
+         | '%=' { AbsGramm.ModEq }
+         | '+=' { AbsGramm.PlusEq }
+         | '-=' { AbsGramm.MinusEq }
 Params :: { Params }
 Params : '(' ListExp ')' { AbsGramm.ParExp $2 }
 ListParams :: { [Params] }
@@ -234,14 +236,14 @@ happyError ts =
 
 myLexer = tokens
 op_ e1_ o_ e2_ = EOp e1_ o_ e2_
-dproc_ id_ params_ block_ = DefFun id_ params_ (TSimple TypeVoid) block_
-dprocinline_ id_ params_ exp_ = DefFunInLine id_ params_ (TSimple TypeVoid) exp_
+dproc_ id_ params_ block_ = DefFun id_ params_ (TSimple SType_Void) block_
+dprocinline_ id_ params_ exp_ = DefFunInLine id_ params_ (TSimple SType_Void) exp_
 sdo_ st_ ex_ = SBlock (DBlock [st_, SWhile ex_ st_])
 sif_ exp_ stm_ = SIfElse exp_ stm_ (SBlock (DBlock []))
-prodAssign_ lexp_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Prod exp_)
-divAssign_ lexp_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Div exp_)
-modAssign_ lexp_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Mod exp_)
-plusAssign_ lexp_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Plus exp_)
-minusAssign_ lexp_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Minus exp_)
+sugarAssign_ lexp_ ProdEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Prod exp_)
+sugarAssign_ lexp_ MinusEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Minus exp_)
+sugarAssign_ lexp_ PlusEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Plus exp_)
+sugarAssign_ lexp_ DivEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Div exp_)
+sugarAssign_ lexp_ ModEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Mod exp_)
 }
 

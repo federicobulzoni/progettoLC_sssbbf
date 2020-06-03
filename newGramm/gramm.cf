@@ -16,8 +16,8 @@ TPointer. TypeSpec ::= "*" TypeSpec;
 TArray. TypeSpec ::= "Array" "[" TypeSpec "]" "(" PInteger ")";
 
 rules SType ::= "Float" | "Int" | "Char" | "String" | "Bool";
-internal TypeError. SType ::= "Error";
-internal TypeVoid. SType ::= "Void";
+internal SType_Error. SType ::= "Error";
+internal SType_Void. SType ::= "Void";
 
 Prog. Program ::= [Declaration];
 separator Declaration "";
@@ -50,11 +50,13 @@ SReturn. 	Stm ::= PReturn ";";
 SReturnExp. Stm ::= PReturn Exp ";" ;
 SProcCall.  Stm ::= PIdent [Params] ";";
 
-prodAssign.  Stm ::= LExp "*=" Exp ";" ;
-divAssign.   Stm ::= LExp "/=" Exp ";" ;
-modAssign.   Stm ::= LExp "%=" Exp ";" ;
-plusAssign.  Stm ::= LExp "+=" Exp ";" ;
-minusAssign. Stm ::= LExp "-=" Exp ";" ;
+sugarAssign. Stm ::=  LExp OpAssign Exp ";" ;
+
+ProdEq. OpAssign ::= "*=" ;
+DivEq. OpAssign ::= "/=" ;
+ModEq. OpAssign ::= "%=" ;
+PlusEq. OpAssign ::= "+=" ;
+MinusEq. OpAssign ::= "-=" ;
 
 ParExp. Params ::= "(" [Exp] ")";
 separator nonempty Params "";
@@ -119,16 +121,18 @@ coercions LExp 1;
 internal LExpTyped. LExp ::= "[" LExp ":" TypeSpec ":" "(" Integer "," Integer ")" ":" "(" Integer ":" Integer ")" "]";
 
 define op e1 o e2 = EOp e1 o e2;
-define dproc id params block = DefFun id params (TSimple TypeVoid) (block);
-define dprocinline id params exp = DefFunInLine id params (TSimple TypeVoid) exp;
+define dproc id params block = DefFun id params (TSimple SType_Void) (block);
+define dprocinline id params exp = DefFunInLine id params (TSimple SType_Void) exp;
 define sdo st ex = SBlock (DBlock [st, (SWhile ex st)]);
 define sif exp stm = SIfElse exp stm (SBlock (DBlock []));
 
-define prodAssign  lexp exp = SAssign lexp (op (ELExp lexp) Prod exp );
-define divAssign   lexp exp = SAssign lexp (op (ELExp lexp) Div exp  );
-define modAssign   lexp exp = SAssign lexp (op (ELExp lexp) Mod exp  );
-define plusAssign  lexp exp = SAssign lexp (op (ELExp lexp) Plus exp );
-define minusAssign lexp exp = SAssign lexp (op (ELExp lexp) Minus exp);
+define sugarAssign lexp ProdEq exp  = SAssign lexp (op (ELExp lexp) Prod exp );
+define sugarAssign lexp MinusEq exp = SAssign lexp (op (ELExp lexp) Minus exp );
+define sugarAssign lexp PlusEq exp  = SAssign lexp (op (ELExp lexp)  Plus exp );
+define sugarAssign lexp DivEq exp   = SAssign lexp (op (ELExp lexp) Div exp );
+define sugarAssign lexp ModEq exp   = SAssign lexp (op (ELExp lexp) Mod exp );
+
+
 position token PString ( '"' ((char - ["\"\\"]) | ('\\' ["\"\\nt"]))* '"' );
 position token PChar ('\'' ((char - ["'\\"]) | ('\\' ["'\\nt"])) '\'' );
 

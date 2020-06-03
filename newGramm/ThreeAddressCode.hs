@@ -160,7 +160,7 @@ genDecl decl = case decl of
         out $ (Lab (buildFunLabel ident dloc))
         lastIsReturn <- genBlock block
         case (lastIsReturn,typ) of
-            (False, TSimple TypeVoid) -> out $ (ReturnVoid)
+            (False, TSimple SType_Void) -> out $ (ReturnVoid)
             (False, _ ) -> do
                 addrDef <- genExp $ buildDefaultValue typ
                 out $ (ReturnAddr addrDef)
