@@ -13,7 +13,7 @@ instance Typed Exp where
     isTypeError texp = getType texp == (TSimple SType_Error)
 
 instance Typed LExp where
-    getType (LExpTyped _ typ _ _ ) = typ
-    getLoc (LExpTyped _ _ loc _ ) = loc
+    getType (LExpTyped _ typ _) = typ
+    getLoc (LExpTyped _ _ loc) = loc
     isTypeError tlexp = getType tlexp == (TSimple SType_Error)
 

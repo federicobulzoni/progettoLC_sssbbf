@@ -133,7 +133,7 @@ genParamAux (ParExp (exp:exps)) = do
     genParamAux (ParExp exps)
 
 genExpAssign :: Addr -> Exp -> MyMon ()
-genExpAssign addr texp@(ETyped exp typ loc) = case exp of 
+genExpAssign addr texp@(ETyped exp typ _) = case exp of 
     EOp e1 op e2 -> do
         addrE1 <- genExp e1
         addrE2 <- genExp e2
@@ -147,9 +147,9 @@ genExpAssign addr texp@(ETyped exp typ loc) = case exp of
         addrE1 <- genExp e1
         out $ AssignUnOp addr Not addrE1 (convertToTACType typ)
 
-    EFunCall id@(PIdent (_,ident)) params -> do
+    EFunCall id@(PIdent (dloc,ident)) params -> do
         genParams params
-        out $ AssignFromFunction addr (buildFunLabel ident loc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
+        out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
 
     _ -> do
         addrTExp <- genExp texp
@@ -224,8 +224,8 @@ getArrayType (TArray typ' _) = typ'
 getArrayType typ = error $ "Errore: " ++ printTree typ
 
 genLexp :: LExp -> MyMon Addr
-genLexp (LExpTyped lexp typ _ dloc) = case lexp of
-    LIdent (PIdent (_,ident)) -> return $ buildVarAddress ident dloc
+genLexp (LExpTyped lexp typ _) = case lexp of
+    LIdent (PIdent (dloc,ident)) -> return $ buildVarAddress ident dloc
     LRef lexp' -> do
         addrTemp <- newTemp
         addrLexp' <- genLexp lexp'
@@ -343,7 +343,7 @@ genStm stm = case stm of
     --out $ AssignFromArray addrTemp addrLexp' addrOffset (convertToTACType typ)
     --return addrTemp
 
-    SAssign (LExpTyped lexp typ loc dloc) texp -> do
+    SAssign (LExpTyped lexp typ loc) texp -> do
         case lexp of
             (LRef lexp') -> do
                 addrLexp' <- genLexp lexp'
@@ -356,7 +356,7 @@ genStm stm = case stm of
                 out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
                 addrExp <- genExp texp
                 out $ AssignToArray addrLexp' addrOffset addrExp (convertToTACType typ)
-            (LIdent id@(PIdent (_,ident))) -> 
+            (LIdent id@(PIdent (dloc,ident))) -> 
                 genExpAssign (buildVarAddress ident dloc) texp
 
     SWhile texp@(ETyped exp _ _) tstm -> do
