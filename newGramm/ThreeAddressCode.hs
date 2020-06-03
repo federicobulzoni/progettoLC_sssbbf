@@ -195,7 +195,7 @@ genLexp (LExpTyped lexp typ _ dloc) = case lexp of
     LRef lexp' -> do
         addrTemp <- newTemp
         addrLexp' <- genLexp lexp'
-        out $ AssignFromPointer addrTemp addrLexp' (convertToTACType typ)
+        out $ AssignFromPointer addrTemp addrLexp' (TACAddr)
         return addrTemp
     LArr lexp' exp -> do
         addrOffset <- newTemp
@@ -322,9 +322,8 @@ genStm stm = case stm of
                 out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
                 addrExp <- genExp texp
                 out $ AssignToArray addrLexp' addrOffset addrExp (convertToTACType typ)
-            (LIdent id) -> do
-                addrLexp <- genLexp lexp
-                genExpAssign addrLexp texp
+            (LIdent id@(PIdent (_,ident))) -> 
+                genExpAssign (buildVarAddress ident dloc) texp
 
     SWhile texp@(ETyped exp _ _) tstm -> do
         labelWhile <- newLabel

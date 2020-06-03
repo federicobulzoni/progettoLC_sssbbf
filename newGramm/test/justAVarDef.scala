@@ -1,11 +1,21 @@
 var x : Array[Int](3) = Array(11,12,13);
-var y : Int = x[1];
+var y : Int = 4;
+
+def proc () = {
+    var a : Array[Array[Int](3)](2) = Array(x,x);
+    var b : Int = a[1][2];
+
+    var c : *Array[Int](3) = &a[1];
+}
+
 
 def foo () = {
-    y= 4;
+    y = 4;
+    
     def foo2() = {
         var t : Int;
     }
+    
 }
 
 var h : Float;
