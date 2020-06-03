@@ -55,7 +55,7 @@ data TCException
     | EnvDuplicateIdent Ident Loc Bool
     | EnvNotDeclaredIdent Ident
     | InternalError
-    deriving(Show)
+    deriving(Show,Eq)
   
 
 printException :: LogElement -> String
@@ -72,6 +72,10 @@ launchError loc except = Error loc except
 isError :: LogElement -> Bool
 isError (Error _ _) = True
 isError _ = False
+
+getException :: LogElement -> TCException
+getException (Warning _ e)= e
+getException (Error _ e)= e
 
 getExceptionMsg :: TCException -> String
 getExceptionMsg except = case except of

@@ -1,4 +1,6 @@
-def main() : Int = {
+var b : Int = 3;
+
+def main1() : Int = {
     //var a : Array[Array[Int](2)](3);
     //a[1-1] = Array(1,2);
 
@@ -9,3 +11,5 @@ def main() : Int = {
     // **x = y + z * k
     *x = y;
 }
+
+var c : Int = 2;

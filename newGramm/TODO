@@ -25,7 +25,7 @@ Cose da fare:
     [X] Riga 289 del tac. Si pu; lanciare l'errore? Si
     [] Togliere dipendenze da Typed in Errors BF
     [X] Aggiungere gestione del main nel TypeChecker. BF
-    [] Aggiungere un'etichetta in fondo al tac (raggiungibile con goto dopo le decl globali), se manca il main      SS
+    [X] Aggiungere un'etichetta in fondo al tac (raggiungibile con goto dopo le decl globali), se manca il main      SS
     [] Todo del typechecker: BF
   		[] fare in  modo che agli array si possano assegnare Array() di cardinalità minore rispetto a quella dell'array
   		[X] controllare la grammatica e aggiungere le locazioni a tutti i typed che non ce l'hanno.
