@@ -74,4 +74,7 @@ data TAC
     | Param Addr                                    -- param x
     | Call Label Int                                 -- call f , n
 
+    | Comment String
+    | CommentArgs [(TACType, Addr)]
+
   deriving (Eq, Ord, Show, Read)

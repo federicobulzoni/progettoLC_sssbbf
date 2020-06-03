@@ -183,9 +183,14 @@ genDecl decl = case decl of
     DecVar id@(PIdent (dloc, ident)) typ ->
         genExpAssign (buildVarAddress ident dloc) (buildDefaultValue typ)
 
-    DefFun id@(PIdent (dloc, ident)) _ typ block -> do
+    DefFun id@(PIdent (dloc, ident)) params typ block -> do
         createStream
         out $ (Lab (buildFunLabel ident dloc))
+        case typ of
+            TSimple SType_Void -> out $ Comment "Begin procedure"
+            otherwise -> do
+                out $ Comment "Begin function"
+                out $ CommentArgs $ concat $ map (\(PArg x) -> map (\(DArg (PIdent (loc,ident)) typ) -> (convertToTACType typ,buildVarAddress ident loc)) x) params
         lastIsReturn <- genBlock block
         case (lastIsReturn,typ) of
             (False, TSimple SType_Void) -> out $ (ReturnVoid)
@@ -193,6 +198,9 @@ genDecl decl = case decl of
                 addrDef <- genExp $ buildDefaultValue typ
                 out $ (ReturnAddr addrDef)
             otherwise -> return ()
+        case typ of
+            TSimple SType_Void -> out $ Comment "End procedure"
+            otherwise -> out $ Comment "End function"
         pushCurrentStream
         isGlobal <- isGlobalScope
         -- check if this is the main function and if it is in the global scope

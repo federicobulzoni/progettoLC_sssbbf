@@ -20,7 +20,7 @@ Cose da fare:
                                 1
                             }
     [X] Aggiungere nella grammatica un ; alla fine delle dichiarazioni di funzione inline.
-    [] Aggiungere commenti al TAC, per far capire che sappiamo quali sono gli argomenti di una funzione. SB
+    [X] Aggiungere commenti al TAC, per far capire che sappiamo quali sono gli argomenti di una funzione. SB
     [X] Type Error e Type Void sono brutti scritti in modo diverso dagli altri tipi base. SS
     [X] Finire di commentare le funzioni in environment. BF
     [X] Controllare se tutti gli import in TestGramm.hs servono veramente. BF

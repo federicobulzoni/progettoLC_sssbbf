@@ -81,7 +81,14 @@ buildTACInstruction instr = case instr of
         "param " ++ buildAddr addr1
 
     Call label n ->
-        intercalate " " ["pcall",buildLabel label,",",show n] 
+        intercalate " " ["pcall",buildLabel label,",",show n]
+
+    Comment comment ->
+        color Default Italic $ "// " ++ comment
+
+    CommentArgs tactyp_addr -> 
+        "// Args: " 
+        ++ intercalate ", " (map (\(t,a) -> (buildAssignType t) ++ " " ++ (buildAddr a)) tactyp_addr)
 
 
 buildBinOpr :: BinOp -> String
