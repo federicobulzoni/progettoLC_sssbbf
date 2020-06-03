@@ -6,6 +6,8 @@ position token PIdent ( letter (letter | digit | '_' )* );
 position token PFloat ( (digit+ '.' digit+) | (digit+ '.') | ('.' digit+));
 position token PInteger ( digit+ );
 
+entrypoints Program;
+
 comment "//";
 comment "/*" "*/";
 
