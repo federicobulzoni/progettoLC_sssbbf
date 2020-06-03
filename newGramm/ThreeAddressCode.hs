@@ -257,11 +257,16 @@ genExp texp@(ETyped exp typ loc) = case exp of
         out $ AssignFromRef addrTemp addrLexp' (convertToTACType typ)
         return addrTemp
     
+    -- Da gestire il caso di un array vuoto! (Hint: ha tipo TypeVoid)
     EArray exps -> do
-        arrVals <- mapM (genExp) exps
-        addrTemp <- newTemp
-        zipWithM (\x i -> aux addrTemp x i (getArrayType typ)) arrVals [0..((length exps)-1)]
-        return addrTemp
+        if length exps == 0
+            then
+                return $ LitNull
+            else do
+                arrVals <- mapM (genExp) exps
+                addrTemp <- newTemp
+                zipWithM (\x i -> aux addrTemp x i (getArrayType typ)) arrVals [0..((length exps)-1)]
+                return addrTemp
 
     ELExp lexp' -> genLexp lexp'
 

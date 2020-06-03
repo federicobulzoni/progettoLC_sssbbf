@@ -1,6 +1,5 @@
 var x : Array[Int](3) = Array(11,12,13);
 var y : Int = 4;
-
 def proc () = {
     var a : Array[Array[Int](3)](2) = Array(x,x);
     var b : Int = a[1][2];
@@ -8,10 +7,15 @@ def proc () = {
     var c : *Array[Int](3) = &a[1];
 }
 
+var emptyArr : Array[Int](0) = Array();
 
 def foo () = {
     y = 4;
     
+    {
+        y = 6;
+        y = 8;
+    }
     def foo2() = {
         var t : Int;
     }
@@ -21,9 +25,8 @@ def foo () = {
 var h : Float;
 var k : Array[*Int](4);
 
-def main() : Int = 3;
  
-def main12() = {
+def main() = {
     var x : Int;
     def main1 (a : Int) : Int = {
         return 1;

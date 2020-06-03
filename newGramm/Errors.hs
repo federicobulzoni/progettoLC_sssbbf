@@ -5,7 +5,6 @@ import PrintGramm
 import Color
 import Control.Monad (MonadPlus(..), liftM)
 import Control.Applicative (Applicative(..), Alternative(..))
-import Typed
 
 data ErrEnv a = Success a | Failure TCException
     deriving (Show)
@@ -32,10 +31,10 @@ data TCException
     = MissingReturn Ident
     | MainDefinedInLine
     | MissingMain
-    | WrongExpType Exp Exp TypeSpec
-    | WrongExpAssignType Exp Exp LExp LExp
-    | WrongWhileCondition Exp Exp
-    | WrongIfCondition Exp Exp
+    | WrongExpType Exp TypeSpec TypeSpec
+    | WrongExpAssignType Exp TypeSpec TypeSpec LExp
+    | WrongWhileCondition Exp TypeSpec
+    | WrongIfCondition Exp TypeSpec
     | WrongReturnValue TypeSpec
     | DuplicateVariable Ident Loc
     | DuplicateFunction Ident Loc
@@ -43,13 +42,13 @@ data TCException
     | WrongProcParams Ident [[TypeSpec]] [[TypeSpec]]
     | WrongFunctionParams Ident [[TypeSpec]] [[TypeSpec]] TypeSpec
     | WrongPointerApplication LExp TypeSpec
-    | WrongArrayIndex Exp Exp
+    | WrongArrayIndex Exp TypeSpec
     | WrongArrayAccess LExp TypeSpec
     | WrongArrayAccessIndex Exp
     | ArrayInconsistency
-    | WrongNotApplication Exp Exp
-    | WrongNegApplication Exp Exp
-    | WrongOpApplication Op Exp Exp
+    | WrongNotApplication Exp TypeSpec
+    | WrongNegApplication Exp TypeSpec
+    | WrongOpApplication Op TypeSpec TypeSpec
     | UnexpectedReturn
     | UnexpectedProc Ident
     | EnvDuplicateIdent Ident Loc Bool
@@ -77,6 +76,11 @@ getException :: LogElement -> TCException
 getException (Warning _ e)= e
 getException (Error _ e)= e
 
+
+isNotNull :: Exp -> Bool
+isNotNull (ENull _) = False
+isNotNull _ = True
+
 getExceptionMsg :: TCException -> String
 getExceptionMsg except = case except of
     MissingReturn ident -> "Not every code path returns a value in function " 
@@ -84,18 +88,19 @@ getExceptionMsg except = case except of
     MainDefinedInLine -> "Main definito come una funzione inline."
 
     MissingMain -> "Main non definito."
-    WrongExpType exp texp typ -> "L'espressione " ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) 
-                                                    ++ ", ma il tipo atteso e' " ++ printTree typ ++ "."
+    WrongExpType exp texpTyp typ -> "L'espressione " ++ printTree exp ++ if (isNotNull exp) 
+      then " ha tipo " ++ printTree texpTyp ++ ", ma il tipo atteso e' " ++ printTree typ ++ "."
+      else " non può essere applicata. Tipo richiesto: " ++  printTree typ ++ "."
 
-    WrongExpAssignType exp texp tlexp lexp -> "L'espressione " ++ printTree exp ++" ha tipo " ++ printTree (getType texp) ++ ", ma " 
+    WrongExpAssignType exp texpTyp tlexpTyp lexp -> "L'espressione " ++ printTree exp ++" ha tipo " ++ printTree texpTyp ++ ", ma " 
                                                                 ++ printTree lexp ++ " ha tipo " 
-                                                                ++ printTree (getType tlexp) ++ "."
+                                                                ++ printTree tlexpTyp ++ "."
 
-    WrongWhileCondition exp texp -> "La condizione del while deve essere di tipo booleano, invece " ++ printTree exp 
-                                                            ++ " ha tipo " ++ printTree (getType texp) ++ "."
+    WrongWhileCondition exp texpTyp -> "La condizione del while deve essere di tipo booleano, invece " ++ printTree exp 
+                                                            ++ " ha tipo " ++ printTree texpTyp ++ "."
                                 
-    WrongIfCondition exp texp -> "La condizione dell' if deve essere di tipo booleano, invece " ++ printTree exp 
-                                                        ++ " ha tipo " ++ printTree (getType texp) ++ "."
+    WrongIfCondition exp texpTyp -> "La condizione dell' if deve essere di tipo booleano, invece " ++ printTree exp 
+                                                        ++ " ha tipo " ++ printTree texpTyp ++ "."
     
     WrongReturnValue typ -> "L'operazione return non ha valore di ritorno, ma la funzione ha tipo " ++ printTree typ ++ "."
 
@@ -119,8 +124,8 @@ getExceptionMsg except = case except of
 
     WrongPointerApplication lexp typ -> "Impossibile applicare operatore * a " ++ printTree lexp ++ " che ha tipo " ++ printTree typ ++ "."
 
-    WrongArrayIndex exp texp -> "L'indice di accesso ad un'array deve avere tipo intero, ma l'espressione " 
-                                                        ++ printTree exp ++ " ha tipo " ++ printTree (getType texp) ++ "."
+    WrongArrayIndex exp texpTyp -> "L'indice di accesso ad un'array deve avere tipo intero, ma l'espressione " 
+                                                        ++ printTree exp ++ " ha tipo " ++ printTree texpTyp ++ "."
     
     WrongArrayAccess lexp typ ->"L'accesso tramite operatore [] puo' essere effettuato solo su elementi di tipo Array, mentre "
                                                         ++ printTree lexp ++ " ha tipo " ++ printTree typ ++ "."
@@ -130,15 +135,15 @@ getExceptionMsg except = case except of
 
     ArrayInconsistency -> "Inconsistenza nei valori assegnati all'array."
 
-    WrongNotApplication exp texp -> "Operatore ! applicato all'espressione " ++ printTree exp ++ ", che ha tipo "
-                                                            ++ printTree (getType texp) ++ ", ma era attesa di tipo " ++ printTree (TSimple SType_Bool) ++ "."
+    WrongNotApplication exp texpTyp -> "Operatore ! applicato all'espressione " ++ printTree exp ++ ", che ha tipo "
+                                                            ++ printTree texpTyp ++ ", ma era attesa di tipo " ++ printTree (TSimple SType_Bool) ++ "."
 
-    WrongNegApplication exp texp -> "Operatore - applicato all'espressione " ++ printTree exp ++ ", che ha tipo "
-                                                            ++ printTree (getType texp) ++ ", ma era attesa di tipo numerico."
+    WrongNegApplication exp texpTyp -> "Operatore - applicato all'espressione " ++ printTree exp ++ ", che ha tipo "
+                                                            ++ printTree texpTyp ++ ", ma era attesa di tipo numerico."
 
-    WrongOpApplication op texpl texpr -> "L'operatore " ++ printTree op ++ " non puo' essere applicato ad un'espressione di tipo " 
-                                            ++ printTree (getType texpl)
-                                            ++ " e un'espressione di tipo " ++ printTree (getType texpr)  ++ "." 
+    WrongOpApplication op texplTyp texprTyp -> "L'operatore " ++ printTree op ++ " non puo' essere applicato ad un'espressione di tipo " 
+                                            ++ printTree texplTyp
+                                            ++ " e un'espressione di tipo " ++ printTree texprTyp  ++ "." 
 
     
 
