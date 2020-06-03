@@ -36,7 +36,11 @@ isTypeVoid typ = typ == (TSimple SType_Void)
 isCompatible :: Exp -> TypeSpec -> Bool
 isCompatible texp typ = case typ of
   (TPointer typ') -> getType texp == (TPointer (TSimple SType_Void)) || getType texp == typ
-  _               -> getType texp == typ
+  (TArray typ' _) -> let typExp = getType texp in
+    case typExp of
+      (TArray (TSimple SType_Void) _) -> True
+      _ -> typExp == typ 
+  otherwise       -> getType texp == typ
 
 -- startingEnv
 -- Definizione dell'environment iniziale di un programma. Contiene le informazioni a riguardo delle
@@ -65,6 +69,8 @@ startingEnv =
 typeCheck :: Program -> Writer [LogElement] Program
 typeCheck (Prog decls) = do
   (tdecls, env) <- inferDecls decls startingEnv
+  -- L'environment globale ha il campo booleano a True se e solo se è stato trovato un
+  -- main tra le dichiarazioni globali.
   if not $ Env.hasReturn env then do
     saveLog $ launchWarning (0,0) MissingMain
     return $ Prog tdecls
@@ -82,6 +88,7 @@ inferDecls (decl:decls) env = do
 inferDecl :: Declaration -> Env -> Writer [LogElement] (Declaration, Env)
 inferDecl decl env = case decl of
   DefVar id@(PIdent (loc, ident)) typ exp -> 
+    -- Si prova ad inserire i dati della variabile nell'environment
     case (Env.update env ident (VarInfo loc typ)) of
       Success env' -> do
         texp <- inferExp exp env
@@ -199,7 +206,8 @@ inferStm stm env = case stm of
         return $ (SWhile texp tstm', Env.setReturnFound env)
       else
         return $ (SWhile texp tstm', env)
-  
+ 
+  -------------------------------------------------------------------------------------------------------------------------------------------
   SIfElse exp stmif stmelse -> do
     texp <- inferExp exp env
     if not (isTypeError texp || isCompatible texp (TSimple SType_Bool))
@@ -214,10 +222,12 @@ inferStm stm env = case stm of
     else 
       return $ (SIfElse texp tstmif tstmelse, env)
 
+-------------------------------------------------------------------------------------------------------------------------------------------
   SDecl decl -> do
     (tdecl, env') <- inferDecl decl env
     return $ (SDecl tdecl, env')
 
+-------------------------------------------------------------------------------------------------------------------------------------------
   SBlock block -> let ftyp = Env.getScopeType env in do
     (tblock, env') <- inferBlock block ftyp env
     if Env.hasReturn env'
@@ -225,7 +235,8 @@ inferStm stm env = case stm of
         return $ (SBlock tblock, Env.setReturnFound env)
       else
         return $ (SBlock tblock, env)
-  
+
+-------------------------------------------------------------------------------------------------------------------------------------------
   SAssign lexp exp -> do
     tlexp <- inferLExp lexp env
     texp <- inferExp exp env
@@ -236,6 +247,7 @@ inferStm stm env = case stm of
         return ()
     return $ (SAssign tlexp texp, env)
 
+-------------------------------------------------------------------------------------------------------------------------------------------
   SReturnExp preturn@(PReturn (loc, id)) exp -> let ftyp = Env.getScopeType env in
     do
       texp <- inferExp exp env
@@ -253,6 +265,7 @@ inferStm stm env = case stm of
               saveLog $ launchError loc (WrongExpType exp texp ftyp)
               return $ (SReturnExp preturn texp, env)
 
+-------------------------------------------------------------------------------------------------------------------------------------------
   SReturn preturn@(PReturn (loc, _))-> let ftyp = Env.getScopeType env in
     if not (isTypeVoid ftyp)
       then do
@@ -261,6 +274,7 @@ inferStm stm env = case stm of
       else
         return $ (SReturn preturn, env)
 
+-------------------------------------------------------------------------------------------------------------------------------------------
                                     -- lista di liste ParExp [Exp]
   SProcCall id@(PIdent (loc, ident)) params -> do
     -- Tre possibili errori:
@@ -311,6 +325,7 @@ inferLExp lexp env = case lexp of
            saveLog $ launchError loc (WrongPointerApplication lexp' typ')
            return $ LExpTyped (LRef tlexp') (TSimple SType_Error) loc
 
+-------------------------------------------------------------------------------------------------------------------------------------------
  LArr lexp exp -> do
    tlexp <- inferLExp lexp env
    texp <- inferExp exp env
@@ -330,6 +345,8 @@ inferLExp lexp env = case lexp of
          (_, True) -> do
            saveLog $ launchError (getLoc texp) (WrongArrayAccess lexp (getType tlexp))
            return  $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) (getLoc tlexp)
+
+-------------------------------------------------------------------------------------------------------------------------------------------
  LIdent id@(PIdent (loc, ident)) -> let res = Env.lookup env id in
    case res of
      Failure except -> do
@@ -349,18 +366,23 @@ inferArrayAux :: [Exp] -> TypeSpec -> (Bool, Bool)
 inferArrayAux texps typ = ( (any (\x -> isCompatible x (TSimple SType_Error)) texps),(all (\x -> isCompatible x typ) texps) )
 
 inferExp :: Exp -> Env -> Writer [LogElement] Exp
-inferExp exp env = case exp of
-                                                                              -- posizione fittizia.
-  EArray [] -> return $ ETyped (exp) (TArray (TSimple SType_Void) (PInteger ( (0,0), show (0)  ) )) (0,0) 
+inferExp exp env = case exp of                                                                       
   EArray exps -> do
     texps <- mapM (\x -> inferExp x env) exps
-    case inferArrayAux texps (getType (head texps) ) of
-      (True, _) -> return $ ETyped (EArray texps) (TArray (TSimple SType_Error) (PInteger ( (getLoc (head texps)) , show (length texps)  ) )) (getLoc (head texps)) 
-      (_, True) -> return $ ETyped (EArray texps) (TArray (getType (head texps) )  (PInteger ( (getLoc (head texps)), show (length texps)  ))) (getLoc (head texps))
-      (_ , _) -> do
-        saveLog $ launchError (getLoc (head texps)) ArrayInconsistency
-        return $ ETyped (EArray texps) (TSimple SType_Error) (getLoc (head texps))
+    if length texps == 0 
+      then
+        -- serve?
+        return $ ETyped (exp) (TArray (TSimple SType_Void) (PInteger ( (0,0), show (0)  ) )) (0,0) 
+      else 
+        let (anyError, allCompatible) = inferArrayAux texps (getType (head texps) ) in
+          case (anyError, allCompatible) of
+            (True, _) -> return $ ETyped (EArray texps) (TArray (TSimple SType_Error) (PInteger ( (getLoc (head texps)) , show (length texps)  ) )) (getLoc (head texps)) 
+            (_, True) -> return $ ETyped (EArray texps) (TArray (getType (head texps) )  (PInteger ( (getLoc (head texps)), show (length texps)  ))) (getLoc (head texps))
+            (_ , _) -> do
+              saveLog $ launchError (getLoc (head texps)) ArrayInconsistency
+              return $ ETyped (EArray texps) (TSimple SType_Error) (getLoc (head texps))
 
+-------------------------------------------------------------------------------------------------------------------------------------------
                                     -- lista di liste ParExp [Exp]
   EFunCall id@(PIdent (loc, ident)) params -> do
     -- Tre possibili errori:
@@ -396,6 +418,7 @@ inferExp exp env = case exp of
                     saveLog $ launchError loc (WrongFunctionParams ident typ_args typ_params typ)
                     return $ ETyped (EFunCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
 
+-------------------------------------------------------------------------------------------------------------------------------------------
   ENot exp -> do
     texp <- inferExp exp env
     if isTypeError texp || isCompatible texp (TSimple SType_Bool)
@@ -404,6 +427,7 @@ inferExp exp env = case exp of
         saveLog $ launchError (getLoc texp) (WrongNotApplication exp texp)
         return $ ETyped (ENot texp) (TSimple SType_Error) (getLoc texp)
 
+-------------------------------------------------------------------------------------------------------------------------------------------
   ENeg exp -> do
     texp <- inferExp exp env
     if isTypeError texp || isCompatible texp (TSimple SType_Int) || isCompatible texp (TSimple SType_Float)
@@ -411,17 +435,20 @@ inferExp exp env = case exp of
       else do
         saveLog $ launchError (getLoc texp) (WrongNegApplication exp texp)
         return $ (ETyped (ENeg texp) (TSimple SType_Error) (getLoc texp))
-  
+
+-------------------------------------------------------------------------------------------------------------------------------------------
   ELExp lexp -> do
     tlexp <- inferLExp lexp env
     return $ ETyped (ELExp tlexp) (getType tlexp) (getLoc tlexp)
 
+-------------------------------------------------------------------------------------------------------------------------------------------
   EDeref lexp -> do
     tlexp <- inferLExp lexp env
     if isTypeError tlexp
       then return $ ETyped (EDeref tlexp) (TSimple SType_Error) (getLoc tlexp)
       else return $ ETyped (EDeref tlexp) (TPointer (getType tlexp)) (getLoc tlexp)
 
+-------------------------------------------------------------------------------------------------------------------------------------------
   EInt    const@(PInteger (loc, _)) -> return $ ETyped (EInt const) (TSimple SType_Int) (loc) 
   EFloat  const@(PFloat (loc, _))   -> return $ ETyped (EFloat const) (TSimple SType_Float) (loc) 
   EChar   const@(PChar (loc, _))    -> return $ ETyped (EChar const) (TSimple SType_Char) (loc) 

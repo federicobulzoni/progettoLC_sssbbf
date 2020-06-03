@@ -257,6 +257,7 @@ genExp texp@(ETyped exp typ loc) = case exp of
         out $ AssignFromRef addrTemp addrLexp' (convertToTACType typ)
         return addrTemp
     
+    -- Da gestire il caso di un array vuoto! (Hint: ha tipo TypeVoid)
     EArray exps -> do
         arrVals <- mapM (genExp) exps
         addrTemp <- newTemp

@@ -1,6 +1,5 @@
 var x : Array[Int](3) = Array(11,12,13);
 var y : Int = 4;
-
 def proc () = {
     var a : Array[Array[Int](3)](2) = Array(x,x);
     var b : Int = a[1][2];
@@ -8,6 +7,7 @@ def proc () = {
     var c : *Array[Int](3) = &a[1];
 }
 
+var emptyArr : Array[Int](0) = Array();
 
 def foo () = {
     y = 4;

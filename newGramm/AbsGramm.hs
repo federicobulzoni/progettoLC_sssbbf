@@ -122,7 +122,7 @@ data LExp
     = LRef LExp
     | LArr LExp Exp
     | LIdent PIdent
-    | LExpTyped LExp TypeSpec Loc -- loc
+    | LExpTyped LExp TypeSpec Loc
   deriving (Eq, Ord, Show, Read)
 
 
