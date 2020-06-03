@@ -268,5 +268,5 @@ instance Print AbsGramm.LExp where
     AbsGramm.LRef lexp -> prPrec i 0 (concatD [doc (showString "*"), prt 1 lexp])
     AbsGramm.LArr lexp exp -> prPrec i 1 (concatD [prt 1 lexp, doc (showString "["), prt 0 exp, doc (showString "]")])
     AbsGramm.LIdent pident -> prPrec i 1 (concatD [prt 0 pident])
-    AbsGramm.LExpTyped lexp typespec loc dloc -> prPrec i 0 (concatD [doc (showString "["), prt 0 lexp, doc (showString ":"), prt 0 typespec, doc (showString ":"), prt 0 loc, doc (showString ":") , prt 0 dloc, doc (showString "]")])
+    AbsGramm.LExpTyped lexp typespec loc -> prPrec i 0 (concatD [doc (showString "["), prt 0 lexp, doc (showString ":"), prt 0 typespec, doc (showString ":"), prt 0 loc, doc (showString "]")])
 
