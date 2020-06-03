@@ -81,7 +81,7 @@ buildTACInstruction instr = case instr of
         "param " ++ buildAddr addr1
 
     Call label n ->
-        intercalate " " ["pcall",buildLabelDefaultFun label,",",show n] 
+        intercalate " " ["pcall",buildLabel label,",",show n] 
 
 
 buildBinOpr :: BinOp -> String
@@ -138,10 +138,9 @@ buildColAssignType t = color Magenta Bold $ buildAssignType t
 buildLabel :: Label -> String
 buildLabel label = case label of
     LabStm n              -> id "l" ++ show n
-    LabFun ident (r,c)       ->  ident ++ "@(" ++ show r ++ "," ++ show c ++ ")"
-
-buildLabelDefaultFun :: Label -> String
-buildLabelDefaultFun (LabFun ident _) = ident ++ "@default"
+    LabFun ident (r,c)       ->  case (r,c) of
+        (0,0) -> ident ++ "@default"
+        otherwise -> ident ++ "@(" ++ show r ++ "," ++ show c ++ ")"
 
 buildInstrLabel :: Label -> String
 buildInstrLabel label = (buildLabel label) ++ ":" 
