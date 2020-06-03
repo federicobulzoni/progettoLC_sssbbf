@@ -49,6 +49,7 @@ run v p s = let ts = myLLexer s in case p ts of
                               showTAC code
                             _ -> do
                               errors <- showErrors logs
+                              printTypeCheckSuccess annotatedTree
                               if errors == True
                                 then do
                                   let code = genTAC annotatedTree (hasMain logs)

@@ -7,7 +7,8 @@ Cose da fare:
     [X] le dichiarazioni delle variabili globali vanno in testa al tac
     [X] Distinguere stampa errori e warning
     [X] modificare ordine delle funzioni quando si trova un main (che ora va in testa al tac, dopo le dichiarazioni di variabile) ma le sue funzioni interne rimangono nell'ordine sbagliato
-    [] all'interno del TAC va gestito il caso in EArray di un array vuoto. @critical
+    [X] all'interno del TAC va gestito il caso in EArray di un array vuoto. 
+    [] decidere cosa assegnare all'array vuoto. Provvisoriamente gli viene assegnato Null @critical
     [] sistemare errori SB
     [X] togliere dipendenze da Typed in Errors. SS
     [] fare tanti test                      BF    
@@ -19,9 +20,9 @@ Cose da fare:
                             }
     [X] Aggiungere nella grammatica un ; alla fine delle dichiarazioni di funzione inline.
     [] Aggiungere commenti al TAC, per far capire che sappiamo quali sono gli argomenti di una funzione. SB
-    [X] Type Error e Type Void sono brutti scritti in modo diverso dagli altri tipi base. @critical SS
+    [X] Type Error e Type Void sono brutti scritti in modo diverso dagli altri tipi base. SS
     [X] Finire di commentare le funzioni in environment. BF
-    [] Controllare se tutti gli import in TestGramm.hs servono veramente. BF
+    [X] Controllare se tutti gli import in TestGramm.hs servono veramente. BF
     [X] Aggiungere statement vuoto per evitare brutture nell-if nel tac.
     [X] Controllare se genLExp per gli array array è giusto. Non sembra, l'indice dovrebbe essere convertito.
     [X] Riga 289 del tac. Si pu; lanciare l'errore? Si
@@ -56,3 +57,5 @@ Cose da discutere:
     [] Perché l'abbiamo chiamato Gramm? Tutti i file non dovrebbero avere un nome più significativo, tipo il nome del nostro linguaggio?
     [X] Il commento all'inizio di environment?
     [X] Rimuovere il file TestGramm
+    [] quando assegno ad un array di dimensione n una lista di valori di dimensione m, con n > m, è come se gli assegnassi tutti e n i valori e quelli che mancano
+        sarebbero valori di default.
