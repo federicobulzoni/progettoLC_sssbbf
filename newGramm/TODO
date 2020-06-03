@@ -27,6 +27,7 @@ Cose da fare:
     [X] Aggiungere un'etichetta in fondo al tac (raggiungibile con goto dopo le decl globali), se manca il main      SS
     [] Todo del typechecker: BF
   		[] fare in  modo che agli array si possano assegnare Array() di cardinalità minore rispetto a quella dell'array
+            Si vanno a creare problemi a livello di generazione del TAC, per l'assegnamento dei valori mancanti, se la dimensione dell'array assegnato è più piccola della dimensione dell'array che si sta inizializzando.
   		[X] controllare la grammatica e aggiungere le locazioni a tutti i typed che non ce l'hanno.
   		[X] controllare che la locazione negli statement serva veramente (sembra servire solo nella chiamata di funzione)
   		[X] ci serve la posizione di dichiarazione di tutto ciò che viene dichiarato (identificatori: var, fun) --> serve nel tac per identificare gli id
