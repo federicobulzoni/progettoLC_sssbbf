@@ -75,6 +75,46 @@ startFunScope env id@(PIdent (loc, ident)) params typ =
   where
     argsInfo = map (\(DArg argId@(PIdent (argLoc, argIdent)) argTyp) -> (argIdent, VarInfo argLoc argTyp)) (concat ( map (\(PArg args) -> args) params ))
     funInfo = (ident, FunInfo loc typ params):argsInfo
+
+-- Definizione dei tipi di operazione.
+data TypeOp = NumericOp | BooleanOp | EqOp | RelOp
+
+-- getTypeOp
+-- preso un operatore binario ritorna il suo tipo.
+getTypeOp :: Op -> TypeOp
+getTypeOp op = case op of
+  Plus      -> NumericOp
+  Minus     -> NumericOp
+  Prod      -> NumericOp
+  Div       -> NumericOp
+  Mod       -> NumericOp
+  Pow       -> NumericOp
+  Or        -> BooleanOp
+  And       -> BooleanOp
+  Less      -> RelOp
+  Greater   -> RelOp
+  LessEq    -> RelOp
+  GreaterEq -> RelOp
+  Equal     -> EqOp
+  NotEq     -> EqOp
+
+-- isConsistent
+-- preso il tipo di un operatore binario ed i tipi delle due sotto-espressioni di cui si vuol fare expl op expr,
+-- restituisce un booleano che indica se i tipi delle sotto-espressioni sono consistenti con il tipo dell'operatore.
+isConsistent :: TypeOp -> TypeSpec -> TypeSpec -> Bool
+isConsistent NumericOp typl typr = (typl == typr) && (checkNumericTyp typl)
+isConsistent BooleanOp typl typr = (typl == typr) && (checkBooleanTyp typl)
+isConsistent EqOp typl typr      = (typl == typr)
+isConsistent RelOp typl typr     = (typl == typr) && (checkNumericTyp typl)
+
+checkNumericTyp :: TypeSpec  -> Bool
+checkNumericTyp typ = ( (typ == (TSimple SType_Int) )|| (typ == (TSimple SType_Float)) )
+
+checkBooleanTyp :: TypeSpec -> Bool
+checkBooleanTyp (TSimple SType_Bool) = True
+checkBooleanTyp _ = False
+
+
 ------------------------------------------------------------------------------------------------------------------------
 
 genAnnotatedTree :: Program -> (Program, [LogElement])
@@ -374,6 +414,8 @@ inferLExp lexp env = case lexp of
         case tlexp' of
           -- Quando l'operatore di referenziazione * è applicato ad x di tipo puntatore a typ, il tipo di 
           -- *x è typ.
+          -- Si noti che in questo caso la LExpTyped viene costruita senza passare la lexp annidata tipata,
+          -- questo viene fatto per mantenere leggera la rappresentazione evitando inutile ridondanza.
           (LExpTyped _ (TPointer typ) loc) -> return $ LExpTyped (LRef lexp') typ loc
           -- Se invece viene applicato ad un qualcosa che non è di tipo puntatore allora si lancia un errore.
           (LExpTyped _ typ' loc) -> do
@@ -383,12 +425,17 @@ inferLExp lexp env = case lexp of
 -------------------------------------------------------------------------------------------------------------------------------------------
   LArr lexp exp -> do
      tlexp <- inferLExp lexp env
-     -- Espressione contenente la cella a cui si vuole accedere
+     -- Espressione contenente la cella a cui si vuole accedere.
      texp <- inferExp exp env
      if isTypeError tlexp || isTypeError texp
        then
           return $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) (getLoc tlexp)
        else
+         -- se l'accesso viene effettuato su di un array di tipo "Array typ dim", l'elemento
+         -- acceduto ha tipo typ.
+         -- Nel caso l'accesso venga effettuato su di una variabile che non ha tipo typ bisogna notificare l'errore.
+         -- Un ulteriore vincolo è dato dal tipo dell'espressione contenente l'indice di accesso, che deve avere tipo
+         -- compatibile con SType_Int.
          case (tlexp , isCompatible texp (TSimple SType_Int)) of
            (LExpTyped _ (TArray typ _) loc, True) -> return $ LExpTyped (LArr tlexp texp) typ loc
            (LExpTyped _ (TArray typ _) loc, False) -> do
@@ -404,32 +451,33 @@ inferLExp lexp env = case lexp of
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   LIdent id@(PIdent (loc, ident)) -> let res = Env.lookup env id in
+    -- Come prima cosa si verifica che l'identificatore sia effettivamente presente nell'environment.
     case res of
       Failure except -> do
         saveLog $ launchError loc except
         return $ LExpTyped (LIdent (PIdent ((0,0), ident))) (TSimple SType_Error) loc
+      -- Si noti che nella LExpTyped, la locazione dell'identificatore, che quando arriva dal parser
+      -- corrisponde a quella relativa all'utilizzo corrente dell'identificatore nella LExp considerata,
+      -- viene sostituito con la locazione in cui tale identificatore è stato dichiarato.
       Success (VarInfo dloc typ) -> return $ LExpTyped (LIdent (PIdent (dloc, ident))) typ loc
       Success (FunInfo dloc _ _) -> do
         saveLog $ launchError loc (DuplicateFunction ident dloc)
         return $ LExpTyped (LIdent (PIdent (dloc, ident))) (TSimple SType_Error) loc
 
-
-
--- Prende una lista di espressioni tipate, un tipo, e ritorna una coppia con il primo elemento
--- che dice se si è trovato almeno un elemento con tipo (TSimple SType_Error), ed il secondo elemento che dice
--- se tutte le espressioni hanno tipo type o meno.
-inferArrayAux :: [Exp] -> TypeSpec -> (Bool, Bool)
-inferArrayAux texps typ = ( (any (\x -> isCompatible x (TSimple SType_Error)) texps),(all (\x -> isCompatible x typ) texps) )
-
 inferExp :: Exp -> Env -> Logger Exp
 inferExp exp env = case exp of                                                                       
   EArray exps -> do
+    -- Vengono tipizzate tutte le espressioni contenute nell'espressione Array(exp1, ..., expn)
     texps <- mapM (\x -> inferExp x env) exps
+    -- Se non è presente alcuna espressione viene ritornato un array vuoto a cui si assegna tipo SType_Void.
     if length texps == 0 
       then
         -- serve?
         return $ ETyped (exp) (TArray (TSimple SType_Void) (PInteger ( (0,0), show (0)  ) )) (0,0) 
       else 
+        -- Altrimenti se nessuna espressione ha errori al proprio interno,
+        -- e se tutte le espressioni hanno tipo compatibile tra loro, allora l'espressione Array(exp1, ..., expn)
+        -- ha il tipo delle sotto-espressioni exp1, ..., expn e dimensione <lunghezza exps>.
         let (anyError, allCompatible) = inferArrayAux texps (getType (head texps) ) in
           case (anyError, allCompatible) of
             (True, _) -> return $ ETyped (EArray texps) (TArray (TSimple SType_Error) (PInteger ( (getLoc (head texps)) , show (length texps)  ) )) (getLoc (head texps)) 
@@ -437,9 +485,16 @@ inferExp exp env = case exp of
             (_ , _) -> do
               saveLog $ launchError (getLoc (head texps)) ArrayInconsistency
               return $ ETyped (EArray texps) (TSimple SType_Error) (getLoc (head texps))
+        where
+          -- Prende una lista di espressioni tipate, un tipo, e ritorna una coppia con il primo elemento
+          -- che dice se si è trovato almeno un elemento con tipo (TSimple SType_Error), ed il secondo elemento che dice
+          -- se tutte le espressioni hanno tipo type o meno.
+          inferArrayAux texps typ = ( (any (\x -> isCompatible x (TSimple SType_Error)) texps),(all (\x -> isCompatible x typ) texps) )
+
 
 -------------------------------------------------------------------------------------------------------------------------------------------
                                     -- lista di liste ParExp [Exp]
+  -- Molto simile a SProcCall, per dubbi riferirsi ai commenti di quest'ultima.
   EFunCall id@(PIdent (loc, ident)) params -> do
     -- Tre possibili errori:
       -- 1. Il numero di clausole nella chiamata non corrisponde con il numero di clausole nella definizione,
@@ -517,58 +572,27 @@ inferExp exp env = case exp of
 -- Prese due espressioni ed un operatore binario ritorna la corrispondente espressione tipizzata
 inferBinOp :: Exp -> Op -> Exp -> Env -> Logger Exp
 inferBinOp expl op expr env = do 
-    texpl <- inferExp expl env
-    texpr <- inferExp expr env
+  texpl <- inferExp expl env
+  texpr <- inferExp expr env
 
-    case ((getTypeOp op), (getType texpl), (getType texpr) ) of
-      (_ , TSimple SType_Error, _ ) -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
-      (_ , _ , TSimple SType_Error) -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
-      (EqOp, typl, typr) ->
-        if isConsistent EqOp typl typr
-          then return $ ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
-          else returnBinOpError texpl op texpr
-      (RelOp, typl, typr) ->
-        if isConsistent RelOp typl typr
-          then return $ ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
-          else returnBinOpError texpl op texpr
-      (_, typl, typr) ->
-        if isConsistent (getTypeOp op) typl typr
-          then return $ ETyped (EOp texpl op texpr) typl (getLoc texpl)
-          else returnBinOpError texpl op texpr
-
-returnBinOpError :: Exp -> Op -> Exp -> Logger Exp
-returnBinOpError texpl op texpr = do
-  saveLog $ launchError (getLoc texpl) (WrongOpApplication op (getType texpl) (getType texpr))
-  return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
-
-isConsistent :: TypeOp -> TypeSpec -> TypeSpec -> Bool
-isConsistent NumericOp typl typr = (typl == typr) && (checkNumericTyp typl)
-isConsistent BooleanOp typl typr = (typl == typr) && (checkBooleanTyp typl)
-isConsistent EqOp typl typr      = (typl == typr)
-isConsistent RelOp typl typr     = (typl == typr) && (checkNumericTyp typl)
-
-checkNumericTyp :: TypeSpec  -> Bool
-checkNumericTyp typ = ( (typ == (TSimple SType_Int) )|| (typ == (TSimple SType_Float)) )
-
-checkBooleanTyp :: TypeSpec -> Bool
-checkBooleanTyp (TSimple SType_Bool) = True
-checkBooleanTyp _ = False
-
-data TypeOp = NumericOp | BooleanOp | EqOp | RelOp
-
-getTypeOp :: Op -> TypeOp
-getTypeOp op = case op of
-  Plus      -> NumericOp
-  Minus     -> NumericOp
-  Prod      -> NumericOp
-  Div       -> NumericOp
-  Mod       -> NumericOp
-  Pow       -> NumericOp
-  Or        -> BooleanOp
-  And       -> BooleanOp
-  Less      -> RelOp
-  Greater   -> RelOp
-  LessEq    -> RelOp
-  GreaterEq -> RelOp
-  Equal     -> EqOp
-  NotEq     -> EqOp
+  -- Viene recuperato il tipo dell'operazione (es. Numerica, Relazionale, etc.) e i tipi delle due sotto-espressioni
+  -- coinvolte, poi si verifica che i tipi di tali espressioni siano consistenti con il tipo dell'operazione.
+  case ((getTypeOp op), (getType texpl), (getType texpr) ) of
+    (_ , TSimple SType_Error, _ ) -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
+    (_ , _ , TSimple SType_Error) -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
+    (EqOp, typl, typr) ->
+      if isConsistent EqOp typl typr
+        then return $ ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
+        else returnBinOpError texpl op texpr
+    (RelOp, typl, typr) ->
+      if isConsistent RelOp typl typr
+        then return $ ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
+        else returnBinOpError texpl op texpr
+    (_, typl, typr) ->
+      if isConsistent (getTypeOp op) typl typr
+        then return $ ETyped (EOp texpl op texpr) typl (getLoc texpl)
+        else returnBinOpError texpl op texpr
+  where
+    returnBinOpError texpl op texpr = do
+      saveLog $ launchError (getLoc texpl) (WrongOpApplication op (getType texpl) (getType texpr))
+      return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
