@@ -137,6 +137,10 @@ genExpAssign addr texp@(ETyped exp typ _) = case exp of
         addrE1 <- genExp e1
         out $ AssignUnOp addr Not addrE1 (convertToTACType typ)
 
+    EDeref lexp -> do
+        addrLexp <- genLexp lexp
+        out $ AssignFromRef addr addrLexp (TACAddr)
+
     EFunCall id@(PIdent (dloc,ident)) params -> do
         genParams params
         out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
@@ -222,22 +226,23 @@ getArrayType (TArray typ' _) = typ'
 getArrayType typ = error $ "Errore: " ++ printTree typ
 
 genLexp :: LExp -> TacState Addr
-genLexp (LExpTyped lexp typ _) = case lexp of
+genLexp lexp = case lexp of
+    (LExpTyped lexp' typ _ ) -> case lexp' of
+        (LArr lexp'' exp) -> do
+            addrOffset <- newTemp
+            addrTemp <- newTemp
+            addrLexp'' <- genLexp lexp''
+            addrExp <- genExp exp
+            out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
+            out $ AssignFromArray addrTemp addrLexp'' addrOffset (convertToTACType typ)
+            return addrTemp
+        _ -> genLexp lexp'
     LIdent (PIdent (dloc,ident)) -> return $ buildVarAddress ident dloc
     LRef lexp' -> do
         addrTemp <- newTemp
         addrLexp' <- genLexp lexp'
         out $ AssignFromPointer addrTemp addrLexp' (TACAddr)
         return addrTemp
-    LArr lexp' exp -> do
-        addrOffset <- newTemp
-        addrTemp <- newTemp
-        addrLexp' <- genLexp lexp'
-        addrExp <- genExp exp
-        out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-        out $ AssignFromArray addrTemp addrLexp' addrOffset (convertToTACType typ)
-        return addrTemp
-
 
 genExp :: Exp -> TacState Addr
 genExp texp@(ETyped exp typ loc) = case exp of

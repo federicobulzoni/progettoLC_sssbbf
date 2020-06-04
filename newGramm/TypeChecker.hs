@@ -365,48 +365,53 @@ inferStm stm env = case stm of
 
 inferLExp :: LExp -> Env -> Logger LExp
 inferLExp lexp env = case lexp of
- LRef lexp' -> do
-   tlexp' <- inferLExp lexp' env
-   if isTypeError tlexp' 
-     then return $ LExpTyped (LRef tlexp') (TSimple SType_Error) (getLoc tlexp')
-     else
-       case tlexp' of
-         (LExpTyped _ (TPointer typ) loc) -> return $ LExpTyped (LRef tlexp') typ loc
-         (LExpTyped _ typ' loc) -> do
-           saveLog $ launchError loc (WrongPointerApplication lexp' typ')
-           return $ LExpTyped (LRef tlexp') (TSimple SType_Error) loc
+  LRef lexp' -> do
+    tlexp' <- inferLExp lexp' env
+    if isTypeError tlexp' 
+      then 
+        return $ LExpTyped (LRef lexp') (TSimple SType_Error) (getLoc tlexp')
+      else
+        case tlexp' of
+          -- Quando l'operatore di referenziazione * è applicato ad x di tipo puntatore a typ, il tipo di 
+          -- *x è typ.
+          (LExpTyped _ (TPointer typ) loc) -> return $ LExpTyped (LRef lexp') typ loc
+          -- Se invece viene applicato ad un qualcosa che non è di tipo puntatore allora si lancia un errore.
+          (LExpTyped _ typ' loc) -> do
+            saveLog $ launchError loc (WrongPointerApplication lexp' typ')
+            return $ LExpTyped (LRef lexp') (TSimple SType_Error) loc
 
 -------------------------------------------------------------------------------------------------------------------------------------------
- LArr lexp exp -> do
-   tlexp <- inferLExp lexp env
-   texp <- inferExp exp env
-   if isTypeError tlexp || isTypeError texp
-     then
-       return $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) (getLoc tlexp)
-     else
-       case (tlexp , isCompatible texp (TSimple SType_Int)) of
-         (LExpTyped _ (TArray typ _) loc, True) -> return $ LExpTyped (LArr tlexp texp) typ loc
-         (LExpTyped _ (TArray typ _) loc, False) -> do
-           saveLog $ launchError loc (WrongArrayIndex exp (getType texp))
-           return $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) loc
-         (_, False) -> do
-           saveLog $ launchError (getLoc texp) (WrongArrayAccess  lexp (getType tlexp))
-           saveLog $ launchError (getLoc texp) (WrongArrayIndex exp (getType texp))
-           return  $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) (getLoc tlexp)
-         (_, True) -> do
-           saveLog $ launchError (getLoc texp) (WrongArrayAccess lexp (getType tlexp))
-           return  $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) (getLoc tlexp)
+  LArr lexp exp -> do
+     tlexp <- inferLExp lexp env
+     -- Espressione contenente la cella a cui si vuole accedere
+     texp <- inferExp exp env
+     if isTypeError tlexp || isTypeError texp
+       then
+          return $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) (getLoc tlexp)
+       else
+         case (tlexp , isCompatible texp (TSimple SType_Int)) of
+           (LExpTyped _ (TArray typ _) loc, True) -> return $ LExpTyped (LArr tlexp texp) typ loc
+           (LExpTyped _ (TArray typ _) loc, False) -> do
+             saveLog $ launchError loc (WrongArrayIndex exp (getType texp))
+             return $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) loc
+           (_, False) -> do
+             saveLog $ launchError (getLoc texp) (WrongArrayAccess  lexp (getType tlexp))
+             saveLog $ launchError (getLoc texp) (WrongArrayIndex exp (getType texp))
+             return  $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) (getLoc tlexp)
+           (_, True) -> do
+             saveLog $ launchError (getLoc texp) (WrongArrayAccess lexp (getType tlexp))
+             return  $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) (getLoc tlexp)
 
 -------------------------------------------------------------------------------------------------------------------------------------------
- LIdent id@(PIdent (loc, ident)) -> let res = Env.lookup env id in
-   case res of
-     Failure except -> do
-       saveLog $ launchError loc except
-       return $ LExpTyped (LIdent (PIdent ((0,0), ident))) (TSimple SType_Error) loc
-     Success (VarInfo dloc typ) -> return $ LExpTyped (LIdent (PIdent (dloc, ident))) typ loc
-     Success (FunInfo dloc _ _) -> do
-       saveLog $ launchError loc (DuplicateFunction ident dloc)
-       return $ LExpTyped (LIdent (PIdent (dloc, ident))) (TSimple SType_Error) loc
+  LIdent id@(PIdent (loc, ident)) -> let res = Env.lookup env id in
+    case res of
+      Failure except -> do
+        saveLog $ launchError loc except
+        return $ LExpTyped (LIdent (PIdent ((0,0), ident))) (TSimple SType_Error) loc
+      Success (VarInfo dloc typ) -> return $ LExpTyped (LIdent (PIdent (dloc, ident))) typ loc
+      Success (FunInfo dloc _ _) -> do
+        saveLog $ launchError loc (DuplicateFunction ident dloc)
+        return $ LExpTyped (LIdent (PIdent (dloc, ident))) (TSimple SType_Error) loc
 
 
 
