@@ -12,10 +12,9 @@ import AbsGramm
 import AbsTAC
 import ThreeAddressCode
 import TypeChecker
-import Control.Monad.Writer
 import Errors
 import PrintTAC
-
+import Color
 import ErrM
 
 type ParseFun a = [Token] -> Err Program
@@ -33,23 +32,24 @@ runFile v p f = putStrLn f >> readFile f >>= run v p
 run :: Verbosity -> ParseFun Program -> String -> IO ()
 run v p s = let ts = myLLexer s in case p ts of
            Bad s  -> do 
-                          putStrLn "\nParse              Failed...\n"
+                          putStrLn $ color Red Bold "\nParse              Failed...\n"
                           putStrV v "Tokens:"
                           putStrV v $ show ts
                           putStrLn s
                           exitFailure
            Ok tree -> do 
-                          putStrLn "\nParse Successful!"
+                          putStrLn $ color Green Bold "\nParse Successful!"
                           showTree v tree
-                          let (annotatedTree, logs) = runWriter $ typeCheck $ tree
+                          putStrLn $ "\n" ++ separator ++ "\n\n"
+                          let (annotatedTree, logs) = genAnnotatedTree tree
                           case (logs) of
                             [] -> do
-                              printTypeCheckSuccess annotatedTree
+                              showAnnotatedTree v annotatedTree
                               let code = genTAC annotatedTree True
                               showTAC code
                             _ -> do
+                              showAnnotatedTree v annotatedTree
                               errors <- showErrors logs
-                              printTypeCheckSuccess annotatedTree
                               if errors == True
                                 then do
                                   let code = genTAC annotatedTree (hasMain logs)
@@ -64,10 +64,13 @@ hasMain :: [LogElement] -> Bool
 hasMain [log] = not (getException log == MissingMain)
 hasMain logs = not (getException (last logs) == MissingMain)
 
+colorSectionTitle :: String -> String
+colorSectionTitle s = color Cyan Bold s
+
 showErrors :: [LogElement] -> IO Bool
 showErrors logs = do
   putStrLn $ "\n" ++ separator
-  putStrLn "[Lista errori type checker]"
+  putStrLn $ colorSectionTitle "[Lista errori type checker]"
   putStrLn separator
   errorFound <- printTypeCheckErrors logs 0
   putStrLn separator
@@ -87,13 +90,13 @@ printTypeCheckErrors (log:logs) index = do
   where
     printIndex n = show index ++ ")"
 
-printTypeCheckSuccess :: Program -> IO()
-printTypeCheckSuccess prog = do
-  putStrLn $ "\n" ++ separator
-  putStrLn "[Albero tipato]"
-  putStrLn separator
-  putStrV 2 $ show prog
-  putStrLn separator
+--printTypeCheckSuccess :: Program -> IO()
+--printTypeCheckSuccess prog = do
+--  putStrLn $ "\n" ++ separator
+--  putStrLn "[Albero tipato]"
+--  putStrLn separator
+--  putStrV 2 $ show prog
+--  putStrLn separator
 
 separator :: String
 separator = "----------------------------------------------------------------"
@@ -109,8 +112,15 @@ showTAC code = do
 showTree :: Int -> Program -> IO ()
 showTree v tree
  = do
-      putStrV v $ "\n[Abstract Syntax]\n\n" ++ show tree
-      putStrV v $ "\n[Linearized tree]\n\n" ++ printTree tree
+      putStrV v $ (colorSectionTitle "\n[Abstract Syntax]\n\n") ++ show tree
+      putStrV v $ (colorSectionTitle "\n[Linearized tree]\n\n") ++ printTree tree
+
+showAnnotatedTree :: Int -> Program -> IO ()
+showAnnotatedTree v tree
+  = do
+      --putStrLn "\n" ++ separator ++ "\n\n"
+      putStrV v $ (colorSectionTitle "\n[Annotated Tree - Abstract Syntax]\n\n") ++ show tree
+      putStrV v $ (colorSectionTitle "\n[Annotated Tree - Linearized tree]\n\n") ++ printTree tree
 
 usage :: IO ()
 usage = do

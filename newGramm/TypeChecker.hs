@@ -14,10 +14,12 @@ import Control.Monad.Writer
 import Errors
 import Typed
 
+type Logger a = Writer [LogElement] a
+
 -- Utilities 
 -- saveLog
 -- salva un elemento di log nella lista di elementi di log che sarà ritornata da typeCheck.
-saveLog:: LogElement -> Writer [LogElement] ()
+saveLog:: LogElement -> Logger ()
 saveLog logelem = do 
   tell [logelem]
   return ()
@@ -75,9 +77,12 @@ startFunScope env id@(PIdent (loc, ident)) params typ =
     funInfo = (ident, FunInfo loc typ params):argsInfo
 ------------------------------------------------------------------------------------------------------------------------
 
+genAnnotatedTree :: Program -> (Program, [LogElement])
+genAnnotatedTree prog = runWriter $ typeCheck prog
+
 -- typeCheck
 -- Dato un programma scritto in sintassi astratta restituisce una lista di log ed un programma annotato.
-typeCheck :: Program -> Writer [LogElement] Program
+typeCheck :: Program -> Logger Program
 typeCheck (Prog decls) = do
   (tdecls, env) <- inferDecls decls startingEnv
   -- L'environment globale ha il campo booleano a True se e solo se è stato trovato un
@@ -89,14 +94,14 @@ typeCheck (Prog decls) = do
     return $ Prog tdecls
 
 
-inferDecls :: [Declaration] -> Env -> Writer [LogElement] ([Declaration], Env)
+inferDecls :: [Declaration] -> Env -> Logger ([Declaration], Env)
 inferDecls [] env = return ([], env)
 inferDecls (decl:decls) env = do
   (tdecl , env') <-  inferDecl decl env
   (tdecls, env'') <- inferDecls decls env'
   return ((tdecl:tdecls), env'')
 
-inferDecl :: Declaration -> Env -> Writer [LogElement] (Declaration, Env)
+inferDecl :: Declaration -> Env -> Logger (Declaration, Env)
 inferDecl decl env = case decl of
   DefVar id@(PIdent (loc, ident)) typ exp -> 
     -- Si prova ad inserire i dati della variabile nell'environment ...
@@ -188,14 +193,14 @@ inferDecl decl env = case decl of
 
   
 {-
-inferBlock :: Block -> TypeSpec -> Env -> Writer [LogElement] (Block, Env)
+inferBlock :: Block -> TypeSpec -> Env -> Logger (Block, Env)
 inferBlock (DBlock []) _ env = return $ (DBlock [], env)
 inferBlock (DBlock stms) ftyp env = do
   (tstms, env') <- inferStms stms (Env.addScope env ftyp) 
   return $ (DBlock tstms, env')
 -}
 
-inferStms :: [Stm] -> Env -> Writer [LogElement] ([Stm], Env)
+inferStms :: [Stm] -> Env -> Logger ([Stm], Env)
 inferStms [] env = return ([], env)
 inferStms (stm:stms) env = do
   (tstm, env') <- inferStm stm env
@@ -203,7 +208,7 @@ inferStms (stm:stms) env = do
   return $ (tstm:tstms, env'') 
 
 
-inferStm :: Stm  -> Env -> Writer [LogElement] (Stm, Env)
+inferStm :: Stm  -> Env -> Logger (Stm, Env)
 inferStm stm env = case stm of
   SWhile exp stm' -> do
     -- texp è l'espressione annotata col tipo.
@@ -358,7 +363,7 @@ inferStm stm env = case stm of
                         return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
 
 
-inferLExp :: LExp -> Env -> Writer [LogElement] LExp
+inferLExp :: LExp -> Env -> Logger LExp
 inferLExp lexp env = case lexp of
  LRef lexp' -> do
    tlexp' <- inferLExp lexp' env
@@ -411,7 +416,7 @@ inferLExp lexp env = case lexp of
 inferArrayAux :: [Exp] -> TypeSpec -> (Bool, Bool)
 inferArrayAux texps typ = ( (any (\x -> isCompatible x (TSimple SType_Error)) texps),(all (\x -> isCompatible x typ) texps) )
 
-inferExp :: Exp -> Env -> Writer [LogElement] Exp
+inferExp :: Exp -> Env -> Logger Exp
 inferExp exp env = case exp of                                                                       
   EArray exps -> do
     texps <- mapM (\x -> inferExp x env) exps
@@ -501,11 +506,11 @@ inferExp exp env = case exp of
   EString const@(PString (loc, _))  -> return $ ETyped (EString const) (TSimple SType_String) (loc)
   ETrue   const@(PTrue (loc, _))    -> return $ ETyped (ETrue const) (TSimple SType_Bool) (loc)
   EFalse  const@(PFalse (loc, _))   -> return $ ETyped (EFalse const) (TSimple SType_Bool) (loc)
-  ENull const@(PNull (loc, _)) -> return $ ETyped (ENull const) (TPointer (TSimple SType_Void)) loc 
+  ENull   const@(PNull (loc, _))    -> return $ ETyped (ENull const) (TPointer (TSimple SType_Void)) loc 
   EOp expl op expr -> inferBinOp expl op expr env
 
 -- Prese due espressioni ed un operatore binario ritorna la corrispondente espressione tipizzata
-inferBinOp :: Exp -> Op -> Exp -> Env -> Writer [LogElement] Exp
+inferBinOp :: Exp -> Op -> Exp -> Env -> Logger Exp
 inferBinOp expl op expr env = do 
     texpl <- inferExp expl env
     texpr <- inferExp expr env
@@ -526,7 +531,7 @@ inferBinOp expl op expr env = do
           then return $ ETyped (EOp texpl op texpr) typl (getLoc texpl)
           else returnBinOpError texpl op texpr
 
-returnBinOpError :: Exp -> Op -> Exp -> Writer [LogElement] Exp
+returnBinOpError :: Exp -> Op -> Exp -> Logger Exp
 returnBinOpError texpl op texpr = do
   saveLog $ launchError (getLoc texpl) (WrongOpApplication op (getType texpl) (getType texpr))
   return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
@@ -547,17 +552,18 @@ checkBooleanTyp _ = False
 data TypeOp = NumericOp | BooleanOp | EqOp | RelOp
 
 getTypeOp :: Op -> TypeOp
-getTypeOp Plus      = NumericOp
-getTypeOp Minus     = NumericOp
-getTypeOp Prod      = NumericOp
-getTypeOp Div       = NumericOp
-getTypeOp Mod       = NumericOp
-getTypeOp Pow       = NumericOp
-getTypeOp Or        = BooleanOp
-getTypeOp And       = BooleanOp
-getTypeOp Less      = RelOp
-getTypeOp Greater   = RelOp
-getTypeOp LessEq    = RelOp
-getTypeOp GreaterEq = RelOp
-getTypeOp Equal     = EqOp
-getTypeOp NotEq     = EqOp
+getTypeOp op = case op of
+  Plus      -> NumericOp
+  Minus     -> NumericOp
+  Prod      -> NumericOp
+  Div       -> NumericOp
+  Mod       -> NumericOp
+  Pow       -> NumericOp
+  Or        -> BooleanOp
+  And       -> BooleanOp
+  Less      -> RelOp
+  Greater   -> RelOp
+  LessEq    -> RelOp
+  GreaterEq -> RelOp
+  Equal     -> EqOp
+  NotEq     -> EqOp

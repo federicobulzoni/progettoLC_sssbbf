@@ -4,7 +4,8 @@ import AbsTAC
 import AbsGramm
 import Control.Monad.State.Lazy
 import PrintGramm
-type MyMon a = State (
+
+type TacState a = State (
     Int,      -- temporanei
     Int,      -- label
     [TAC],    -- codice
@@ -12,13 +13,13 @@ type MyMon a = State (
     ) 
     a
 
-out :: TAC -> MyMon ()
+out :: TAC -> TacState ()
 out instr = do
     (k, l, revcode, funs) <- get
     put (k, l, revcode, (instr : (head funs)) : (tail funs))
 
 
-pushCurrentStream :: MyMon ()
+pushCurrentStream :: TacState ()
 pushCurrentStream = do
     (k, l, revcode, funs) <- get
     if length funs == 1 
@@ -27,38 +28,32 @@ pushCurrentStream = do
         else
             put (k, l,  (head funs) ++ revcode, tail funs)
 
-pushMain :: Label -> MyMon ()
+pushMain :: TAC -> TacState ()
 pushMain label = do
     (k, l, revcode, funs) <- get
-    put (k, l, revcode ++ [Goto label], funs)
+    put (k, l, revcode ++ [label], funs)
 
-pushLastLabel :: Label -> MyMon()
+pushLastLabel :: Label -> TacState()
 pushLastLabel label = do
     (k,l,revcode,funs) <- get
     put (k, l, [Lab label] ++ revcode, funs)
 
-createStream :: MyMon ()
+createStream :: TacState ()
 createStream = do
     (k, l, revcode, funs) <- get
     put (k,l, revcode, [] : funs)
 
 
-newTemp :: MyMon Addr
+newTemp :: TacState Addr
 newTemp = do
     (k, l, revcode, funs) <- get
     put (k+1, l, revcode, funs)
     return $ Temp k
 
-newLabel :: MyMon Label
+newLabel :: TacState Label
 newLabel = do
     (k, l , revcode, funs) <- get
     put (k, l+1, revcode, funs)
-    return $ LabStm l
-
-defaultLabel :: MyMon Label
-defaultLabel = do
-    (k, l , revcode, funs) <- get
-    put (k, l, revcode, funs)
     return $ LabStm l
     
 getTACCode :: (Int, Int, [TAC], [[TAC]]) -> [TAC]
@@ -68,29 +63,24 @@ getTACCode (k, l, code, _) = code
 genTAC :: Program -> Bool -> [TAC]
 genTAC prog hasMain = reverse $ getTACCode $ execState ( genProg prog hasMain) (0, 0 ,[], [[]])
 
-genProg :: Program -> Bool -> MyMon ()
+genProg :: Program -> Bool -> TacState ()
 genProg (Prog decls) hasMain= do
-    -- create a defaut label (init)
-    mainLabel <- defaultLabel
     -- check if a main exists
     if not hasMain
         then do
             -- if not create a goto instruction after global decls
             mainLabel <- newLabel
-            pushMain mainLabel
-        else
-            return()
+            pushMain $ Goto mainLabel
+            pushMain $ Comment "No main found"
+            genDecls decls
+            -- add the new label on the bottom
+            pushLastLabel mainLabel
+            pushCurrentStream
+        else do
+            genDecls decls
+            pushCurrentStream
 
-    genDecls decls
-    
-    if not hasMain 
-        -- add the new label on the bottom
-        then pushLastLabel mainLabel
-        else return ()
-    
-    pushCurrentStream
-
-genDecls :: [Declaration] -> MyMon ()
+genDecls :: [Declaration] -> TacState ()
 genDecls [] = return ()
 genDecls (decl:decls) = do
     genDecl decl
@@ -119,20 +109,20 @@ convertOperation op typ = case (op,typ) of
     (AbsGramm.Greater  , _)         -> AbsTAC.Greater
     (AbsGramm.GreaterEq, _)         -> AbsTAC.GreaterEq
 
-genParams :: [Params] -> MyMon ()
+genParams :: [Params] -> TacState ()
 genParams [] = return ()
 genParams (param:params) = do
     genParamAux param
     genParams params
 
-genParamAux :: Params -> MyMon ()
+genParamAux :: Params -> TacState ()
 genParamAux (ParExp []) = return ()
 genParamAux (ParExp (exp:exps)) = do
     addrExp <- genExp exp
     out $ (Param addrExp)
     genParamAux (ParExp exps)
 
-genExpAssign :: Addr -> Exp -> MyMon ()
+genExpAssign :: Addr -> Exp -> TacState ()
 genExpAssign addr texp@(ETyped exp typ _) = case exp of 
     EOp e1 op e2 -> do
         addrE1 <- genExp e1
@@ -176,7 +166,7 @@ buildDefaultValue etyp@(TPointer typ) = (ETyped (ENull (PNull ((0,0),"Null"))) e
 buildDefaultValue etyp@(TArray typ (PInteger (_,n))) = (ETyped (EArray ( replicate (read n :: Int) (buildDefaultValue typ))) etyp (0,0))
  
 
-genDecl :: Declaration -> MyMon ()
+genDecl :: Declaration -> TacState ()
 genDecl decl = case decl of
     DefVar id@(PIdent (dloc, ident)) typ texp -> let addrId = buildVarAddress ident dloc in
         genExpAssign addrId texp
@@ -206,12 +196,12 @@ genDecl decl = case decl of
         -- check if this is the main function and if it is in the global scope
         if ident == "main" && isGlobal
             then do
-                pushMain $ buildFunLabel ident dloc
+                pushMain $ Goto (buildFunLabel ident dloc)
                 return ()
             else
                 return ()
         
-isGlobalScope :: MyMon Bool
+isGlobalScope :: TacState Bool
 isGlobalScope = do
     (k, l, revcode, funs) <- get
     return $ length funs == 1 
@@ -231,7 +221,7 @@ getArrayType :: TypeSpec -> TypeSpec
 getArrayType (TArray typ' _) = typ'
 getArrayType typ = error $ "Errore: " ++ printTree typ
 
-genLexp :: LExp -> MyMon Addr
+genLexp :: LExp -> TacState Addr
 genLexp (LExpTyped lexp typ _) = case lexp of
     LIdent (PIdent (dloc,ident)) -> return $ buildVarAddress ident dloc
     LRef lexp' -> do
@@ -249,7 +239,7 @@ genLexp (LExpTyped lexp typ _) = case lexp of
         return addrTemp
 
 
-genExp :: Exp -> MyMon Addr
+genExp :: Exp -> TacState Addr
 genExp texp@(ETyped exp typ loc) = case exp of
     EInt (PInteger (loc,ident)) -> return $ LitInt ( read ident :: Int )
     EFloat (PFloat (loc,ident)) -> return $ LitFloat ( read ident :: Float )
@@ -291,11 +281,11 @@ genExp texp@(ETyped exp typ loc) = case exp of
 
 
 -- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
-genBlock :: Block -> MyMon Bool
+genBlock :: Block -> TacState Bool
 genBlock (DBlock stms) = genStms stms
 
 -- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
-genStms :: [Stm] -> MyMon Bool
+genStms :: [Stm] -> TacState Bool
 genStms [] = return False
 genStms [stm]
     | isReturnStm stm = do
@@ -341,20 +331,12 @@ convertToTACType typ = case typ of
     (TSimple _ )           -> error "Internal error: converting void or error to TAC type."
     _                      -> TACAddr  
 
-genStm :: Stm -> MyMon ()
+genStm :: Stm -> TacState ()
 genStm stm = case stm of
     SDecl decl -> genDecl decl
     SBlock block -> do
         genBlock block
         return ()
-
-    --addrOffset <- newTemp
-    --addrTemp <- newTemp
-    --addrLexp' <- genLexp lexp'
-    --addrExp <- genExp exp
-    --out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-    --out $ AssignFromArray addrTemp addrLexp' addrOffset (convertToTACType typ)
-    --return addrTemp
 
     SAssign (LExpTyped lexp typ loc) texp -> do
         case lexp of
@@ -416,7 +398,7 @@ isFalse :: Exp -> Bool
 isFalse (ETyped (EFalse _) _ _) = True
 isFalse _ = False
 
-genCondition :: Exp -> Label -> Label -> MyMon ()
+genCondition :: Exp -> Label -> Label -> TacState ()
 genCondition texp@(ETyped exp typ loc) lblTrue lblFalse = case exp of
     ETrue _ -> checkLabel lblTrue
     EFalse _ -> checkLabel lblFalse

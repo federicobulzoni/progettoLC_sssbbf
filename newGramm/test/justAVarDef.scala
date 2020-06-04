@@ -26,7 +26,7 @@ var h : Float;
 var k : Array[*Int](4);
 
  
-def main() = {
+def main2() = {
     var x : Int;
     def main1 (a : Int) : Int = {
         return 1;

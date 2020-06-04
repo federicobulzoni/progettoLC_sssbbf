@@ -257,7 +257,7 @@ instance Print AbsGramm.Exp where
     AbsGramm.ENull pnull -> prPrec i 7 (concatD [prt 0 pnull])
     AbsGramm.EArray exps -> prPrec i 7 (concatD [doc (showString "Array"), doc (showString "("), prt 0 exps, doc (showString ")")])
     AbsGramm.EFunCall pident paramss -> prPrec i 7 (concatD [prt 0 pident, prt 0 paramss])
-    --AbsGramm.ETyped exp typespec n1 n2 -> prPrec i 0 (concatD [doc (showString "["), prt 0 exp, doc (showString ":"), prt 0 typespec, doc (showString ":"), doc (showString "("), prt 0 n1, doc (showString ","), prt 0 n2, doc (showString ")"), doc (showString "]")])
+    AbsGramm.ETyped exp typespec loc -> prPrec i 0 (concatD [doc (showString "["), prt 0 exp, doc (showString ":"), prt 0 typespec, doc (showString ":"), doc (showString "("), prt 0 loc, doc (showString ")"), doc (showString "]")])
     AbsGramm.EOp exp1 op exp2 -> prPrec i 0 (concatD [prt 7 exp1, prt 0 op, prt 7 exp2])
   prtList _ [] = concatD []
   prtList _ [x] = concatD [prt 0 x]

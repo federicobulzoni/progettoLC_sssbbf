@@ -84,11 +84,12 @@ buildTACInstruction instr = case instr of
         intercalate " " ["pcall",buildLabel label,",",show n]
 
     Comment comment ->
-        color Default Italic $ "// " ++ comment
+        color Default Italic $ color Default Faint $ "// " ++ comment
 
     CommentArgs tactyp_addr -> 
-        "// Args: " 
-        ++ intercalate ", " (map (\(t,a) -> (buildAssignType t) ++ " " ++ (buildAddr a)) tactyp_addr)
+        color Default Italic $ color Default Faint $ "// Args: " ++ if (length tactyp_addr == 0)
+            then "None"
+            else intercalate ", " (map (\(t,a) -> (buildAssignType t) ++ " " ++ (buildAddr a)) tactyp_addr)
 
 
 buildBinOpr :: BinOp -> String
