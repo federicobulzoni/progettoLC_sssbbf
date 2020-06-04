@@ -62,3 +62,8 @@ Cose da discutere:
     [X] Rimuovere il file TestGramm
     [] quando assegno ad un array di dimensione n una lista di valori di dimensione m, con n > m, è come se gli assegnassi tutti e n i valori e quelli che mancano sarebbero valori di default.
     [] Cosa scrivere nel warning MainDefinedInline? Non possiamo scrivere veramente che è inline perché di solito per inline si intende un'altra cosa.
+
+Relazione:
+    [] Descrizione tecniche non standard    SS/BF
+    [] Descrizione soluzione                SS/BF
+    [] Descrizione assunzioni fatte         SB

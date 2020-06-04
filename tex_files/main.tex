@@ -1,0 +1,41 @@
+\documentclass[11pt,a4paper,italian]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage{babel}
+\usepackage{color, soul}
+\usepackage{hyperref}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{amsthm}
+
+\title{Descrizione del linguaggio Scala40}
+\date{}
+\author{sssbbf}
+
+% Nome del linguaggio.
+\newcommand{\SBF}{\textbf{SBF}}
+
+% Token
+\newcommand{\token}[1]{\langle \mathit{#1} \rangle }
+
+% Parole riservate
+\newcommand{\False}{\texttt{False}}
+\newcommand{\True}{\texttt{True}}
+\newcommand{\If}{\texttt{if}}
+\newcommand{\Else}{\texttt{else}}
+\newcommand{\Do}{\texttt{do}}
+\newcommand{\While}{\texttt{while}}
+\newcommand{\Def}{\texttt{def}}
+\newcommand{\Return}{\texttt{return}}
+\newcommand{\Val}{\texttt{val}}
+\newcommand{\Var}{\texttt{var}}
+
+\begin{document}
+    \maketitle
+    
+\input{soluzioni_non_standard.tex}
+\input{descrizione_soluzione.tex}
+\input{descrizione_linguaggio.tex}
+
+\end{document}
