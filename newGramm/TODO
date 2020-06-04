@@ -46,6 +46,7 @@ Cose da aggiungere consegna finale:
     [] pensare alla compatibilita String + String
     [] Aggiungere: operatore ternario
     [] costanti
+    [] controllo su dimensione array.
 
 Errori da risolvere:
 
@@ -59,6 +60,5 @@ Cose da discutere:
     [] Perché l'abbiamo chiamato Gramm? Tutti i file non dovrebbero avere un nome più significativo, tipo il nome del nostro linguaggio?
     [X] Il commento all'inizio di environment?
     [X] Rimuovere il file TestGramm
-    [] quando assegno ad un array di dimensione n una lista di valori di dimensione m, con n > m, è come se gli assegnassi tutti e n i valori e quelli che mancano
-        sarebbero valori di default.
+    [] quando assegno ad un array di dimensione n una lista di valori di dimensione m, con n > m, è come se gli assegnassi tutti e n i valori e quelli che mancano sarebbero valori di default.
     [] Cosa scrivere nel warning MainDefinedInline? Non possiamo scrivere veramente che è inline perché di solito per inline si intende un'altra cosa.
