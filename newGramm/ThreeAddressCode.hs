@@ -145,6 +145,25 @@ genExpAssign addr texp@(ETyped exp typ _) = case exp of
         genParams params
         out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
 
+    ELExp lexp -> case lexp of
+        (LExpTyped lexp' typ _ ) -> case lexp' of
+            (LArr lexp'' exp) -> do
+                addrOffset <- newTemp
+                addrLexp'' <- genLexp lexp''
+                addrExp <- genExp exp
+                out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
+                out $ AssignFromArray addr addrLexp'' addrOffset (convertToTACType typ)
+            LRef lexp'' -> do
+                addrLexp' <- genLexp lexp''
+                out $ AssignFromPointer addr addrLexp' (TACAddr)
+            _ -> do
+                addrTExp <- genExp texp
+                out $ Assign addr addrTExp (convertToTACType typ)
+        LIdent (PIdent (dloc,ident)) -> out $ Assign addr (buildVarAddress ident dloc) (convertToTACType typ)
+        LRef lexp' -> do
+            addrLexp' <- genLexp lexp'
+            out $ AssignFromPointer addr addrLexp' (TACAddr)
+    
     _ -> do
         addrTExp <- genExp texp
         out $ Assign addr addrTExp (convertToTACType typ)
@@ -361,6 +380,7 @@ genExp texp@(ETyped exp typ loc) = case exp of
                 addrTemp <- newTemp
                 zipWithM (\x i -> aux addrTemp x i (getArrayType typ)) arrVals [0..((length exps)-1)]
                 return addrTemp
+
 
     ELExp lexp' -> genLexp lexp'
 
