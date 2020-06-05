@@ -29,31 +29,32 @@ data LogElement
 
 data TCException
     = MissingReturn Ident
-    | MainDefinedInLine
     | MissingMain
     | WrongExpType Exp TypeSpec TypeSpec
     | WrongExpAssignType Exp TypeSpec TypeSpec LExp
     | WrongWhileCondition Exp TypeSpec
     | WrongIfCondition Exp TypeSpec
     | WrongReturnValue TypeSpec
-    | DuplicateVariable Ident Loc
-    | DuplicateFunction Ident Loc
-    | MissingAssignVariable Ident
+    | VariableUsedAsFunction Ident Loc
+    | VariableUsedAsProcedure Ident Loc
+    | FunctionUsedAsVariable Ident Loc
+    | UnusedReturnValue Ident
     | WrongProcParams Ident [[TypeSpec]] [[TypeSpec]]
     | WrongFunctionParams Ident [[TypeSpec]] [[TypeSpec]] TypeSpec
     | WrongPointerApplication LExp TypeSpec
-    | WrongArrayIndex Exp TypeSpec
+    | ArraySubscriptNotInt Exp TypeSpec
     | WrongArrayAccess LExp TypeSpec
     | WrongArrayAccessIndex Exp
     | ArrayInconsistency
     | WrongNotApplication Exp TypeSpec
     | WrongNegApplication Exp TypeSpec
     | WrongOpApplication Op TypeSpec TypeSpec
-    | UnexpectedReturn
+    | UnexpectedReturn Exp
     | UnexpectedProc Ident
     | EnvDuplicateIdent Ident Loc Bool
     | EnvNotDeclaredIdent Ident
     | InternalError
+    | ExpAssignedToProcedure Ident Exp TypeSpec
     deriving(Show,Eq)
   
 
@@ -85,81 +86,99 @@ getExceptionMsg :: TCException -> String
 getExceptionMsg except = case except of
     MissingReturn ident -> 
         "Not every code path returns a value in function " ++ color Default Italic (printTree ident) ++ "."
-    MainDefinedInLine -> 
-        "Main definito come una funzione inline."
+
     MissingMain -> 
         "Undefined " ++ color Default Italic "main" ++ " function."
 
     WrongExpType exp texpTyp typ -> 
         "Expected expression of type " ++ printTree typ ++ ", but found " ++ printTree exp 
         ++ if (isNotNull exp) then " which has type " ++ printTree texpTyp ++ "." else "."
-    -- WrongExpType exp texpTyp typ -> "L'espressione " ++ printTree exp ++ if (isNotNull exp) 
-    --   then " ha tipo " ++ printTree texpTyp ++ ", ma il tipo atteso e' " ++ printTree typ ++ "."
-    --   else " non può essere applicata. Tipo richiesto: " ++  printTree typ ++ "."
 
-    WrongExpAssignType exp texpTyp tlexpTyp lexp -> "L'espressione " ++ printTree exp ++" ha tipo " ++ printTree texpTyp ++ ", ma " 
-                                                                ++ printTree lexp ++ " ha tipo " 
-                                                                ++ printTree tlexpTyp ++ "."
+    WrongExpAssignType exp texpTyp tlexpTyp lexp ->
+        "Incompatible types when assigning from type " ++ printTree texpTyp
+        ++ " to type " ++ printTree tlexpTyp ++ ":" 
+        ++ "\n\t" ++ printTree (SAssign lexp exp) 
 
-    WrongWhileCondition exp texpTyp -> "La condizione del while deve essere di tipo booleano, invece " ++ printTree exp 
-                                                            ++ " ha tipo " ++ printTree texpTyp ++ "."
-                                
-    WrongIfCondition exp texpTyp -> "La condizione dell' if deve essere di tipo booleano, invece " ++ printTree exp 
-                                                        ++ " ha tipo " ++ printTree texpTyp ++ "."
+    WrongWhileCondition exp typ ->
+        "Expected boolean expression, but found " ++ printTree exp ++ " of type " ++ printTree typ ++ ":"
+        ++ "\n\t" ++ "while ( " ++ printTree exp ++ " )"
     
-    WrongReturnValue typ -> "L'operazione return non ha valore di ritorno, ma la funzione ha tipo " ++ printTree typ ++ "."
-
-    UnexpectedReturn -> "Valore di ritorno inaspettato."
-    UnexpectedProc ident -> "Chiamata alla procedura " ++ printTree ident ++ " inaspettata."
-
-
-    --DuplicateVariable loc ident dloc -> "L'identificatore " ++ printTree ident ++ "e' stato utilizzato in posizione " 
-    --                                        ++ printTree dloc ++ "per dichiarare una variabile."
-
-    MissingAssignVariable ident -> "Il valore di ritorno della funzione "
-                                            ++ printTree ident ++ " non e' stato assegnato a nessuna variabile."
+    WrongIfCondition exp typ ->
+        "Expected boolean expression, but found " ++ printTree exp ++ " of type " ++ printTree typ ++ ":"
+        ++ "\n\t" ++ "if ( " ++ printTree exp ++ " )"
     
-    WrongProcParams ident args params -> "Nella chiamata alla funzione "
-                                                    ++ printTree ident ++ " la firma della funzione e': " ++ printTree args 
-                                                    ++ " mentre i parametri passati sono di tipo: " ++ printTree params ++ "."
+    WrongReturnValue typ -> 
+        "Unexpected return with no value in function returning " ++ printTree typ ++ ":"
+        ++ "\n\t" ++ "return ;"
+
+    UnexpectedReturn exp -> 
+        "Unexpected return with a value inside a procedure:"
+        ++ "\n\t" ++ "return " ++ printTree exp ++ " ;"
     
-    WrongFunctionParams ident args params typ -> "Nella chiamata alla funzione "
-                                                    ++ printTree ident ++ " la firma della funzione e': " ++ printTree args ++ " : " ++ printTree typ
-                                                    ++ " mentre i parametri passati sono di tipo: " ++ printTree params ++ "."
+    ExpAssignedToProcedure ident exp typ ->
+        "Expression " ++ printTree exp ++ " of type " ++ printTree typ ++ " cannot be assigned to procedure "
+        ++ color Default Italic (printTree ident) ++ ". Expected procedure call or block."
 
-    WrongPointerApplication lexp typ -> "Impossibile applicare operatore * a " ++ printTree lexp ++ " che ha tipo " ++ printTree typ ++ "."
+    UnexpectedProc ident -> 
+        "Unexpected call of procedure " ++ color Default Italic (printTree ident) ++ "."
 
-    WrongArrayIndex exp texpTyp -> "L'indice di accesso ad un'array deve avere tipo intero, ma l'espressione " 
-                                                        ++ printTree exp ++ " ha tipo " ++ printTree texpTyp ++ "."
+    FunctionUsedAsVariable ident loc ->
+        "Identifier " ++ color Default Italic (printTree ident) ++ " declared in " ++ printTree loc
+        ++ " does not refer to a variable."
+
+    VariableUsedAsFunction ident loc ->
+        "Identifier " ++ color Default Italic (printTree ident) ++" declared in " ++ printTree loc
+        ++ " does not refer to a function."
+
+    VariableUsedAsProcedure ident loc ->
+        "Identifier " ++ color Default Italic (printTree ident) ++" declared in " ++ printTree loc
+        ++ " does not refer to a procedure."
+
+    UnusedReturnValue ident -> 
+        "Unused return value of function " ++ color Default Italic (printTree ident) ++ "."
     
-    WrongArrayAccess lexp typ ->"L'accesso tramite operatore [] puo' essere effettuato solo su elementi di tipo Array, mentre "
-                                                        ++ printTree lexp ++ " ha tipo " ++ printTree typ ++ "."
+    WrongProcParams ident args params ->
+        "Mismatch in parameter list of procedure " ++ color Default Italic (printTree ident) ++ "."
+        ++ " Signature is " ++ printTree args ++ " but has been given " ++ printTree params ++ "."
 
-    --DuplicateFunction loc ident dloc -> printError loc $ "l'identificatore " ++ printTree ident
-    --                                        ++ "e' stato utilizzato in posizione " ++ printTree dloc ++ "per dichiarare una funzione."
+    WrongFunctionParams ident args params typ -> 
+        "Mismatch in parameter list of function " ++ color Default Italic (printTree ident) ++ "."
+        ++ " Signature is " ++ printTree args ++ " : " ++ printTree typ 
+        ++ " but has been given " ++ printTree params ++ "."
 
-    ArrayInconsistency -> "Inconsistenza nei valori assegnati all'array."
+    WrongPointerApplication lexp typ ->
+        "Dereference operator * cannot be applied to " ++ printTree lexp ++ " which has type "++ printTree typ ++ ":"
+        ++ "\n\t * ( " ++ printTree lexp ++ " )"
 
-    WrongNotApplication exp texpTyp -> "Operatore ! applicato all'espressione " ++ printTree exp ++ ", che ha tipo "
-                                                            ++ printTree texpTyp ++ ", ma era attesa di tipo " ++ printTree (TSimple SType_Bool) ++ "."
-
-    WrongNegApplication exp texpTyp -> "Operatore - applicato all'espressione " ++ printTree exp ++ ", che ha tipo "
-                                                            ++ printTree texpTyp ++ ", ma era attesa di tipo numerico."
-
-    WrongOpApplication op texplTyp texprTyp -> "L'operatore " ++ printTree op ++ " non puo' essere applicato ad un'espressione di tipo " 
-                                            ++ printTree texplTyp
-                                            ++ " e un'espressione di tipo " ++ printTree texprTyp  ++ "." 
+    ArraySubscriptNotInt exp typ -> 
+        "Array subscript must be an integer, but found " ++ printTree exp ++ " which has type " ++ printTree typ ++ "."
 
     
+    WrongArrayAccess lexp typ ->
+        "Operator [] cannot be applied to " ++ printTree lexp ++ " which has type " ++ printTree typ ++ "."
 
-    EnvDuplicateIdent ident dloc isVar -> "Identificatore " ++ printTree ident 
-                                           ++ " usato in precedenza per una " 
-                                           ++ if isVar then "variabile" else "funzione" ++ " dichiarata in posizione "
-                                           ++ printTree dloc ++ "."
+    ArrayInconsistency -> 
+        "Array elements must all have the same type."
 
+    WrongNotApplication exp typ -> 
+        "Operator ! cannot be applied to type " ++ printTree typ ++ ". Expected type Bool."
+        ++ "\n\t! ( " ++ printTree exp ++ " )"
 
-    EnvNotDeclaredIdent ident -> "Identificatore " ++ printTree ident ++ " utilizzato, ma non dichiarato in precedenza."
-    InternalError -> "Errore interno."
-    --ErrEnvor msg -> msg
+    WrongNegApplication exp typ -> 
+        "Unary operator - cannot be applied to type " ++ printTree typ ++ ". Expected type Int or Float."
+        ++ "\n\t- ( " ++ printTree exp ++ " )"
+
+    WrongOpApplication op typ1 typ2 -> 
+        "Operator " ++ printTree op ++ " cannot be applied to type " ++ printTree typ1 
+        ++ " and type " ++ printTree typ2 ++ "." 
+
+    EnvDuplicateIdent ident dloc isVar -> 
+        "Duplicate declaration of " ++ color Default Italic (printTree ident) 
+        ++ ". The identifier has already been declared in " ++ printTree dloc ++ "."
+
+    EnvNotDeclaredIdent ident -> 
+        "Undeclared identifier " ++ color Default Italic (printTree ident) ++ "."
+    
+    InternalError -> "Internal error."
 
 

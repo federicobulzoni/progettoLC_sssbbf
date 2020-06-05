@@ -182,9 +182,13 @@ genDecl decl = case decl of
         out $ (Lab (buildFunLabel ident dloc))
         case typ of
             TSimple SType_Void -> out $ Comment "Begin procedure"
-            otherwise -> do
-                out $ Comment "Begin function"
-                out $ CommentArgs $ concat $ map (\(PArg x) -> map (\(DArg (PIdent (loc,ident)) typ) -> (convertToTACType typ,buildVarAddress ident loc)) x) params
+            otherwise -> out $ Comment "Begin function"
+        let args = concat $ map (\(PArg x) -> map (\(DArg (PIdent (loc,ident)) typ) -> (convertToTACType typ,buildVarAddress ident loc)) x) params
+        if (length args > 0 ) 
+            then 
+                out $ CommentArgs $ args
+            else
+                return ()
         lastIsReturn <- genBlock block
         case (lastIsReturn,typ) of
             (False, TSimple SType_Void) -> out $ (ReturnVoid)
