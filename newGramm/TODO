@@ -11,7 +11,7 @@ Cose da fare:
     [X] ripulire albero annotato
     [X] all'interno del TAC va gestito il caso in EArray di un array vuoto. 
     [X] decidere cosa assegnare all'array vuoto. Provvisoriamente gli viene assegnato Null @critical
-    [] sistemare errori SB
+    [X] sistemare errori SB
     [X] togliere dipendenze da Typed in Errors. SS
     [] fare tanti test                      BF    
     [] pulizia codice                       SS/BF   
@@ -20,6 +20,7 @@ Cose da fare:
                             def foo : Int = {
                                 1
                             }
+        NON SI FA, DA' CONFLITTI REDUCE REDUCE.
     [X] Aggiungere nella grammatica un ; alla fine delle dichiarazioni di funzione inline.
     [X] Aggiungere commenti al TAC, per far capire che sappiamo quali sono gli argomenti di una funzione. SB
     [X] Type Error e Type Void sono brutti scritti in modo diverso dagli altri tipi base. SS
