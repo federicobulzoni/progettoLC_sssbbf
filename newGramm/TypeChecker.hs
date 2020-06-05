@@ -153,7 +153,7 @@ inferDecl decl env = case decl of
             return $ (DefVar id typ texp, env')
           else do
             saveLog $ launchError (getLoc texp) (WrongExpType exp (getType texp) typ)
-            return $ (DefVar id typ texp, env)
+            return $ (DefVar id typ texp, env')
       Failure except -> do
         -- Se qualcosa è andato storto si lancia l'errore.
         saveLog $ launchError loc except
@@ -213,8 +213,11 @@ inferDecl decl env = case decl of
             -- PROCEDURA con assegnata EXP
             (_,True) -> do
               texp <- inferExp exp (startFunScope e id params typ)
-              saveLog $ launchError loc (ExpAssignedToProcedure ident exp (getType texp))
-              return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
+              if isTypeError texp then
+                return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
+              else do
+                saveLog $ launchError loc (ExpAssignedToProcedure ident exp (getType texp))
+                return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
             -- FUNZIONE
             (_,False) -> do
               texp <- inferExp exp (startFunScope e id params typ)
