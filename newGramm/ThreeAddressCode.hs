@@ -145,6 +145,25 @@ genExpAssign addr texp@(ETyped exp typ _) = case exp of
         genParams params
         out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
 
+    ELExp lexp -> case lexp of
+        (LExpTyped lexp' typ _ ) -> case lexp' of
+            (LArr lexp'' exp) -> do
+                addrOffset <- newTemp
+                addrLexp'' <- genLexp lexp''
+                addrExp <- genExp exp
+                out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
+                out $ AssignFromArray addr addrLexp'' addrOffset (convertToTACType typ)
+            LRef lexp'' -> do
+                addrLexp' <- genLexp lexp''
+                out $ AssignFromPointer addr addrLexp' (TACAddr)
+            _ -> do
+                addrTExp <- genExp texp
+                out $ Assign addr addrTExp (convertToTACType typ)
+        LIdent (PIdent (dloc,ident)) -> out $ Assign addr (buildVarAddress ident dloc) (convertToTACType typ)
+        LRef lexp' -> do
+            addrLexp' <- genLexp lexp'
+            out $ AssignFromPointer addr addrLexp' (TACAddr)
+    
     _ -> do
         addrTExp <- genExp texp
         out $ Assign addr addrTExp (convertToTACType typ)
@@ -208,7 +227,94 @@ genDecl decl = case decl of
                 return ()
             else
                 return ()
-        
+
+
+-- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
+genBlock :: Block -> TacState Bool
+genBlock (DBlock stms) = genStms stms
+
+-- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
+genStms :: [Stm] -> TacState Bool
+genStms [] = return False
+genStms [stm]
+    | isReturnStm stm = do
+        genStm stm
+        return True
+    | otherwise = do
+        genStm stm
+        return False
+genStms (stm:stms) = do
+    genStm stm
+    genStms stms
+
+isReturnStm :: Stm -> Bool
+isReturnStm (SReturn _ ) = True
+isReturnStm (SReturnExp _ _ ) = True
+isReturnStm _ = False
+
+genStm :: Stm -> TacState ()
+genStm stm = case stm of
+    SDecl decl -> genDecl decl
+    SBlock block -> do
+        genBlock block
+        return ()
+
+    SAssign (LExpTyped lexp typ loc) texp -> do
+        case lexp of
+            (LRef lexp') -> do
+                addrLexp' <- genLexp lexp'
+                addrExp <- genExp texp
+                out $ AssignToPointer addrLexp' addrExp (convertToTACType typ)
+            (LArr lexp' texp') -> do
+                addrOffset <- newTemp
+                addrLexp' <- genLexp lexp'
+                addrExp' <- genExp texp'
+                out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
+                addrExp <- genExp texp
+                out $ AssignToArray addrLexp' addrOffset addrExp (convertToTACType typ)
+            (LIdent id@(PIdent (dloc,ident))) -> 
+                genExpAssign (buildVarAddress ident dloc) texp
+
+    SWhile texp@(ETyped exp _ _) tstm -> do
+        labelWhile <- newLabel
+        labelFalse <- newLabel
+        out $ (Lab labelWhile)
+        genCondition texp Fall labelFalse
+                -- per il break:
+                -- passo in avanti l'etichetta della prima istruzione fuori dal ciclo (labelFalse)
+                -- così quando si trova un break si crea Goto labelFalse
+        genStm tstm
+        out $ (Goto labelWhile)
+        out $ (Lab labelFalse)
+
+    SIfElse texp@(ETyped exp _ _) stm_if stm_else -> do
+        labelNext <- newLabel
+        labelElse <- if isBlockEmpty stm_else then return labelNext else newLabel
+        genCondition texp Fall labelElse
+        genStm stm_if
+        if (not $ isBlockEmpty stm_else)
+            then do
+                out $ (Goto labelNext)
+                out $ (Lab labelElse)
+                genStm stm_else
+            else return ()
+        out $ Lab labelNext
+  
+    SProcCall (PIdent (loc, ident)) params -> do
+        genParams params
+        out $ Call (buildFunLabel ident loc) (sum (map (\(ParExp x) -> length x) params))
+
+    SReturn preturn -> 
+        out $ ReturnVoid
+
+    SReturnExp  preturn texp -> do
+        addrTexp <- genExp texp
+        out $ ReturnAddr addrTexp
+
+    where 
+        isBlockEmpty bl = if (SBlock (DBlock []) == bl ) then True else False
+
+
 isGlobalScope :: TacState Bool
 isGlobalScope = do
     (k, l, revcode, funs) <- get
@@ -275,6 +381,7 @@ genExp texp@(ETyped exp typ loc) = case exp of
                 zipWithM (\x i -> aux addrTemp x i (getArrayType typ)) arrVals [0..((length exps)-1)]
                 return addrTemp
 
+
     ELExp lexp' -> genLexp lexp'
 
     _ -> do
@@ -288,29 +395,6 @@ genExp texp@(ETyped exp typ loc) = case exp of
             out $ AssignBinOp temp (LitInt i) AbsTAC.ProdInt (LitInt $ sizeOf typ') (convertToTACType (TSimple SType_Int))
             out $ AssignToArray base temp x (convertToTACType typ')
 
-
--- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
-genBlock :: Block -> TacState Bool
-genBlock (DBlock stms) = genStms stms
-
--- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
-genStms :: [Stm] -> TacState Bool
-genStms [] = return False
-genStms [stm]
-    | isReturnStm stm = do
-        genStm stm
-        return True
-    | otherwise = do
-        genStm stm
-        return False
-genStms (stm:stms) = do
-    genStm stm
-    genStms stms
-
-isReturnStm :: Stm -> Bool
-isReturnStm (SReturn _ ) = True
-isReturnStm (SReturnExp _ _ ) = True
-isReturnStm _ = False
 
 convertToOppositeTACOp :: Op -> BinOp
 convertToOppositeTACOp op = case op of
@@ -340,64 +424,7 @@ convertToTACType typ = case typ of
     (TSimple _ )           -> error "Internal error: converting void or error to TAC type."
     _                      -> TACAddr  
 
-genStm :: Stm -> TacState ()
-genStm stm = case stm of
-    SDecl decl -> genDecl decl
-    SBlock block -> do
-        genBlock block
-        return ()
 
-    SAssign (LExpTyped lexp typ loc) texp -> do
-        case lexp of
-            (LRef lexp') -> do
-                addrLexp' <- genLexp lexp'
-                addrExp <- genExp texp
-                out $ AssignToPointer addrLexp' addrExp (convertToTACType typ)
-            (LArr lexp' texp') -> do
-                addrOffset <- newTemp
-                addrLexp' <- genLexp lexp'
-                addrExp' <- genExp texp'
-                out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-                addrExp <- genExp texp
-                out $ AssignToArray addrLexp' addrOffset addrExp (convertToTACType typ)
-            (LIdent id@(PIdent (dloc,ident))) -> 
-                genExpAssign (buildVarAddress ident dloc) texp
-
-    SWhile texp@(ETyped exp _ _) tstm -> do
-        labelWhile <- newLabel
-        labelFalse <- newLabel
-        out $ (Lab labelWhile)
-        genCondition texp Fall labelFalse
-        genStm tstm
-        out $ (Goto labelWhile)
-        out $ (Lab labelFalse)
-
-    SIfElse texp@(ETyped exp _ _) stm_if stm_else -> do
-        labelNext <- newLabel
-        labelElse <- if isBlockEmpty stm_else then return labelNext else newLabel
-        genCondition texp Fall labelElse
-        genStm stm_if
-        if (not $ isBlockEmpty stm_else)
-            then do
-                out $ (Goto labelNext)
-                out $ (Lab labelElse)
-                genStm stm_else
-            else return ()
-        out $ Lab labelNext
-  
-    SProcCall (PIdent (loc, ident)) params -> do
-        genParams params
-        out $ Call (buildFunLabel ident loc) (sum (map (\(ParExp x) -> length x) params))
-
-    SReturn preturn -> 
-        out $ ReturnVoid
-
-    SReturnExp  preturn texp -> do
-        addrTexp <- genExp texp
-        out $ ReturnAddr addrTexp
-
-    where 
-        isBlockEmpty bl = if (SBlock (DBlock []) == bl ) then True else False
 
 isTrue :: Exp -> Bool
 isTrue (ETyped (ETrue _) _ _) = True
