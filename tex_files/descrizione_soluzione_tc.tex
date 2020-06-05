@@ -31,3 +31,9 @@ Per una nostra decisione personale, nel caso in cui si stia inferendo un element
 
 Per ottenere questo comportamento, abbiamo nella sintassi astratta un tipo interno \texttt{SType\_Error} che viene assegnato alle espressioni che generano un'eccezione, o alle espressioni le cui sotto-espressioni generano eccezioni. Se un qualsiasi elemento ha come sotto-espressione una espressione di tipo \texttt{SType\_Error} non vengono generate ulteriori eccezioni riguardo all'interazione di tale sotto-espressione con l'elemento considerato.
 
+Le annotazioni aggiunte dal modulo di analisi statica riguardano esclusivamente le espressioni, sia R-espressioni (elementi \texttt{Exp}), sia L-espressioni (elementi \texttt{LExp}. Le espressioni annotate sono identificate rispettivamente dagli elementi di sintassi astratta interni: \texttt{ETyped} per le R-espressioni e da \texttt{LExpTyped} per le L-espressioni. Entrambi gli elementi condividono la stessa struttura, una espressione tipata contiene la espressione, il suo tipo, e la locazione in cui viene utilizzata. Un ulteriore caratteristica delle espressioni tipate è che la locazione contenuta all'interno di un identificatore utilizzato all'interno dell'espressione non è la locazione di utilizzo, che invece è in un campo apposito, ma è la locazione di dichiarazione dell'identificatore.
+La locazione di dichiarazione di un identificatore utilizzato all'interno di una espressione ci risulta fondamentale per la successiva fase di sgenerazione del codice TAC.
+La definizione degli elementi tipati con le loro proprietà è presente all'interno del modulo \texttt{Typed.hs}.
+
+
+
