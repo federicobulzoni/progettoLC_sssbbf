@@ -58,8 +58,9 @@ The set of reserved words is the set of terminals appearing in the grammar. Thos
 
 The reserved words used in gramm are the following:
   | ``Array`` | ``Bool`` | ``Char`` | ``Float``
-  | ``Int`` | ``String`` | ``def`` | ``do``
-  | ``else`` | ``if`` | ``var`` | ``while``
+  | ``Int`` | ``String`` | ``Switch`` | ``case``
+  | ``def`` | ``do`` | ``else`` | ``if``
+  | ``var`` | ``while`` |  |
 
 The symbols used in gramm are the following:
   | * | [ | ] | (
@@ -117,7 +118,12 @@ All other symbols are terminals.
   |  |  **|**  | //PReturn// ``;``
   |  |  **|**  | //PReturn// //Exp// ``;``
   |  |  **|**  | //PIdent// //[Params]// ``;``
+  |  |  **|**  | ``Switch`` //Exp// ``{`` //Cases// ``}``
   |  |  **|**  | //LExp// //OpAssign// //Exp// ``;``
+  | //Case// | -> | ``case`` //Exp// ``:`` //[Stm]//
+  | //Cases// | -> | //[Case]//
+  | //[Case]// | -> | //Case//
+  |  |  **|**  | //Case// //[Case]//
   | //OpAssign// | -> | ``*=``
   |  |  **|**  | ``/=``
   |  |  **|**  | ``%=``

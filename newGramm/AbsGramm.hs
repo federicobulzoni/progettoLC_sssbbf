@@ -78,6 +78,13 @@ data Stm
     | SReturn PReturn
     | SReturnExp PReturn Exp
     | SProcCall PIdent [Params]
+    | SSwithc Exp Cases
+    deriving (Eq, Ord, Show, Read)
+    
+data Case = SCase Exp [Stm]
+  deriving (Eq, Ord, Show, Read)
+  
+data Cases = SCases [Case]
   deriving (Eq, Ord, Show, Read)
 
 data Params = ParExp [Exp]

@@ -44,18 +44,20 @@ import ErrM
   'Float' { PT _ (TS _ 29) }
   'Int' { PT _ (TS _ 30) }
   'String' { PT _ (TS _ 31) }
-  '[' { PT _ (TS _ 32) }
-  ']' { PT _ (TS _ 33) }
-  '^' { PT _ (TS _ 34) }
-  'def' { PT _ (TS _ 35) }
-  'do' { PT _ (TS _ 36) }
-  'else' { PT _ (TS _ 37) }
-  'if' { PT _ (TS _ 38) }
-  'var' { PT _ (TS _ 39) }
-  'while' { PT _ (TS _ 40) }
-  '{' { PT _ (TS _ 41) }
-  '||' { PT _ (TS _ 42) }
-  '}' { PT _ (TS _ 43) }
+  'Switch' { PT _ (TS _ 32) }
+  '[' { PT _ (TS _ 33) }
+  ']' { PT _ (TS _ 34) }
+  '^' { PT _ (TS _ 35) }
+  'case' { PT _ (TS _ 36) }
+  'def' { PT _ (TS _ 37) }
+  'do' { PT _ (TS _ 38) }
+  'else' { PT _ (TS _ 39) }
+  'if' { PT _ (TS _ 40) }
+  'var' { PT _ (TS _ 41) }
+  'while' { PT _ (TS _ 42) }
+  '{' { PT _ (TS _ 43) }
+  '||' { PT _ (TS _ 44) }
+  '}' { PT _ (TS _ 45) }
   L_integ  { PT _ (TI $$) }
   L_PTrue { PT _ (T_PTrue _) }
   L_PFalse { PT _ (T_PFalse _) }
@@ -147,7 +149,14 @@ Stm : Declaration { AbsGramm.SDecl $1 }
     | PReturn ';' { AbsGramm.SReturn $1 }
     | PReturn Exp ';' { AbsGramm.SReturnExp $1 $2 }
     | PIdent ListParams ';' { AbsGramm.SProcCall $1 $2 }
+    | 'Switch' Exp '{' Cases '}' { AbsGramm.SSwithc $2 $4 }
     | LExp OpAssign Exp ';' { sugarAssign_ $1 $2 $3 }
+Case :: { Case }
+Case : 'case' Exp ':' ListStm { AbsGramm.SCase $2 (reverse $4) }
+Cases :: { Cases }
+Cases : ListCase { AbsGramm.SCases $1 }
+ListCase :: { [Case] }
+ListCase : Case { (:[]) $1 } | Case ListCase { (:) $1 $2 }
 OpAssign :: { OpAssign }
 OpAssign : '*=' { AbsGramm.ProdEq }
          | '/=' { AbsGramm.DivEq }
@@ -240,10 +249,10 @@ dproc_ id_ params_ block_ = DefFun id_ params_ (TSimple SType_Void) block_
 dprocinline_ id_ params_ exp_ = DefFunInLine id_ params_ (TSimple SType_Void) exp_
 sdo_ st_ ex_ = SBlock (DBlock [st_, SWhile ex_ st_])
 sif_ exp_ stm_ = SIfElse exp_ stm_ (SBlock (DBlock []))
-sugarAssign_ lexp_ ProdEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Prod exp_)
-sugarAssign_ lexp_ MinusEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Minus exp_)
-sugarAssign_ lexp_ PlusEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Plus exp_)
-sugarAssign_ lexp_ DivEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Div exp_)
-sugarAssign_ lexp_ ModEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Mod exp_)
+sugarAssign_ lexp_ AbsGramm.ProdEq exp_ = SAssign lexp_ (op_ (ELExp lexp_) Prod exp_)
+sugarAssign_ lexp_ AbsGramm.MinusEq exp_ = SAssign lexp_ (op_ (ELExp lexp_) Minus exp_)
+sugarAssign_ lexp_ AbsGramm.PlusEq exp_ = SAssign lexp_ (op_ (ELExp lexp_) Plus exp_)
+sugarAssign_ lexp_ AbsGramm.DivEq exp_ = SAssign lexp_ (op_ (ELExp lexp_) Div exp_)
+sugarAssign_ lexp_ AbsGramm.ModEq exp_ = SAssign lexp_ (op_ (ELExp lexp_) Mod exp_)
 }
 

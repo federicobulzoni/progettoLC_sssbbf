@@ -49,8 +49,14 @@ sdo. 		Stm ::= "do" Stm "while" "(" Exp ")" ";";
 SReturn. 	Stm ::= PReturn ";";
 SReturnExp. Stm ::= PReturn Exp ";" ;
 SProcCall.  Stm ::= PIdent [Params] ";";
-
+SSwithc.    Stm ::= "Switch" Exp "{" Cases "}";
 sugarAssign. Stm ::=  LExp OpAssign Exp ";" ;
+
+SCase. Case ::= "case" Exp ":" [Stm];
+SCases. Cases ::= [Case] ;
+separator nonempty Case "";
+
+
 
 ProdEq. OpAssign ::= "*=" ;
 DivEq. OpAssign ::= "/=" ;
