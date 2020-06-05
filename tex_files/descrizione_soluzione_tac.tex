@@ -1,8 +1,8 @@
-\subsection{Descrizione soluzione - TAC}
+\subsection{Descrizione soluzione - Three Address Code}
 \begin{center}
     {\bf BOZZA}
 \end{center}
-Il Three Address Code (TAC) viene costruito a partire dall'albero annotato risultante dall'analisi di semantica statica (Type Checking). Per la costruzione viene fatto largo uso della monade State, descritta nella sezione precedente. In particolare lo stato ha quattro campi: il numero di temporanei e di etichette finora utilizzati, la lista di istruizioni che compongono il TAC e una lista di liste di istruzioni (utili per la gestione degli scope e delle funzioni innestate). Lo stato, come detto, è stato rinominato in {\tt TacState}.
+Il Three Address Code (TAC) viene costruito a partire dall'albero annotato risultante dall'analisi di semantica statica (Type Checking). Per la costruzione viene fatto largo uso della monade State, descritta nella sezione precedente. In particolare lo stato ha quattro campi: il numero di temporanei e di etichette finora utilizzati, la lista di istruzioni che compongono il TAC e una lista di liste di istruzioni (utili per la gestione degli scope e delle funzioni innestate). Lo stato è stato rinominato in {\tt TacState}.
 
 Nel TAC gli indirizzi utilizzati nelle istruzioni sono:
 \begin{itemize}
@@ -17,19 +17,20 @@ Nel TAC gli indirizzi utilizzati nelle istruzioni sono:
 Inoltre, nel TAC sono presenti le etichette che vengono utilizzate per indicare una locazione univoca nel flusso di esecuzione. Nel caso delle funzioni, come etichetta, viene utilizzato il loro indirizzo.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% genProg, genDecls, genDecl
 
-La costruzione del TAC parte dalla funzione 
+La costruzione del Three Address Code inizia dalla funzione 
 \begin{center}
     {\tt genProg :: Program -> Bool -> TacState ()} 
 \end{center}
 
 che ha i seguenti compiti:
 \begin{itemize}
-    \item Inserire un'etichetta in fondo a tutte le istruzioni (e il relativo {\tt Goto} dopo le dichiarazioni globali) se durante l'analisi di semantica statica non è stato trovato un metodo main da cui far partire la computazione. In alternativa, viene inserita un'istruzione {\tt Goto} all'etichetta del main, se esso è stato trovato;
+    \item Inserire un'etichetta in fondo a tutte le istruzioni (e il relativo {\tt Goto} dopo le dichiarazioni globali) se durante l'analisi di semantica statica non è stato trovato un metodo main da cui far partire la computazione. In alternativa, viene inserita un'istruzione {\tt Goto} all'etichetta del main;
     \item iniziare la discesa nell'albero annotato per poter costruire le singole istruzioni, tramite la funzione 
     \begin{center}
         {\tt genDecls :: [Declaration] -> TacState ()}
     \end{center} 
 \end{itemize}
+
 La funzione {\tt genDecls} prende in input una lista di dichiarazioni e le scorre producendo le relative istruzioni TAC. Questo avviene tramite la funzione 
 \begin{center}
     {\tt genDecl :: Declaration -> TacState ()}
@@ -48,8 +49,8 @@ la quale divide le dichiarazioni nei quattro casi possibili:
         \hline\hline
         Int & 0 \\ 
         Float & 0.0  \\
-        %Char & \\0 \\
-        %String &  "" \\
+        Char & \textbackslash0 \\
+        String &  "" \\
         Bool & False \\ 
         Pointer & Null\\
         Array & - \\[1ex] 

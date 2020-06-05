@@ -1,6 +1,6 @@
-\subsection{Soluzioni non standard - TAC}
+\subsection{Gestione delle istruzioni TAC tramite la monade State}
 \begin{center}
-    {\bf BOZZA - non riletta}
+    {\bf BOZZA}
 \end{center}
 
 Per la gestione della creazione e dell'ordine di esecuzione delle istruzioni TAC durante la creazione di quest'ultimo, è stata utilizzata la monade {\tt State a}. Questa permette di trattare l'inserimento di nuove istruzioni, la creazione di nuove etichette e di nuovi temporanei, come fossero un cambio di stato in una computazione. La monade {\tt State} utilizza due funzioni per operare sullo stato corrente: {\tt get}, per ottenerlo, e {\tt put} per aggiornarlo. 
