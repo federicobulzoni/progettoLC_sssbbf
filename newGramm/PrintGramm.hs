@@ -89,6 +89,7 @@ instance Print Integer where
 
 instance Print Int where
   prt _ x = doc (shows x)
+
 instance Print Double where
   prt _ x = doc (shows x)
 
@@ -103,6 +104,12 @@ instance Print AbsGramm.PReturn where
 
 instance Print AbsGramm.PNull where
   prt _ (AbsGramm.PNull (_,i)) = doc (showString i)
+
+instance Print AbsGramm.PBreak where
+  prt _ (AbsGramm.PBreak (_,i)) = doc (showString i)
+
+instance Print AbsGramm.PContinue where
+  prt _ (AbsGramm.PContinue (_,i)) = doc (showString i)
 
 instance Print AbsGramm.PIdent where
   prt _ (AbsGramm.PIdent (_,i)) = doc (showString i)
@@ -130,7 +137,7 @@ instance Print [AbsGramm.Declaration] where
 
 instance Print AbsGramm.Loc where
   prt i (line, column) =  (concatD [doc (showString "("), prt 0 line, doc (showString ","), prt 0 column, doc (showString ")")])
-    
+      
 instance Print AbsGramm.TypeSpec where
   prt i e = case e of
     AbsGramm.TSimple stype -> prPrec i 0 (concatD [prt 0 stype])
@@ -146,7 +153,7 @@ instance Print [AbsGramm.TypeSpec] where
   
 instance Print [[AbsGramm.TypeSpec]] where
   prt i e = concatD (map (\x -> concatD [doc (showString "("), prt 0 x, doc (showString ")") ] ) e )
-    
+      
 instance Print AbsGramm.SType where
   prt i e = case e of
     AbsGramm.SType_Float -> prPrec i 0 (concatD [doc (showString "Float")])
@@ -171,7 +178,6 @@ instance Print AbsGramm.SType where
 --
 --instance Print [AbsGramm.Declaration] where
 --  prt = prtList
-
 instance Print AbsGramm.Declaration where
   prt i e = case e of
     AbsGramm.DefVar pident typespec exp -> prPrec i 0 (concatD [doc (showString "var"), prt 0 pident, doc (showString ":"), prt 0 typespec, doc (showString "="), prt 0 exp, doc (showString ";")])
@@ -218,6 +224,8 @@ instance Print AbsGramm.Stm where
     AbsGramm.SReturnExp preturn exp -> prPrec i 0 (concatD [prt 0 preturn, prt 0 exp, doc (showString ";")])
     AbsGramm.SProcCall pident paramss -> prPrec i 0 (concatD [prt 0 pident, prt 0 paramss, doc (showString ";")])
     AbsGramm.SSwithc exp cases -> prPrec i 0 (concatD [doc (showString "Switch"), prt 0 exp, doc (showString "{"), prt 0 cases, doc (showString "}")])
+    AbsGramm.SContinue pcontinue -> prPrec i 0 (concatD [prt 0 pcontinue, doc (showString ";")])
+    AbsGramm.SBreak pbreak -> prPrec i 0 (concatD [prt 0 pbreak, doc (showString ";")])
   prtList _ [] = concatD []
   prtList _ (x:xs) = concatD [prt 0 x, prt 0 xs]
 

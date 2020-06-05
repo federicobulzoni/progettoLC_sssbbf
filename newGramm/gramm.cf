@@ -1,11 +1,12 @@
-position token PTrue	'T' 'r' 'u' 'e' ;						
-position token PFalse	'F' 'a' 'l' 's' 'e' ;						
-position token PReturn	'r' 'e' 't' 'u' 'r' 'n' ;	
-position token PNull	'N' 'u' 'l' 'l';			
+position token PTrue	    'T' 'r' 'u' 'e' ;						
+position token PFalse	    'F' 'a' 'l' 's' 'e' ;						
+position token PReturn	    'r' 'e' 't' 'u' 'r' 'n' ;	
+position token PNull	    'N' 'u' 'l' 'l';
+position token PBreak       'b' 'r' 'e' 'a' 'k' ;
+position token PContinue    'c' 'o' 'n' 't' 'i' 'n' 'u' 'e';	
 position token PIdent ( letter (letter | digit | '_' )* );
 position token PFloat ( (digit+ '.' digit+) | (digit+ '.') | ('.' digit+));
 position token PInteger ( digit+ );
-
 entrypoints Program;
 
 comment "//";
@@ -50,6 +51,8 @@ SReturn. 	Stm ::= PReturn ";";
 SReturnExp. Stm ::= PReturn Exp ";" ;
 SProcCall.  Stm ::= PIdent [Params] ";";
 SSwithc.    Stm ::= "Switch" Exp "{" Cases "}";
+SContinue.  Stm ::= PContinue ";";
+SBreak.     Stm ::= PBreak ";";
 sugarAssign. Stm ::=  LExp OpAssign Exp ";" ;
 
 SCase. Case ::= "case" Exp ":" [Stm];

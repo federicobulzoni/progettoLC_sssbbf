@@ -38,6 +38,10 @@ r e t u r n
     { tok (\p s -> PT p (eitherResIdent (T_PReturn . share) s)) }
 N u l l
     { tok (\p s -> PT p (eitherResIdent (T_PNull . share) s)) }
+b r e a k
+    { tok (\p s -> PT p (eitherResIdent (T_PBreak . share) s)) }
+c o n t i n u e
+    { tok (\p s -> PT p (eitherResIdent (T_PContinue . share) s)) }
 $l ($l | $d | \_)*
     { tok (\p s -> PT p (eitherResIdent (T_PIdent . share) s)) }
 $d + \. $d + | $d + \. | \. $d +
@@ -76,6 +80,8 @@ data Tok =
  | T_PFalse !String
  | T_PReturn !String
  | T_PNull !String
+ | T_PBreak !String
+ | T_PContinue !String
  | T_PIdent !String
  | T_PFloat !String
  | T_PInteger !String
@@ -122,6 +128,8 @@ prToken t = case t of
   PT _ (T_PFalse s) -> s
   PT _ (T_PReturn s) -> s
   PT _ (T_PNull s) -> s
+  PT _ (T_PBreak s) -> s
+  PT _ (T_PContinue s) -> s
   PT _ (T_PIdent s) -> s
   PT _ (T_PFloat s) -> s
   PT _ (T_PInteger s) -> s

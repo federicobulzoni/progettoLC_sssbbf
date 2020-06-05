@@ -63,6 +63,8 @@ import ErrM
   L_PFalse { PT _ (T_PFalse _) }
   L_PReturn { PT _ (T_PReturn _) }
   L_PNull { PT _ (T_PNull _) }
+  L_PBreak { PT _ (T_PBreak _) }
+  L_PContinue { PT _ (T_PContinue _) }
   L_PIdent { PT _ (T_PIdent _) }
   L_PFloat { PT _ (T_PFloat _) }
   L_PInteger { PT _ (T_PInteger _) }
@@ -85,6 +87,12 @@ PReturn  : L_PReturn { PReturn (mkPosToken $1)}
 
 PNull :: { PNull}
 PNull  : L_PNull { PNull (mkPosToken $1)}
+
+PBreak :: { PBreak}
+PBreak  : L_PBreak { PBreak (mkPosToken $1)}
+
+PContinue :: { PContinue}
+PContinue  : L_PContinue { PContinue (mkPosToken $1)}
 
 PIdent :: { PIdent}
 PIdent  : L_PIdent { PIdent (mkPosToken $1)}
@@ -150,6 +158,8 @@ Stm : Declaration { AbsGramm.SDecl $1 }
     | PReturn Exp ';' { AbsGramm.SReturnExp $1 $2 }
     | PIdent ListParams ';' { AbsGramm.SProcCall $1 $2 }
     | 'Switch' Exp '{' Cases '}' { AbsGramm.SSwithc $2 $4 }
+    | PContinue ';' { AbsGramm.SContinue $1 }
+    | PBreak ';' { AbsGramm.SBreak $1 }
     | LExp OpAssign Exp ';' { sugarAssign_ $1 $2 $3 }
 Case :: { Case }
 Case : 'case' Exp ':' ListStm { AbsGramm.SCase $2 (reverse $4) }
@@ -249,10 +259,10 @@ dproc_ id_ params_ block_ = DefFun id_ params_ (TSimple SType_Void) block_
 dprocinline_ id_ params_ exp_ = DefFunInLine id_ params_ (TSimple SType_Void) exp_
 sdo_ st_ ex_ = SBlock (DBlock [st_, SWhile ex_ st_])
 sif_ exp_ stm_ = SIfElse exp_ stm_ (SBlock (DBlock []))
-sugarAssign_ lexp_ AbsGramm.ProdEq exp_ = SAssign lexp_ (op_ (ELExp lexp_) Prod exp_)
-sugarAssign_ lexp_ AbsGramm.MinusEq exp_ = SAssign lexp_ (op_ (ELExp lexp_) Minus exp_)
-sugarAssign_ lexp_ AbsGramm.PlusEq exp_ = SAssign lexp_ (op_ (ELExp lexp_) Plus exp_)
-sugarAssign_ lexp_ AbsGramm.DivEq exp_ = SAssign lexp_ (op_ (ELExp lexp_) Div exp_)
-sugarAssign_ lexp_ AbsGramm.ModEq exp_ = SAssign lexp_ (op_ (ELExp lexp_) Mod exp_)
+sugarAssign_ lexp_ ProdEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Prod exp_)
+sugarAssign_ lexp_ MinusEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Minus exp_)
+sugarAssign_ lexp_ PlusEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Plus exp_)
+sugarAssign_ lexp_ DivEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Div exp_)
+sugarAssign_ lexp_ ModEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Mod exp_)
 }
 

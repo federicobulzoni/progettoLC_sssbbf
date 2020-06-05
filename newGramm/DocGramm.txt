@@ -25,6 +25,8 @@ Integer literals //Integer// are nonempty sequences of digits.
 
 
 
+
+
 PTrue literals are recognized by the regular expression
 `````'T' 'r' 'u' 'e'`````
 
@@ -36,6 +38,12 @@ PReturn literals are recognized by the regular expression
 
 PNull literals are recognized by the regular expression
 `````'N' 'u' 'l' 'l'`````
+
+PBreak literals are recognized by the regular expression
+`````'b' 'r' 'e' 'a' 'k'`````
+
+PContinue literals are recognized by the regular expression
+`````'c' 'o' 'n' 't' 'i' 'n' 'u' 'e'`````
 
 PIdent literals are recognized by the regular expression
 `````letter (letter | digit | '_')*`````
@@ -119,6 +127,8 @@ All other symbols are terminals.
   |  |  **|**  | //PReturn// //Exp// ``;``
   |  |  **|**  | //PIdent// //[Params]// ``;``
   |  |  **|**  | ``Switch`` //Exp// ``{`` //Cases// ``}``
+  |  |  **|**  | //PContinue// ``;``
+  |  |  **|**  | //PBreak// ``;``
   |  |  **|**  | //LExp// //OpAssign// //Exp// ``;``
   | //Case// | -> | ``case`` //Exp// ``:`` //[Stm]//
   | //Cases// | -> | //[Case]//

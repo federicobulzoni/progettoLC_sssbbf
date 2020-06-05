@@ -33,6 +33,12 @@ newtype PString = PString (Loc,Ident)
 newtype PChar = PChar (Loc,Ident)
   deriving (Eq, Ord, Show, Read)
 
+newtype PBreak = PBreak ((Int,Int),String)
+  deriving (Eq, Ord, Show, Read)
+
+newtype PContinue = PContinue ((Int,Int),String)
+  deriving (Eq, Ord, Show, Read)
+
 data Program = Prog [Declaration]
   deriving (Eq, Ord, Show, Read)
 
@@ -79,11 +85,13 @@ data Stm
     | SReturnExp PReturn Exp
     | SProcCall PIdent [Params]
     | SSwithc Exp Cases
-    deriving (Eq, Ord, Show, Read)
-    
+    | SContinue PContinue
+    | SBreak PBreak
+  deriving (Eq, Ord, Show, Read)
+
 data Case = SCase Exp [Stm]
   deriving (Eq, Ord, Show, Read)
-  
+
 data Cases = SCases [Case]
   deriving (Eq, Ord, Show, Read)
 
@@ -107,29 +115,30 @@ data Op
     | Pow
   deriving (Eq, Ord, Show, Read)
 
+
 data Exp
-    = ENot Exp
-    | ENeg Exp
-    | ELExp LExp
-    | EDeref LExp
-    | EInt PInteger
-    | EFloat PFloat
-    | EChar PChar
-    | EString PString
-    | ETrue PTrue
-    | EFalse PFalse
-    | ENull PNull
-    | EArray [Exp]
-    | EFunCall PIdent [Params]
-    | ETyped Exp TypeSpec Loc
-    | EOp Exp Op Exp
+  = ENot Exp
+  | ENeg Exp
+  | ELExp LExp
+  | EDeref LExp
+  | EInt PInteger
+  | EFloat PFloat
+  | EChar PChar
+  | EString PString
+  | ETrue PTrue
+  | EFalse PFalse
+  | ENull PNull
+  | EArray [Exp]
+  | EFunCall PIdent [Params]
+  | ETyped Exp TypeSpec Loc
+  | EOp Exp Op Exp
   deriving (Eq, Ord, Show, Read)
 
 data LExp
-    = LRef LExp
-    | LArr LExp Exp
-    | LIdent PIdent
-    | LExpTyped LExp TypeSpec Loc
+  = LRef LExp
+  | LArr LExp Exp
+  | LIdent PIdent
+  | LExpTyped LExp TypeSpec Loc
   deriving (Eq, Ord, Show, Read)
 
 
@@ -138,3 +147,4 @@ instance Eq TypeSpec where
   (==) (TPointer typ1) (TPointer typ2) = typ1 == typ2
   (==) (TArray typ1 (PInteger (_,dim1))) (TArray typ2 (PInteger (_,dim2))) = dim1 == dim2 && typ1 == typ2
   (==) _ _ = False
+
