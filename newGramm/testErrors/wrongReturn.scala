@@ -1,0 +1,3 @@
+def foo():Int = {
+	return;
+}

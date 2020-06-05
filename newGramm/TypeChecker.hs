@@ -218,7 +218,7 @@ inferDecl decl env = case decl of
             -- PROCEDURA con assegnata EXP
             (_,True) -> do
               texp <- inferExp exp (startFunScope e id params typ)
-              saveLog $ launchError loc UnexpectedReturn
+              saveLog $ launchError loc (ExpAssignedToProcedure ident exp (getType texp))
               return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
             -- FUNZIONE
             (_,False) -> do
@@ -335,7 +335,7 @@ inferStm stm env = case stm of
               -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
               if isTypeVoid ftyp
                 then do
-                  saveLog $ launchError loc UnexpectedReturn
+                  saveLog $ launchError loc (UnexpectedReturn exp)
                   return $ (SReturnExp preturn texp, env)
                 -- se il tipo dello scope non è void, ma è incompatibile con quello dell'espressione
                 -- allora si lancia un'errore.
@@ -369,7 +369,7 @@ inferStm stm env = case stm of
       case Env.lookup env id of
         -- Caso in cui l'identificatore usato nella chiamata di procedura sia assegnato ad una variabile.
         Success (VarInfo dloc _) -> do
-         saveLog $ launchError loc (DuplicateVariable ident dloc)
+         saveLog $ launchError loc (VariableUsedAsProcedure ident dloc)
          -- Notare come l'identificatore che viene ritornato non sia lo stesso che ci arriva in input,
          -- bensì la locazione dell'identificatore viene sostituita diventando quella di dichiarazione
          -- dell'identificatore.
@@ -380,27 +380,15 @@ inferStm stm env = case stm of
         Success (FunInfo dloc typ paramclauses) -> 
           -- typ_args è il corrispettivo di typ_params, i due devono combaciare per poter affermare
           -- che la chiamata di procedura è valida.
-          let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
-          do
-            if any (isTypeError) (concat tparams)
-              then
-                return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
-              else
-                -- Nel caso in cui quella considerata non sia una procedura viene lanciato un warning
-                --  dato che non viene utilizzato il valore di ritorno.
-                if not (isTypeVoid typ)
-                  then do
-                    saveLog $ launchWarning loc (MissingAssignVariable ident)
-                    return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
-                  else
-                    if not (typ_args == typ_params)
-                      -- Se i tipi dei parametri non combaciano con quelli degli argomenti viene lanciato
-                      -- un errore.
-                      then do
-                        saveLog $ launchError loc (WrongProcParams ident typ_args typ_params)
-                        return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
-                      else
-                        return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
+          let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in 
+            do
+              case (any (isTypeError) (concat tparams), not (typ_args == typ_params), not (isTypeVoid typ)) of
+                (True,_,_) -> return ()
+                (_,True,False) -> saveLog $ launchError loc (WrongProcParams ident typ_args typ_params)
+                (_,True,True) -> saveLog $ launchError loc (WrongFunctionParams ident typ_args typ_params typ)
+                (_,False,True) -> saveLog $ launchWarning loc (UnusedReturnValue ident)
+                otherwise -> return ()
+              return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
 
 
 inferLExp :: LExp -> Env -> Logger LExp
@@ -439,11 +427,11 @@ inferLExp lexp env = case lexp of
          case (tlexp , isCompatible texp (TSimple SType_Int)) of
            (LExpTyped _ (TArray typ _) loc, True) -> return $ LExpTyped (LArr tlexp texp) typ loc
            (LExpTyped _ (TArray typ _) loc, False) -> do
-             saveLog $ launchError loc (WrongArrayIndex exp (getType texp))
+             saveLog $ launchError loc (ArraySubscriptNotInt exp (getType texp))
              return $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) loc
            (_, False) -> do
              saveLog $ launchError (getLoc texp) (WrongArrayAccess  lexp (getType tlexp))
-             saveLog $ launchError (getLoc texp) (WrongArrayIndex exp (getType texp))
+             saveLog $ launchError (getLoc texp) (ArraySubscriptNotInt exp (getType texp))
              return  $ LExpTyped (LArr tlexp texp) (TSimple SType_Error) (getLoc tlexp)
            (_, True) -> do
              saveLog $ launchError (getLoc texp) (WrongArrayAccess lexp (getType tlexp))
@@ -461,7 +449,7 @@ inferLExp lexp env = case lexp of
       -- viene sostituito con la locazione in cui tale identificatore è stato dichiarato.
       Success (VarInfo dloc typ) -> return $ LExpTyped (LIdent (PIdent (dloc, ident))) typ loc
       Success (FunInfo dloc _ _) -> do
-        saveLog $ launchError loc (DuplicateFunction ident dloc)
+        saveLog $ launchError loc (FunctionUsedAsVariable ident dloc)
         return $ LExpTyped (LIdent (PIdent (dloc, ident))) (TSimple SType_Error) loc
 
 inferExp :: Exp -> Env -> Logger Exp
@@ -506,7 +494,7 @@ inferExp exp env = case exp of
     let typ_params = map (map getType) tparams in
       case Env.lookup env id of
         Success (VarInfo dloc _) -> do
-         saveLog $ launchError loc (DuplicateVariable ident dloc)
+         saveLog $ launchError loc (VariableUsedAsFunction ident dloc)
          return $ ETyped (EFunCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
         Failure except -> do
           saveLog $ launchError loc except

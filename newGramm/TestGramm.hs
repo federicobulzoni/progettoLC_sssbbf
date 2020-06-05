@@ -38,22 +38,21 @@ run v p s = let ts = myLLexer s in case p ts of
                           putStrLn s
                           exitFailure
            Ok tree -> do 
-                          putStrLn $ color Green Bold "\nParse Successful!"
+                          putStrLn $ color Green Bold "\nParse Successful!\n"
                           showTree v tree
-                          putStrLn $ "\n" ++ separator ++ "\n\n"
                           let (annotatedTree, logs) = genAnnotatedTree tree
                           case (logs) of
                             [] -> do
                               showAnnotatedTree v annotatedTree
                               let code = genTAC annotatedTree True
-                              showTAC code
+                              showTAC v code
                             _ -> do
                               showAnnotatedTree v annotatedTree
                               errors <- showErrors logs
                               if errors == True
                                 then do
                                   let code = genTAC annotatedTree (hasMain logs)
-                                  showTAC code
+                                  showTAC v code
                                 else 
                                   return ()
                               
@@ -69,11 +68,9 @@ colorSectionTitle s = color Cyan Bold s
 
 showErrors :: [LogElement] -> IO Bool
 showErrors logs = do
-  putStrLn $ "\n" ++ separator
-  putStrLn $ colorSectionTitle "[Lista errori type checker]"
-  putStrLn separator
+  putStrLn $ separator ++ "\n\n" ++ colorSectionTitle "[Type checker error list]" ++ "\n"
   errorFound <- printTypeCheckErrors logs 0
-  putStrLn separator
+  putStrLn $ "\n" ++ separator
   return errorFound
 
 printTypeCheckErrors :: [LogElement] -> Int -> IO Bool
@@ -101,26 +98,27 @@ printTypeCheckErrors (log:logs) index = do
 separator :: String
 separator = "----------------------------------------------------------------"
 
-showTAC :: [TAC] -> IO ()
-showTAC code = do
-  putStrLn $ "\n" ++ separator
-  putStrLn "[Three Address Code]"
-  putStrLn separator
-  printTAC code
-  putStrLn $ separator ++ "\n"
+showTAC :: Int -> [TAC] -> IO ()
+showTAC v code = do
+  putStrV v $ separator ++ "\n"
+  putStrV v $ (colorSectionTitle "\n[Three Address Code]\n\n") ++ printTAC code
+  putStrV v $ ""
 
 showTree :: Int -> Program -> IO ()
 showTree v tree
  = do
+      putStrV v $ separator ++ "\n"
       putStrV v $ (colorSectionTitle "\n[Abstract Syntax]\n\n") ++ show tree
       putStrV v $ (colorSectionTitle "\n[Linearized tree]\n\n") ++ printTree tree
+      putStrV v $ ""
 
 showAnnotatedTree :: Int -> Program -> IO ()
 showAnnotatedTree v tree
   = do
-      --putStrLn "\n" ++ separator ++ "\n\n"
+      putStrV v $ separator ++ "\n"
       putStrV v $ (colorSectionTitle "\n[Annotated Tree - Abstract Syntax]\n\n") ++ show tree
       putStrV v $ (colorSectionTitle "\n[Annotated Tree - Linearized tree]\n\n") ++ printTree tree
+      putStrV v $ ""
 
 usage :: IO ()
 usage = do

@@ -9,25 +9,18 @@ columnWidth :: Int
 columnWidth = 16
 
 -- Entrypoint. Called by TestGramm.
-printTAC :: [TAC] -> IO ()
-printTAC [] = return ()
-printTAC [Lab label] = putStrLn $ buildLabel label
-printTAC ((Lab label1):(Lab label2):xs) = do
-    putStrLn $ buildInstrLabel label1
-    printTAC $ (Lab label2):xs
-printTAC ((Lab label):x:xs)
-    | length stringLabel < columnWidth = do 
-        putStr $ padStringLabel stringLabel
-        putStrLn $ buildTACInstruction x
-        printTAC xs
-    | otherwise = do
-        putStrLn $ stringLabel
-        printTAC (x:xs)
+printTAC :: [TAC] -> String
+printTAC code = intercalate "\n" (printTACAux code)
+
+printTACAux :: [TAC] -> [String]
+printTACAux [] = return []
+printTACAux [Lab label] = [buildLabel label]
+printTACAux ((Lab label1):(Lab label2):xs) = (buildInstrLabel label1):(printTACAux ((Lab label2):xs))
+printTACAux ((Lab label):x:xs)
+    | length stringLabel < columnWidth = (padStringLabel stringLabel ++ buildTACInstruction x):(printTACAux xs)
+    | otherwise = stringLabel:(printTACAux (x:xs))
     where stringLabel = buildInstrLabel label
-printTAC (x:xs) = do
-    putStr $ padStringLabel ""
-    putStrLn $ buildTACInstruction x
-    printTAC xs
+printTACAux (x:xs) = (padStringLabel "" ++ buildTACInstruction x):(printTACAux xs)
 
 -- Convert TAC instruction to string. Does not receive labels.
 buildTACInstruction :: TAC -> String

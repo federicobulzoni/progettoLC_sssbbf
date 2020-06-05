@@ -1,6 +1,6 @@
 #!/bin/bash
 
-for file in ./test/*
+for file in ./testErrors/*
 do
 	echo -e
 	echo "____________________ $file"

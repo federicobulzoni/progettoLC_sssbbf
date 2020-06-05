@@ -1,5 +1,5 @@
 // ERRORE
-def sum(x : Int, y : Int) : Int = *p
+def sum(x : Int, y : Int) : Int = x + y;
 // CORRETTO
 // def sum(x : Int, y : Int) : Int = X+Y
 def main() : Int = {
