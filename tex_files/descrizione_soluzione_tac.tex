@@ -1,6 +1,6 @@
 \subsection{Descrizione soluzione - TAC}
 \begin{center}
-    {\bf BOZZA - non riletta}
+    {\bf BOZZA}
 \end{center}
 Il Three Address Code (TAC) viene costruito a partire dall'albero annotato risultante dall'analisi di semantica statica (Type Checking). Per la costruzione viene fatto largo uso della monade State, descritta nella sezione precedente. In particolare lo stato ha quattro campi: il numero di temporanei e di etichette finora utilizzati, la lista di istruizioni che compongono il TAC e una lista di liste di istruzioni (utili per la gestione degli scope e delle funzioni innestate). Lo stato, come detto, è stato rinominato in {\tt TacState}.
 
