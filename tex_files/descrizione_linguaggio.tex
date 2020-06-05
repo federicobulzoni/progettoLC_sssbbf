@@ -1,53 +1,18 @@
-\documentclass[11pt,a4paper,italian]{article}
+\section{Struttura lessicale di \SBF}
 
-\usepackage[utf8]{inputenc}
-\usepackage{babel}
-\usepackage{color, soul}
-\usepackage{hyperref}
-\usepackage{amsmath}
-\usepackage{amsfonts}
-\usepackage{amssymb}
-\usepackage{amsthm}
+\subsection*{Parole riservate}
+Le parole riservate in \SBF sono le seguenti alfanumeriche
+\begin{equation}
+\False,\ \True,\ \If,\ \Else,\ \Do,\ \While,\ \Def,\ \Return,\ \Val,\ \Var
+\end{equation}
+\hl{andrebbero ordinate}
+e i seguenti simboli
+\begin{equation}
+\texttt{\_},\ \texttt{:},\ \texttt{=},\ \texttt{=>},\ \texttt{<-},\ \texttt{<:},\ \texttt{<\%},\ \texttt{>:},\ \texttt{\#},\ \texttt{@}
+\end{equation}
+\hl{non serviranno tutti}
 
-\title{Descrizione del linguaggio SBF}
-\date{}
-\author{}
-
-% Nome del linguaggio.
-\newcommand{\SBF}{\textbf{SBF}}
-
-% Token
-\newcommand{\token}[1]{\langle \mathit{#1} \rangle }
-
-% Parole riservate
-\newcommand{\False}{\texttt{False}}
-\newcommand{\True}{\texttt{True}}
-\newcommand{\If}{\texttt{if}}
-\newcommand{\Else}{\texttt{else}}
-\newcommand{\Do}{\texttt{do}}
-\newcommand{\While}{\texttt{while}}
-\newcommand{\Def}{\texttt{def}}
-\newcommand{\Return}{\texttt{return}}
-\newcommand{\Val}{\texttt{val}}
-\newcommand{\Var}{\texttt{var}}
-
-\begin{document}
-	\maketitle
-	
-	\section{Struttura lessicale di \SBF}
-	\subsection*{Parole riservate}
-	Le parole riservate in \SBF sono le seguenti alfanumeriche
-	\begin{equation}
-	\False,\ \True,\ \If,\ \Else,\ \Do,\ \While,\ \Def,\ \Return,\ \Val,\ \Var
-	\end{equation}
-	\hl{andrebbero ordinate}
-	e i seguenti simboli
-	\begin{equation}
-	\texttt{\_},\ \texttt{:},\ \texttt{=},\ \texttt{=>},\ \texttt{<-},\ \texttt{<:},\ \texttt{<\%},\ \texttt{>:},\ \texttt{\#},\ \texttt{@}
-	\end{equation}
-	\hl{non serviranno tutti}
-	
-	\subsection*{Identificatori}
+\subsection*{Identificatori}
 %	Un identificatore $\token{Ident}$ è uno dei seguenti:
 %	\begin{enumerate}
 %		\item una lettera o il carattere '\_' seguiti da una sequenza arbitraria di lettere, cifre e del carattere '\_';
@@ -58,125 +23,123 @@
 %	Sono escluse le parole riservate.
 %	\hl{Ci sarebbe la distinzione fra identificatori di costante e non.}
 
-	Un identificatore $\token{Ident}$ è una lettera o il carattere '\_' seguiti da una sequenza arbitraria di lettere, cifre e del carattere '\_'.
-	
-	\subsection*{Caratteri di ritorno a capo}
-	Nel linguaggio \SBF\ le istruzioni possono terminare con ';' oppure '\textbackslash n'. 
+Un identificatore $\token{Ident}$ è una lettera o il carattere '\_' seguiti da una sequenza arbitraria di lettere, cifre e del carattere '\_'.
+
+\subsection*{Caratteri di ritorno a capo}
+Nel linguaggio \SBF\ le istruzioni possono terminare con ';' oppure '\textbackslash n'. 
+\begin{equation*}
+\token{Sep} ::= \texttt{;}\ |\ \token{NewLine}
+\end{equation*}
+
+Il carattere di ritorno a capo '\textbackslash n' è sintatticamente significativo, e corrisponde a un token $\token{NewLine}$ quando le seguenti condizioni sono soddisfatte:
+\begin{itemize}
+	\item il token immediatamente precedente può terminare una istruzione;
+	\item il token immediatamente successivo può iniziare una istruzione;
+	\item il carattere appare in una regione dove il new line è abilitato.
+\end{itemize}
+\hl{Complicate da spiegare, sono scritte qua. }
+\url{https://scala-lang.org/files/archive/spec/2.13/01-lexical-syntax.html#identifiers}
+
+\subsection*{Letterali}
+Ci sono letterali per numeri interi, numeri in virgola mobile, singoli caratteri, booleani, stringhe. Essi seguono le convenzioni della maggior parte dei linguaggi di programmazione.
+\begin{align*}
+\token{Literal} ::=
+& \token{Int}\\
+& \token{Float}\\
+& \token{Char}\\
+& \token{Boolean}\\
+& \token{String}
+\end{align*}
+
+\subsection*{Caratteri di spaziatura e commenti}
+I token possono essere separati da caratteri di spaziatura o commenti.
+
+I commenti sono di due tipi:
+\begin{itemize}
+	\item i commenti di una riga sono sequenze di caratteri che iniziano con \verb$\\$ e finiscono al termine della riga;
+	\item i commenti multi-riga sono sequenze di caratteri che iniziano con \verb$/*$ e terminano con \verb$*/$. Possono essere annidati, ma in modo bilanciato. Ad esempio \verb$/*commento*/*/$ non è un commento valido.
+\end{itemize}
+
+\hl{Permettiamo le trailing commas? In caso va detto qua in una sottosezione che non diventano token.}
+
+\section{Struttura sintattica di \SBF}
+\begin{itemize}
+\item Un \emph{programma} è una sequenza di dichiarazioni separate da token di separazione $\token{Sep}$.
+
+
+\item Una \emph{dichiarazione} ha una delle seguenti forme:
+\begin{itemize}
+	\item \emph{Dichiarazione di variabili e valori.}
+	\begin{align*}
+	\token{Decl} ::=\ &\texttt{val}\ \token{Ident} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\\
+	|\ &\texttt{val}\ \token{Ident} \texttt{:}\ \token{TypeSpec}\\
+	|\ &\texttt{var}\ \token{Ident} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\\
+	|\ &\texttt{var}\ \token{Ident} \texttt{:}\ \token{TypeSpec}
+	\end{align*}
+	dove
+	\begin{align*}
+	\token{TypeSpec} ::=\ &\token{SimpleType}\\
+	|\ &\texttt{\&}\ \token{TypeSpec}\\
+	|\ &\texttt{Array}\ \texttt{[}\ \token{TypeSpec}\ \texttt{]}\\
+	\token{SimpleType} ::=\ &\texttt{bool}| \texttt{char}| \texttt{integer}| \texttt{float}| \texttt{string}
+	\end{align*}
+	\item \emph{Dichiarazione di funzioni/procedure.}
+	\begin{align*}
+	\token{Decl} ::=\ & \texttt{def}\ \token{Ident}\ \token{ParamClauses} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\\
+	& \texttt{def}\ \token{Ident}\ \token{ParamClauses} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Block}
+	\end{align*}
+	L'elemento $\token{ParamClauses}$ è una sequenza, non vuota, di $\token{ParamClause}$:
 	\begin{equation*}
-	\token{Sep} ::= \texttt{;}\ |\ \token{NewLine}
+	\token{ParamClause} ::=\ \texttt{(}\ \token{ListOfParameters}\ \texttt{)}
+	\end{equation*}
+	mentre $\token{ListOfParameters}$ è una sequenza, che può essere vuota, di elementi separati da virgola della forma
+	\begin{equation*}
+	\token{Parameter} ::=\ \token{Ident}\ \texttt{:}\ \token{TypeSpec}
 	\end{equation*}
 	
-	Il carattere di ritorno a capo '\textbackslash n' è sintatticamente significativo, e corrisponde a un token $\token{NewLine}$ quando le seguenti condizioni sono soddisfatte:
-	\begin{itemize}
-		\item il token immediatamente precedente può terminare una istruzione;
-		\item il token immediatamente successivo può iniziare una istruzione;
-		\item il carattere appare in una regione dove il new line è abilitato.
-	\end{itemize}
-	\hl{Complicate da spiegare, sono scritte qua. }
-	\url{https://scala-lang.org/files/archive/spec/2.13/01-lexical-syntax.html#identifiers}
-	
-	\subsection*{Letterali}
-	Ci sono letterali per numeri interi, numeri in virgola mobile, singoli caratteri, booleani, stringhe. Essi seguono le convenzioni della maggior parte dei linguaggi di programmazione.
-	\begin{align*}
-	\token{Literal} ::=
-	& \token{Int}\\
-	& \token{Float}\\
-	& \token{Char}\\
-	& \token{Boolean}\\
-	& \token{String}
-	\end{align*}
-	
-	\subsection*{Caratteri di spaziatura e commenti}
-	I token possono essere separati da caratteri di spaziatura o commenti.
-	
-	I commenti sono di due tipi:
-	\begin{itemize}
-		\item i commenti di una riga sono sequenze di caratteri che iniziano con \verb$\\$ e finiscono al termine della riga;
-		\item i commenti multi-riga sono sequenze di caratteri che iniziano con \verb$/*$ e terminano con \verb$*/$. Possono essere annidati, ma in modo bilanciato. Ad esempio \verb$/*commento*/*/$ non è un commento valido.
-	\end{itemize}
-	
-	\hl{Permettiamo le trailing commas? In caso va detto qua in una sottosezione che non diventano token.}
-	
-	\section{Struttura sintattica di \SBF}
-	\begin{itemize}
-	\item Un \emph{programma} è una sequenza di dichiarazioni separate da token di separazione $\token{Sep}$.
+\end{itemize}
 
-	
-	\item Una \emph{dichiarazione} ha una delle seguenti forme:
-	\begin{itemize}
-		\item \emph{Dichiarazione di variabili e valori.}
-		\begin{align*}
-		\token{Decl} ::=\ &\texttt{val}\ \token{Ident} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\\
-		|\ &\texttt{val}\ \token{Ident} \texttt{:}\ \token{TypeSpec}\\
-		|\ &\texttt{var}\ \token{Ident} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\\
-		|\ &\texttt{var}\ \token{Ident} \texttt{:}\ \token{TypeSpec}
-		\end{align*}
-		dove
-		\begin{align*}
-		\token{TypeSpec} ::=\ &\token{SimpleType}\\
-		|\ &\texttt{\&}\ \token{TypeSpec}\\
-		|\ &\texttt{Array}\ \texttt{[}\ \token{TypeSpec}\ \texttt{]}\\
-		\token{SimpleType} ::=\ &\texttt{bool}| \texttt{char}| \texttt{integer}| \texttt{float}| \texttt{string}
-		\end{align*}
-		\item \emph{Dichiarazione di funzioni/procedure.}
-		\begin{align*}
-		\token{Decl} ::=\ & \texttt{def}\ \token{Ident}\ \token{ParamClauses} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\\
-		& \texttt{def}\ \token{Ident}\ \token{ParamClauses} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Block}
-		\end{align*}
-		L'elemento $\token{ParamClauses}$ è una sequenza, non vuota, di $\token{ParamClause}$:
-		\begin{equation*}
-		\token{ParamClause} ::=\ \texttt{(}\ \token{ListOfParameters}\ \texttt{)}
-		\end{equation*}
-		mentre $\token{ListOfParameters}$ è una sequenza, che può essere vuota, di elementi separati da virgola della forma
-		\begin{equation*}
-		\token{Parameter} ::=\ \token{Ident}\ \texttt{:}\ \token{TypeSpec}
-		\end{equation*}
-		
-	\end{itemize}
+\item Un \emph{blocco} è una sequenza di istruzioni racchiuse fra parentesi graffe e separate da $\token{Sep}$.
 
-	\item Un \emph{blocco} è una sequenza di istruzioni racchiuse fra parentesi graffe e separate da $\token{Sep}$.
-	
-	\item Una \emph{istruzione} ha la forma:
-	\begin{align*}
-	\token{Stmt} ::=\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
-	|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\ \texttt{else}\ \token{Stmt}\\
-	|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\ \token{Sep}\ \texttt{else}\ \token{Stmt}\\
-	|\ &\texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
-	|\ &\texttt{do}\ \token{Stmt}\ \texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\\
-	|\ &\texttt{do}\ \token{Stmt}\ \token{Sep}\ \texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\\
-	|\ &\texttt{return}\\
-	|\ &\texttt{return}\ \token{Expr}\\
-	|\ &\token{Block}\\
-	|\ &\token{LExpr}\\
-	|\ &\token{LExpr}\ \token{AssignmentOp}\ \token{Expr}\\
-	|\ &\token{Ident}\ \token{ParamClauses}
-	\end{align*}
-	
-	\item Le \emph{left expressions} permesse nel linguaggio hanno la seguente forma.
-	\begin{align*}
-	\token{LExpr} ::=\ &\token{Ident}\\
-	|\ &\token{LExpr}\ \texttt{(}\ \token{Expr}\ \texttt{)}\\
-	|\ &\texttt{*}\ \token{LExpr}\\
-	|\ &\texttt{\&}\ \token{LExpr}\\
-	|\ &\texttt{(}\ \token{LExpr}\ \texttt{)}
-	\end{align*}
-	\hl{Precedenza di puntatori e array access}
+\item Una \emph{istruzione} ha la forma:
+\begin{align*}
+\token{Stmt} ::=\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
+|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\ \texttt{else}\ \token{Stmt}\\
+|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\ \token{Sep}\ \texttt{else}\ \token{Stmt}\\
+|\ &\texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
+|\ &\texttt{do}\ \token{Stmt}\ \texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\\
+|\ &\texttt{do}\ \token{Stmt}\ \token{Sep}\ \texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\\
+|\ &\texttt{return}\\
+|\ &\texttt{return}\ \token{Expr}\\
+|\ &\token{Block}\\
+|\ &\token{LExpr}\\
+|\ &\token{LExpr}\ \token{AssignmentOp}\ \token{Expr}\\
+|\ &\token{Ident}\ \token{ParamClauses}
+\end{align*}
 
-	\item Le \emph{right expressions} permesse nel linguaggio hanno la seguente forma.
-	\begin{align*}
-	\token{Expr} ::=\ &\token{LExpr}\\
-	|\ &\token{Literal}\\
-	|\ &\token{Expr}\ \token{BinOp}\ \token{Expr}\\
-	|\ &\token{UnOp}\ \token{Expr}\\
-	|\ &\token{Ident}\ \token{Lists}\\
-	|\ &\texttt{(}\ \token{Expr}\ \texttt{)}
-	\end{align*}
-	\begin{align*}
-	\token{BinOp} ::=\ &\texttt{||} | \texttt{\&\&}|\texttt{+}|\texttt{-}|\texttt{*}|\texttt{/}|\texttt{\%}|\texttt{\^{}}|\texttt{==}|\texttt{!=}|\texttt{<}|\texttt{<=}|\texttt{>}|\texttt{>=}\\
-	\token{UnOp} ::=\ &\texttt{!}\ \texttt{-}
-	\end{align*}
+\item Le \emph{left expressions} permesse nel linguaggio hanno la seguente forma.
+\begin{align*}
+\token{LExpr} ::=\ &\token{Ident}\\
+|\ &\token{LExpr}\ \texttt{(}\ \token{Expr}\ \texttt{)}\\
+|\ &\texttt{*}\ \token{LExpr}\\
+|\ &\texttt{\&}\ \token{LExpr}\\
+|\ &\texttt{(}\ \token{LExpr}\ \texttt{)}
+\end{align*}
+\hl{Precedenza di puntatori e array access}
 
-	
-	\end{itemize}
-	
-\end{document}
+\item Le \emph{right expressions} permesse nel linguaggio hanno la seguente forma.
+\begin{align*}
+\token{Expr} ::=\ &\token{LExpr}\\
+|\ &\token{Literal}\\
+|\ &\token{Expr}\ \token{BinOp}\ \token{Expr}\\
+|\ &\token{UnOp}\ \token{Expr}\\
+|\ &\token{Ident}\ \token{Lists}\\
+|\ &\texttt{(}\ \token{Expr}\ \texttt{)}
+\end{align*}
+\begin{align*}
+\token{BinOp} ::=\ &\texttt{||} | \texttt{\&\&}|\texttt{+}|\texttt{-}|\texttt{*}|\texttt{/}|\texttt{\%}|\texttt{\^{}}|\texttt{==}|\texttt{!=}|\texttt{<}|\texttt{<=}|\texttt{>}|\texttt{>=}\\
+\token{UnOp} ::=\ &\texttt{!}\ \texttt{-}
+\end{align*}
+
+
+\end{itemize}
