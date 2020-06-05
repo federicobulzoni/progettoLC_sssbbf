@@ -200,11 +200,11 @@ inferDecl decl env = case decl of
   DefFunInLine id@(PIdent (loc, ident)) params typ exp -> 
     case update env ident (FunInfo loc typ params) of
       Success env' -> do
-        if ident == "main" && Env.isGlobalScope env' then do
-          saveLog $ launchWarning loc MainDefinedInLine
-          functionHandler (Env.setReturnFound env')
-        else
-          functionHandler env'
+        if ident == "main" && Env.isGlobalScope env' 
+          then 
+            functionHandler (Env.setReturnFound env')
+          else
+            functionHandler env'
       Failure except -> do
         saveLog $ launchError loc except
         functionHandler env

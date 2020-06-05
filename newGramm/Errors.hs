@@ -29,7 +29,6 @@ data LogElement
 
 data TCException
     = MissingReturn Ident
-    | MainDefinedInLine
     | MissingMain
     | WrongExpType Exp TypeSpec TypeSpec
     | WrongExpAssignType Exp TypeSpec TypeSpec LExp
@@ -87,8 +86,7 @@ getExceptionMsg :: TCException -> String
 getExceptionMsg except = case except of
     MissingReturn ident -> 
         "Not every code path returns a value in function " ++ color Default Italic (printTree ident) ++ "."
-    MainDefinedInLine -> 
-        "Main definito come una funzione inline."
+
     MissingMain -> 
         "Undefined " ++ color Default Italic "main" ++ " function."
 

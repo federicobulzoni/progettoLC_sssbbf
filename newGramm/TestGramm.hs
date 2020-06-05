@@ -23,6 +23,9 @@ myLLexer = myLexer
 
 type Verbosity = Int
 
+separator :: String
+separator = "----------------------------------------------------------------"
+
 putStrV :: Verbosity -> String -> IO ()
 putStrV v s = when (v > 1) $ putStrLn s
 
@@ -68,35 +71,11 @@ colorSectionTitle s = color Cyan Bold s
 
 showErrors :: [LogElement] -> IO Bool
 showErrors logs = do
-  putStrLn $ separator ++ "\n\n" ++ colorSectionTitle "[Type checker error list]" ++ "\n"
+  putStrLn $ separator ++ "\n"
+  putStrLn $ colorSectionTitle "\n[Type checker error list]\n"
   errorFound <- printTypeCheckErrors logs 0
-  putStrLn $ "\n" ++ separator
+  putStrLn $ "\n"
   return errorFound
-
-printTypeCheckErrors :: [LogElement] -> Int -> IO Bool
-printTypeCheckErrors [] index = return True
-printTypeCheckErrors (log:logs) index = do
-  putStrLn $ (printIndex index) ++  " " ++ printException log
-  res <- printTypeCheckErrors logs (index+1)
-  if isError log
-    then
-      return $ res && False 
-    else
-      return $ res && True
-    
-  where
-    printIndex n = show index ++ ")"
-
---printTypeCheckSuccess :: Program -> IO()
---printTypeCheckSuccess prog = do
---  putStrLn $ "\n" ++ separator
---  putStrLn "[Albero tipato]"
---  putStrLn separator
---  putStrV 2 $ show prog
---  putStrLn separator
-
-separator :: String
-separator = "----------------------------------------------------------------"
 
 showTAC :: Int -> [TAC] -> IO ()
 showTAC v code = do
@@ -119,6 +98,20 @@ showAnnotatedTree v tree
       putStrV v $ (colorSectionTitle "\n[Annotated Tree - Abstract Syntax]\n\n") ++ show tree
       putStrV v $ (colorSectionTitle "\n[Annotated Tree - Linearized tree]\n\n") ++ printTree tree
       putStrV v $ ""
+
+printTypeCheckErrors :: [LogElement] -> Int -> IO Bool
+printTypeCheckErrors [] index = return True
+printTypeCheckErrors (log:logs) index = do
+  putStrLn $ (printIndex index) ++  " " ++ printException log
+  res <- printTypeCheckErrors logs (index+1)
+  if isError log
+    then
+      return $ res && False 
+    else
+      return $ res && True
+    
+  where
+    printIndex n = show index ++ ")"
 
 usage :: IO ()
 usage = do
