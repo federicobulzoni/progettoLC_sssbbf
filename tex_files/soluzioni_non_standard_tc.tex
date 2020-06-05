@@ -1,0 +1,13 @@
+\subsection{Gestione del log tramite la monade Writer}
+La gestione del log merita un discorso dedicato, per comprendere appieno cosa è stato svolto bisogna partire da una analisi del modulo \texttt{Errors.hs}.
+
+Gli elementi di log, che possono essere \texttt{Warning} oppure \texttt{Errori}, contengono la posizione in cui si è verificata l'eccezione e la rispettiva eccezione.
+Le eccezioni sono di tipo \texttt{TCException} e ogni eccezione ha un messaggio di notifica dedicato.
+
+Il modulo \texttt{Environment.hs} che fornisce l'interfaccia al modulo di analisi statica per la gestione dell'environment del programma, utilizza una versione modificata della monade di default per la gestione degli errori utilizzata da BNFC. Nella versione da noi utilizzata in caso di errore viene ritornato un oggetto di tipo \texttt{TCException} invece che un oggetto \texttt{String}.
+
+All'interno del modulo \texttt{StaticAnalysis.hs} è invece la monade \texttt{Writer} ad occuparsi di immagazzinare gli elementi di log creati durante l'analisi statica del programma.
+La monade \texttt{Writer} si occupa di immagazzinare gli elementi di log all'interno di una lista di \texttt{LogElement}. Un nuovo elemento di log viene aggiunto alla lista tramite la funzione \texttt{tell}.
+
+Giusto per chiarezza sintattica, nel nostro codice è stata aggiunta una funzione \texttt{saveLog} che è poco più che un alias della funzione \texttt{tell}, ed è stato definito l'alias \texttt{Logger a} per \texttt{Writer [LogElement] a}.
+Ogni funzione del modulo di analisi statica che può scovare un'eccezione durante l'analisi dell'albero di sintassi astratta, ritorna dunque un elemento \texttt{Logger a}.

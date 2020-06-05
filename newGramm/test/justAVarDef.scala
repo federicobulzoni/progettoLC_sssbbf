@@ -35,6 +35,9 @@ def main2() = {
     foo ();
 }
 
+def fun3 () : Int = {
+    var x : Int;
+}
 def bar() : Bool = {
     var x : Int = 3 + 4 * 3;
     def bar2(k : Int) : Float = {
