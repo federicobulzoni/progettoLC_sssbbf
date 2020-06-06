@@ -1,145 +1,143 @@
+\section{Caratteristiche generali di \SBF}
+\hl{TODO}
+
 \section{Struttura lessicale di \SBF}
 
 \subsection*{Parole riservate}
-Le parole riservate in \SBF sono le seguenti alfanumeriche
-\begin{equation}
-\False,\ \True,\ \If,\ \Else,\ \Do,\ \While,\ \Def,\ \Return,\ \Val,\ \Var
-\end{equation}
-\hl{andrebbero ordinate}
-e i seguenti simboli
-\begin{equation}
-\texttt{\_},\ \texttt{:},\ \texttt{=},\ \texttt{=>},\ \texttt{<-},\ \texttt{<:},\ \texttt{<\%},\ \texttt{>:},\ \texttt{\#},\ \texttt{@}
-\end{equation}
-\hl{non serviranno tutti}
+Le parole riservate in \SBF\ sono le seguenti:
+\begin{gather*}
+\If,\ \Else,\ \Do,\ \While,\ \Def,\ \Return,\ \Var,\ \texttt{Array},\ \False,\ \True,\\
+\texttt{Null},\ \texttt{Char},\ \texttt{String},\ \texttt{Int},\ \texttt{Float},\ \texttt{Bool}.
+\end{gather*}
 
 \subsection*{Identificatori}
-%	Un identificatore $\token{Ident}$ è uno dei seguenti:
-%	\begin{enumerate}
-%		\item una lettera o il carattere '\_' seguiti da una sequenza arbitraria di lettere, cifre e del carattere '\_';
-%		\item una sequenza di uno o più operatori (ad esempio '+', ':', '?'). Il simbolo '\$' è escluso;
-%		\item identificatori del primo tipo, seguiti da '\_' e da un un identificatore del secondo tipo;
-%		\item una stringa arbitraria racchiusa fra back-quotes (ad esempio `def`).
-%	\end{enumerate}
-%	Sono escluse le parole riservate.
-%	\hl{Ci sarebbe la distinzione fra identificatori di costante e non.}
 
-Un identificatore $\token{Ident}$ è una lettera o il carattere '\_' seguiti da una sequenza arbitraria di lettere, cifre e del carattere '\_'.
-
-\subsection*{Caratteri di ritorno a capo}
-Nel linguaggio \SBF\ le istruzioni possono terminare con ';' oppure '\textbackslash n'. 
-\begin{equation*}
-\token{Sep} ::= \texttt{;}\ |\ \token{NewLine}
-\end{equation*}
-
-Il carattere di ritorno a capo '\textbackslash n' è sintatticamente significativo, e corrisponde a un token $\token{NewLine}$ quando le seguenti condizioni sono soddisfatte:
-\begin{itemize}
-	\item il token immediatamente precedente può terminare una istruzione;
-	\item il token immediatamente successivo può iniziare una istruzione;
-	\item il carattere appare in una regione dove il new line è abilitato.
-\end{itemize}
-\hl{Complicate da spiegare, sono scritte qua. }
-\url{https://scala-lang.org/files/archive/spec/2.13/01-lexical-syntax.html#identifiers}
+Un identificatore $\token{Ident}$ è una lettera seguita da una sequenza arbitraria di lettere, cifre e del carattere '\_'.
 
 \subsection*{Letterali}
-Ci sono letterali per numeri interi, numeri in virgola mobile, singoli caratteri, booleani, stringhe. Essi seguono le convenzioni della maggior parte dei linguaggi di programmazione.
+Vi sono letterali per numeri interi, numeri in virgola mobile, singoli caratteri, booleani, stringhe. Essi seguono le convenzioni della maggior parte dei linguaggi di programmazione.
 \begin{align*}
-\token{Literal} ::=
+\token{Literal} ::=\ 
 & \token{Int}\\
-& \token{Float}\\
-& \token{Char}\\
-& \token{Boolean}\\
-& \token{String}
+|\ & \token{Float}\\
+|\ & \token{Char}\\
+|\ & \token{Bool}\\
+|\ & \token{String}\\
+|\ & \texttt{Null}
 \end{align*}
 
-\subsection*{Caratteri di spaziatura e commenti}
-I token possono essere separati da caratteri di spaziatura o commenti.
-
-I commenti sono di due tipi:
+\subsection*{Commenti}
+I commenti in \SBF\ sono di due tipi:
 \begin{itemize}
 	\item i commenti di una riga sono sequenze di caratteri che iniziano con \verb$\\$ e finiscono al termine della riga;
-	\item i commenti multi-riga sono sequenze di caratteri che iniziano con \verb$/*$ e terminano con \verb$*/$. Possono essere annidati, ma in modo bilanciato. Ad esempio \verb$/*commento*/*/$ non è un commento valido.
+	\item i commenti multi-riga sono sequenze di caratteri che iniziano con \verb$/*$ e terminano con \verb$*/$. Non possono essere annidati.
 \end{itemize}
 
-\hl{Permettiamo le trailing commas? In caso va detto qua in una sottosezione che non diventano token.}
+\subsection*{Caratteri di spaziatura}
+I token possono essere separati dai caratteri di spaziatura standard o commenti.
 
 \section{Struttura sintattica di \SBF}
 \begin{itemize}
-\item Un \emph{programma} è una sequenza di dichiarazioni separate da token di separazione $\token{Sep}$.
-
+\item Un \emph{programma} è una sequenza di dichiarazioni.
 
 \item Una \emph{dichiarazione} ha una delle seguenti forme:
 \begin{itemize}
-	\item \emph{Dichiarazione di variabili e valori.}
+	\item \emph{Dichiarazione di variabili}
 	\begin{align*}
-	\token{Decl} ::=\ &\texttt{val}\ \token{Ident} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\\
-	|\ &\texttt{val}\ \token{Ident} \texttt{:}\ \token{TypeSpec}\\
-	|\ &\texttt{var}\ \token{Ident} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\\
-	|\ &\texttt{var}\ \token{Ident} \texttt{:}\ \token{TypeSpec}
+	\token{Decl} ::=\ &\texttt{var}\ \token{Ident} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\ \texttt{;}\\
+	|\ &\texttt{var}\ \token{Ident} \texttt{:}\ \token{TypeSpec} \texttt{;}
 	\end{align*}
-	dove
+	
+	\item \emph{Dichiarazione di funzioni e procedure}
 	\begin{align*}
-	\token{TypeSpec} ::=\ &\token{SimpleType}\\
-	|\ &\texttt{\&}\ \token{TypeSpec}\\
-	|\ &\texttt{Array}\ \texttt{[}\ \token{TypeSpec}\ \texttt{]}\\
-	\token{SimpleType} ::=\ &\texttt{bool}| \texttt{char}| \texttt{integer}| \texttt{float}| \texttt{string}
+	\token{Decl} ::=\ & \texttt{def}\ \token{Ident}\ \token{ParamClauses} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\ \texttt{;}\\
+	& \texttt{def}\ \token{Ident}\ \token{ParamClauses} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Block}\\
+	& \texttt{def}\ \token{Ident}\ \token{ParamClauses}\ \texttt{=}\ \token{Expr}\ \texttt{;}\\
+	& \texttt{def}\ \token{Ident}\ \token{ParamClauses}\ \texttt{=}\ \token{Block}
 	\end{align*}
-	\item \emph{Dichiarazione di funzioni/procedure.}
-	\begin{align*}
-	\token{Decl} ::=\ & \texttt{def}\ \token{Ident}\ \token{ParamClauses} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Expr}\\
-	& \texttt{def}\ \token{Ident}\ \token{ParamClauses} \texttt{:}\ \token{TypeSpec}\ \texttt{=}\ \token{Block}
-	\end{align*}
-	L'elemento $\token{ParamClauses}$ è una sequenza, non vuota, di $\token{ParamClause}$:
-	\begin{equation*}
-	\token{ParamClause} ::=\ \texttt{(}\ \token{ListOfParameters}\ \texttt{)}
-	\end{equation*}
-	mentre $\token{ListOfParameters}$ è una sequenza, che può essere vuota, di elementi separati da virgola della forma
-	\begin{equation*}
-	\token{Parameter} ::=\ \token{Ident}\ \texttt{:}\ \token{TypeSpec}
-	\end{equation*}
 	
 \end{itemize}
+dove $\token{TypeSpec}$ è una specifica di tipo, che ha la forma
+\begin{align*}
+\token{TypeSpec} ::=\ &\token{SimpleType}\\
+|\ &\texttt{*}\ \token{TypeSpec}\\
+|\ &\texttt{Array}\ \texttt{[}\ \token{TypeSpec}\ \texttt{]}\ \texttt{(}\ \token{Int}\ \texttt{)}\\
+\token{SimpleType} ::=\ &\texttt{Bool}\ |\ \texttt{Char}\ |\ \texttt{Int}\ |\ \texttt{Float}\ |\ \texttt{String}
+\end{align*}
+mentre l'elemento $\token{ParamClauses}$ è una sequenza, non vuota, di $\token{ParamClause}$, e ciascun $\token{ParamClause}$ ha la forma
+\begin{equation*}
+\token{ParamClause} ::=\ \texttt{(}\ \token{Args}\ \texttt{)}
+\end{equation*}
+$\token{Args}$ è una sequenza, che può essere vuota, di elementi separati da virgola della forma
+\begin{equation*}
+\token{Arg} ::=\ \token{Ident}\ \texttt{:}\ \token{TypeSpec}
+\end{equation*}
 
-\item Un \emph{blocco} è una sequenza di istruzioni racchiuse fra parentesi graffe e separate da $\token{Sep}$.
+Ad esempio, una specifica di tipo valida è $\texttt{Array[*Int](2)}$, che indica un array di puntatori ad interi di dimensione $2$. Ad esempio, una definizione di funzione valida è
+\begin{verbatim}
+def foo(a: Array[*Int](2),p: *Int)(x: Int): Int = 
+	*a[1] + *a[2] + *p + x;
+\end{verbatim}
+Essa prende come parametri un array di puntatori ad interi, un puntatore ad un intero e un intero e restituisce un intero.
+
+\item Un \emph{blocco} è una sequenza di istruzioni racchiuse fra parentesi graffe.
+\begin{equation*}
+\token{Block} ::=\ \texttt{\{}\ \token{StmtList}\ \texttt{\}}
+\end{equation*}
 
 \item Una \emph{istruzione} ha la forma:
 \begin{align*}
-\token{Stmt} ::=\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
-|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\ \texttt{else}\ \token{Stmt}\\
-|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\ \token{Sep}\ \texttt{else}\ \token{Stmt}\\
-|\ &\texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
-|\ &\texttt{do}\ \token{Stmt}\ \texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\\
-|\ &\texttt{do}\ \token{Stmt}\ \token{Sep}\ \texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\\
-|\ &\texttt{return}\\
-|\ &\texttt{return}\ \token{Expr}\\
+\token{Stmt} ::=\ &\token{Decl}\\
 |\ &\token{Block}\\
-|\ &\token{LExpr}\\
-|\ &\token{LExpr}\ \token{AssignmentOp}\ \token{Expr}\\
-|\ &\token{Ident}\ \token{ParamClauses}
+|\ &\token{LExpr}\ \token{OpAssign}\ \token{Expr}\ \texttt{;}\\
+|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
+|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\ \texttt{else}\ \token{Stmt}\\
+|\ &\texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
+|\ &\texttt{do}\ \token{Stmt}\ \texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \texttt{;}\\
+|\ &\texttt{return}\ \texttt{;}\\
+|\ &\texttt{return}\ \token{Expr}\ \texttt{;}\\
+|\ &\token{Ident}\ \token{ParamsList}\ \texttt{;}
 \end{align*}
+dove, nell'ultima istruzione, che corrisponde alla chiamata di procedura o funzione, $\token{ParamsList}$ è una sequenza, non vuota, di $\token{Params}$ della forma
+\begin{equation*}
+\token{Params} ::=\ \texttt{(}\ \token{ExprList}\ \texttt{)}
+\end{equation*}
+e $\token{ExprList}$ è una sequenza, che può essere vuota, di $\token{Expr}$ separate da virgola.
 
-\item Le \emph{left expressions} permesse nel linguaggio hanno la seguente forma.
+Invece $\token{OpAssign}$ è uno dei seguenti operatori di assegnamento:
+\begin{equation*}
+\token{OpAssign} ::=\ \texttt{=}\ |\ \texttt{+=}\ |\ \texttt{-=}\ |\ \texttt{*=}\ |\ \texttt{/=}\ |\ \texttt{\%=}
+\end{equation*}
+
+\item Le \emph{left expressions} del linguaggio hanno la seguente forma:
 \begin{align*}
 \token{LExpr} ::=\ &\token{Ident}\\
-|\ &\token{LExpr}\ \texttt{(}\ \token{Expr}\ \texttt{)}\\
+|\ &\token{LExpr}\ \texttt{[}\ \token{Expr}\ \texttt{]}\\
 |\ &\texttt{*}\ \token{LExpr}\\
-|\ &\texttt{\&}\ \token{LExpr}\\
 |\ &\texttt{(}\ \token{LExpr}\ \texttt{)}
 \end{align*}
-\hl{Precedenza di puntatori e array access}
+L'operatore accesso ad array $\texttt{[]}$ ha la precedenza sull'operatore di dereference $\texttt{*}$. Quindi ad esempio $\texttt{*a[1]}$ è sintatticamente equivalente a $\texttt{*(a[1])}$.
 
-\item Le \emph{right expressions} permesse nel linguaggio hanno la seguente forma.
+\item Le \emph{right expressions} del linguaggio hanno la seguente forma:
 \begin{align*}
-\token{Expr} ::=\ &\token{LExpr}\\
-|\ &\token{Literal}\\
+\token{Expr} ::=\ &\token{Literal}\\
+|\ &\token{LExpr}\\
+|\ &\texttt{\&}\ \token{LExpr}\\
+|\ &\texttt{Array}\ \texttt{(}\ \token{ExprList}\ \texttt{)}\\
+|\ &\token{Ident}\ \token{ParamsList}\\
 |\ &\token{Expr}\ \token{BinOp}\ \token{Expr}\\
 |\ &\token{UnOp}\ \token{Expr}\\
-|\ &\token{Ident}\ \token{Lists}\\
 |\ &\texttt{(}\ \token{Expr}\ \texttt{)}
 \end{align*}
 \begin{align*}
-\token{BinOp} ::=\ &\texttt{||} | \texttt{\&\&}|\texttt{+}|\texttt{-}|\texttt{*}|\texttt{/}|\texttt{\%}|\texttt{\^{}}|\texttt{==}|\texttt{!=}|\texttt{<}|\texttt{<=}|\texttt{>}|\texttt{>=}\\
-\token{UnOp} ::=\ &\texttt{!}\ \texttt{-}
+\token{BinOp} ::=\ 
+&\texttt{||}\ |\ \texttt{\&\&}\ |\ \texttt{<}\ |\ \texttt{<=}\ |\ \texttt{>}\ |\ \texttt{>=}\ |\ \texttt{==}\ |\  \texttt{!=}\ 
+|\ \texttt{+}\ |\ \texttt{-}\ |\ \texttt{*}\ |\ \texttt{/}\ |\ \texttt{\%}\ |\ \texttt{\^{}} \\
+\token{UnOp} ::=\ &\texttt{!}\ |\ \texttt{-}
 \end{align*}
-
+Gli operatori hanno precedenze e associatività standard.
 
 \end{itemize}
+
+\section{Vincoli di semantica statica di \SBF}
+\hl{TODO}
