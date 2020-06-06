@@ -10,7 +10,7 @@ Cose da fare:
     [X] gestire la stampa dell'albero annotato @critical
     [X] ripulire albero annotato
     [X] all'interno del TAC va gestito il caso in EArray di un array vuoto. 
-    [] decidere cosa assegnare all'array vuoto. Provvisoriamente gli viene assegnato Null @critical
+    [X] decidere cosa assegnare all'array vuoto. Provvisoriamente gli viene assegnato Null @critical
     [X] sistemare errori SB
     [X] togliere dipendenze da Typed in Errors. SS
     [] fare tanti test                      BF    
@@ -33,8 +33,8 @@ Cose da fare:
     [] Mettere tutti i casi di sugar assign.
     [] Mettere che gli identificatori possono iniziare con _.
     [X] Aggiungere un'etichetta in fondo al tac (raggiungibile con goto dopo le decl globali), se manca il main      SS
-    [] Todo del typechecker: BF
-  		[] fare in  modo che agli array si possano assegnare Array() di cardinalità minore rispetto a quella dell'array
+    [X] Todo del typechecker: BF
+  		[X] fare in  modo che agli array si possano assegnare Array() di cardinalità minore rispetto a quella dell'array
             Si vanno a creare problemi a livello di generazione del TAC, per l'assegnamento dei valori mancanti, se la dimensione dell'array assegnato è più piccola della dimensione dell'array che si sta inizializzando.
   		[X] controllare la grammatica e aggiungere le locazioni a tutti i typed che non ce l'hanno.
   		[X] controllare che la locazione negli statement serva veramente (sembra servire solo nella chiamata di funzione)
@@ -49,6 +49,7 @@ Cose da aggiungere consegna finale:
     [] pensare alla compatibilita String + String
     [] Aggiungere: operatore ternario
     [] costanti
+    [] controllo su dimensione array.
 
 Errori da risolvere:
 
@@ -62,9 +63,8 @@ Cose da discutere:
     [] Perché l'abbiamo chiamato Gramm? Tutti i file non dovrebbero avere un nome più significativo, tipo il nome del nostro linguaggio?
     [X] Il commento all'inizio di environment?
     [X] Rimuovere il file TestGramm
-    [] quando assegno ad un array di dimensione n una lista di valori di dimensione m, con n > m, è come se gli assegnassi tutti e n i valori e quelli che mancano
-        sarebbero valori di default.
-    [] Cosa scrivere nel warning MainDefinedInline? Non possiamo scrivere veramente che è inline perché di solito per inline si intende un'altra cosa.
+    [X] quando assegno ad un array di dimensione n una lista di valori di dimensione m, con n > m, è come se gli assegnassi tutti e n i valori e quelli che mancano sarebbero valori di default.
+    [X] Cosa scrivere nel warning MainDefinedInline? Non possiamo scrivere veramente che è inline perché di solito per inline si intende un'altra cosa.
 
 Relazione:
     [] Descrizione tecniche non standard    SS/BF

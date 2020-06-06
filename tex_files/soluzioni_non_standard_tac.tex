@@ -1,0 +1,16 @@
+\subsection{Gestione delle istruzioni TAC tramite la monade State}
+\begin{center}
+    {\bf BOZZA}
+\end{center}
+
+Per la gestione della creazione e dell'ordine di esecuzione delle istruzioni TAC durante la creazione di quest'ultimo, è stata utilizzata la monade {\tt State a}. Questa permette di trattare l'inserimento di nuove istruzioni, la creazione di nuove etichette e di nuovi temporanei, come fossero un cambio di stato in una computazione. La monade {\tt State} utilizza due funzioni per operare sullo stato corrente: {\tt get}, per ottenerlo, e {\tt put} per aggiornarlo. 
+
+La monade {\tt State a} utilizzata durante la creazione del Three Address Code opera su stati formati da tuple di quattro elementi:
+\begin{itemize}
+    \item un intero che indica l'indice dell'ultimo temporaneo creato;
+    \item un intero che indica l'ultima etichetta creata;
+    \item la lista di istruzioni TAC che compongono il TAC in output;
+    \item una lista di liste di istruzioni TAC. Ogni lista contiene un insieme di istruzioni di una singola funzione. 
+\end{itemize}
+
+Lo stato viene modificato nel momento in cui si crea una nuova etichetta e/o un nuovo temporaneo (per evitare duplicazioni tra le istruzioni) (funzioni {\tt newLabel} e {\tt newTemp}, rispettivamente), quando una nuova istruzione TAC di una funzione viene inserita nella lista delle istruzioni di quella funzione (tramite {\tt out}) e, nel momento in cui tutti gli statetement di una funzione sono stati tradotti in istruzione TAC, quando l'insieme delle istruzione di quelle funzioni vengono aggiunte in testa all'insieme delle istruzioni TAC principale (quelle che compongono il TAC in output), tramite la funzione {\tt pushCurrentStream}.

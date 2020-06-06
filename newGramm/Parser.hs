@@ -4,9 +4,9 @@
 {-# OPTIONS_GHC -XPartialTypeSignatures #-}
 #endif
 {-# OPTIONS_GHC -fno-warn-incomplete-patterns -fno-warn-overlapping-patterns #-}
-module ParGramm where
+module Parser where
 import AbsGramm
-import LexGramm
+import Lexer
 import ErrM
 import qualified Data.Array as Happy_Data_Array
 import qualified Data.Bits as Bits

@@ -1,12 +1,11 @@
--- Modulo SemanticAnalysis.hs
+-- Modulo StaticAnalysis.hs
 -- Il modulo partendo da un programma scritto nella sintassi astratta definita in AbsGramm.hs
 -- verifica la presenza di errori statici all'interno di esso (incompatibilità di tipi, operazioni non consentite)
 -- e nel frattempo si occupa di arricchire l'albero di sintassi astratta in input con informazioni aggiuntive,
 -- quali ad esempio il tipo delle R-espressioni e delle L-espressioni.
 -- La funzione principale del modulo è typeCheck che preso in input un programma in sintassi astratta
 -- ritorna in output tale programma annotato e gli eventuali Warning ed Errori (LogElement) scovati durante l'annotazione.
-
-module TypeChecker where
+module StaticAnalysis where
 
 import AbsGramm
 import Environment as Env
@@ -38,11 +37,7 @@ isTypeVoid typ = typ == (TSimple SType_Void)
 isCompatible :: Exp -> TypeSpec -> Bool
 isCompatible texp typ = case typ of
   (TPointer typ') -> getType texp == (TPointer (TSimple SType_Void)) || getType texp == typ
-  (TArray typ' _) -> let typExp = getType texp in
-    case typExp of
-      (TArray (TSimple SType_Void) _) -> True
-      _ -> typExp == typ 
-  otherwise       -> getType texp == typ
+  _               -> getType texp == typ
 
 -- startingEnv
 -- Definizione dell'environment iniziale di un programma. Contiene le informazioni a riguardo delle
@@ -157,7 +152,7 @@ inferDecl decl env = case decl of
             return $ (DefVar id typ texp, env')
           else do
             saveLog $ launchError (getLoc texp) (WrongExpType exp (getType texp) typ)
-            return $ (DefVar id typ texp, env)
+            return $ (DefVar id typ texp, env')
       Failure except -> do
         -- Se qualcosa è andato storto si lancia l'errore.
         saveLog $ launchError loc except
@@ -200,11 +195,10 @@ inferDecl decl env = case decl of
   DefFunInLine id@(PIdent (loc, ident)) params typ exp -> 
     case update env ident (FunInfo loc typ params) of
       Success env' -> do
-        if ident == "main" && Env.isGlobalScope env' 
-          then 
-            functionHandler (Env.setReturnFound env')
-          else
-            functionHandler env'
+        if ident == "main" && Env.isGlobalScope env' then
+          functionHandler (Env.setReturnFound env')
+        else
+          functionHandler env'
       Failure except -> do
         saveLog $ launchError loc except
         functionHandler env
@@ -218,8 +212,11 @@ inferDecl decl env = case decl of
             -- PROCEDURA con assegnata EXP
             (_,True) -> do
               texp <- inferExp exp (startFunScope e id params typ)
-              saveLog $ launchError loc (ExpAssignedToProcedure ident exp (getType texp))
-              return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
+              if isTypeError texp then
+                return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
+              else do
+                saveLog $ launchError loc (ExpAssignedToProcedure ident exp (getType texp))
+                return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
             -- FUNZIONE
             (_,False) -> do
               texp <- inferExp exp (startFunScope e id params typ)
@@ -460,7 +457,6 @@ inferExp exp env = case exp of
     -- Se non è presente alcuna espressione viene ritornato un array vuoto a cui si assegna tipo SType_Void.
     if length texps == 0 
       then
-        -- serve?
         return $ ETyped (exp) (TArray (TSimple SType_Void) (PInteger ( (0,0), show (0)  ) )) (0,0) 
       else 
         -- Altrimenti se nessuna espressione ha errori al proprio interno,
