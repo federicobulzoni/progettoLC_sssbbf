@@ -17,4 +17,16 @@ def main () = {
         writeInt(3);
     }
     *j = *j;
+ 
+    while (3 < 5){
+        l[1] = k;
+        l[1] = l[2];
+        k = l[1];
+        if(l[1] < 3){
+            break;
+        }
+        
+
+    }
+    var b : Int = 0;
 }

@@ -347,7 +347,9 @@ inferStm stm env = case stm of
         return $ (SReturn preturn, env)
       else
         return $ (SReturn preturn, env)
-
+-------------------------------------------------------------------------------------------------------------------------------------------
+  SBreak pbreak -> return $ (SBreak pbreak, env)
+  SContinue pcontinue -> return $ (SContinue pcontinue, env)
 -------------------------------------------------------------------------------------------------------------------------------------------
                                     -- lista di liste ParExp [Exp]
   SProcCall id@(PIdent (loc, ident)) params -> do

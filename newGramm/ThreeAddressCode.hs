@@ -208,7 +208,7 @@ genDecl decl = case decl of
                 out $ CommentArgs $ args
             else
                 return ()
-        lastIsReturn <- genBlock block
+        lastIsReturn <- genBlock block Fall Fall
         case (lastIsReturn,typ) of
             (False, TSimple SType_Void) -> out $ (ReturnVoid)
             (False, _ ) -> do
@@ -230,35 +230,41 @@ genDecl decl = case decl of
 
 
 -- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
-genBlock :: Block -> TacState Bool
-genBlock (DBlock stms) = genStms stms
+genBlock :: Block -> Label -> Label -> TacState Bool
+genBlock (DBlock stms) breakLabel continueLabel = genStms stms breakLabel continueLabel
 
 -- Returns true iff the last statement is a return. Needed for avoiding printing two consecutive returns.
-genStms :: [Stm] -> TacState Bool
-genStms [] = return False
-genStms [stm]
+genStms :: [Stm] -> Label -> Label -> TacState Bool
+genStms [] _ _ = return False
+genStms [stm] breakLabel continueLabel
     | isReturnStm stm = do
-        genStm stm
+        genStm stm breakLabel continueLabel
         return True
     | otherwise = do
-        genStm stm
+        genStm stm breakLabel continueLabel
         return False
-genStms (stm:stms) = do
-    genStm stm
-    genStms stms
+genStms (stm:stms)  breakLabel continueLabel= do
+    genStm stm breakLabel continueLabel
+    genStms stms breakLabel continueLabel
 
 isReturnStm :: Stm -> Bool
 isReturnStm (SReturn _ ) = True
 isReturnStm (SReturnExp _ _ ) = True
 isReturnStm _ = False
 
-genStm :: Stm -> TacState ()
-genStm stm = case stm of
+genStm :: Stm -> Label -> Label -> TacState ()
+genStm stm breakLabel continueLabel = case stm of
     SDecl decl -> genDecl decl
     SBlock block -> do
-        genBlock block
+        genBlock block breakLabel continueLabel
         return ()
 
+    SBreak pbreak -> do
+        out $ Comment "Break Goto"
+        out $ Goto breakLabel
+    SContinue pcontinue -> do
+        out $ Comment "Continue Goto"
+        out $ Goto continueLabel
     SAssign (LExpTyped lexp typ loc) texp -> do
         case lexp of
             (LRef lexp') -> do
@@ -283,7 +289,7 @@ genStm stm = case stm of
                 -- per il break:
                 -- passo in avanti l'etichetta della prima istruzione fuori dal ciclo (labelFalse)
                 -- così quando si trova un break si crea Goto labelFalse
-        genStm tstm
+        genStm tstm labelFalse labelWhile
         out $ (Goto labelWhile)
         out $ (Lab labelFalse)
 
@@ -291,12 +297,12 @@ genStm stm = case stm of
         labelNext <- newLabel
         labelElse <- if isBlockEmpty stm_else then return labelNext else newLabel
         genCondition texp Fall labelElse
-        genStm stm_if
+        genStm stm_if breakLabel continueLabel
         if (not $ isBlockEmpty stm_else)
             then do
                 out $ (Goto labelNext)
                 out $ (Lab labelElse)
-                genStm stm_else
+                genStm stm_else breakLabel continueLabel
             else return ()
         out $ Lab labelNext
   
