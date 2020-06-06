@@ -1,8 +1,6 @@
 \subsection{Descrizione soluzione - Three Address Code}
-\begin{center}
-    {\bf BOZZA}
-\end{center}
-Il Three Address Code (TAC) viene costruito a partire dall'albero annotato risultante dall'analisi di semantica statica (Type Checking). Per la costruzione viene fatto largo uso della monade State, descritta nella sezione precedente. In particolare lo stato ha quattro campi: il numero di temporanei e di etichette finora utilizzati, la lista di istruzioni che compongono il TAC e una lista di liste di istruzioni (utili per la gestione degli scope e delle funzioni innestate). Lo stato è stato rinominato in {\tt TacState}.
+
+Il Three Address Code (TAC) viene costruito a partire dall'albero annotato risultante dall'analisi di semantica statica (Type Checking). Per la costruzione viene fatto largo uso della monade State, descritta nella sezione precedente. In particolare lo stato ha quattro campi: il numero di temporanei e di etichette finora utilizzati, la lista di istruzioni che compongono il TAC e una lista di liste di istruzioni (utili per la gestione degli scope e delle funzioni innestate).
 
 Nel TAC gli indirizzi utilizzati nelle istruzioni sono:
 \begin{itemize}
@@ -39,7 +37,7 @@ la quale divide le dichiarazioni nei quattro casi possibili:
 \begin{itemize}
     \item Dichiarazione di variabile con assegnamento: viene creato un nuovo indirizzo a partire dall'identificatore della variabile e dalla sua locazione di dichiarazione. Gli viene assegnato un valore tramite la funzione {\tt genExpAssign} che permette di evitare la creazione di temporanei inutili quando ci troviamo nel caso di un'espressione semplice (es. $x = 3$, $*y= x$, $x = y + z$ ecc.).
     \item Dichiarazione di variabile: come nel caso precente costruiamo un indirizzo a partire da identificatore e locazione, e gli assegnamo un valore di default (\label{table:valori_default}) tramite la funzione {\tt buildDefaultValue}.
-    \item Dichiarazione di funzione/procedura: in questo caso viene creata una nuova etichetta per la funzione. Viene chiamata la funzione {\tt genBlock} che (tramite {\tt genStms}) controlla la presenta dell'istruzione {\tt return} (nel caso delle procedure verrà aggiunto un'istruzione di return vuoto) e costruisce tutte le istruzioni TAC relative al corpo della funzione. Al termine di questo processo le istruzioni TAC che sono state create vengono estratte tramite operazione di pop dalla lista di liste di istruzioni dello stato e inserite in testa al codice globale del TAC. Questo per far si che una funzione dichiarata nel corpo di un'altra venga inserita sopra quest'ultima a livello di Three Address Code, e non al suo interno.
+    \item Dichiarazione di funzione/procedura: in questo caso viene creata una nuova etichetta per la funzione. Viene chiamata la funzione {\tt genBlock} che (tramite {\tt genStms}) controlla la presenta dell'istruzione {\tt return} (nel caso delle procedure verrà aggiunto un'istruzione di return vuoto) e costruisce tutte le istruzioni TAC relative al corpo della funzione. Al termine di questo processo le istruzioni TAC che sono state create vengono estratte tramite operazione di pop dalla lista di liste di istruzioni dello stato e inserite in testa al codice globale del TAC. Questo per far sì che una funzione dichiarata nel corpo di un'altra venga inserita sopra quest'ultima a livello di Three Address Code, e non al suo interno.
 \end{itemize}
 
 \begin{table}
@@ -68,7 +66,7 @@ Ogni funzione è costituita da un insieme di statement (contenuti in un blocco).
 \begin{center}
     {\tt genStms :: [Stm] -> TacState Bool}
 \end{center}
-che ritorna {\tt True} se l'ultimo statement è un return (per evitare che nel TAC compaiano due istruzioni {\tt return} consecutive). Nel contempo vengono esaminati gli statement singolarmente tramite la funzione
+che ritorna {\tt True} se l'ultimo statement è un {\tt return} (per evitare che nel TAC compaiano due istruzioni {\tt return} consecutive). Nel contempo vengono esaminati gli statement singolarmente tramite la funzione
 \begin{center}
     {\tt genStm :: Stm -> TacState ()}
 \end{center}
@@ -100,4 +98,4 @@ che ritorna l'indirizzo TAC dell'espressione: un letterale nel caso di espressio
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Conslusione
 
-Terminate tutte le dichiarazioni presenti nello scope globale, vengono inserite in testa alla lista di istruzioni TAC, tutte le dichiarazioni di variabile globale seguite dall'istruzione {\tt Goto} alla funzione {\tt main} se presente, oppure all'etichetta {\tt l0} in fondo a tutte le istruzioni (evitando così che tutte le altre funzioni vengano eseguite sequenzialmente).
+Terminate tutte le dichiarazioni presenti nello scope globale, vengono inserite in testa alla lista di istruzioni TAC tutte le dichiarazioni di variabili globali seguite dall'istruzione {\tt Goto} alla funzione {\tt main} se presente, oppure all'etichetta {\tt l0} in fondo a tutte le istruzioni (evitando così che tutte le altre funzioni vengano eseguite sequenzialmente).
