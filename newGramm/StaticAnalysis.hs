@@ -5,8 +5,7 @@
 -- quali ad esempio il tipo delle R-espressioni e delle L-espressioni.
 -- La funzione principale del modulo è typeCheck che preso in input un programma in sintassi astratta
 -- ritorna in output tale programma annotato e gli eventuali Warning ed Errori (LogElement) scovati durante l'annotazione.
-
-module TypeChecker where
+module StaticAnalysis where
 
 import AbsGramm
 import Environment as Env

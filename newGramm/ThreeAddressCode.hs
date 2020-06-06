@@ -8,7 +8,7 @@ module ThreeAddressCode where
 import AbsTAC
 import AbsGramm
 import Control.Monad.State.Lazy
-import PrintGramm
+import Printer
 
 -- definizione del nuovo tipo TacState, attraverso la monade State
 type TacState a = State (
@@ -358,7 +358,7 @@ genStm stm = case stm of
     where 
         isBlockEmpty bl = if (SBlock (DBlock []) == bl ) then True else False
 
-        
+
 -- FUNZIONI AUSILIARIE
 
 

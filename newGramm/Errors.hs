@@ -1,7 +1,7 @@
 module Errors where
 
 import AbsGramm
-import PrintGramm
+import Printer
 import Color
 import Control.Monad (MonadPlus(..), liftM)
 import Control.Applicative (Applicative(..), Alternative(..))

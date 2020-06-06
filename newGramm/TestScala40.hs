@@ -5,17 +5,17 @@ import System.Environment ( getArgs, getProgName )
 import System.Exit ( exitFailure, exitSuccess )
 import Control.Monad (when)
 
-import LexGramm
-import ParGramm
-import PrintGramm
+import Lexer
+import Parser
+import Printer
 import AbsGramm
 import AbsTAC
 import ThreeAddressCode
-import TypeChecker
 import Errors
 import PrintTAC
 import Color
 import ErrM
+import StaticAnalysis
 
 type ParseFun a = [Token] -> Err Program
 
