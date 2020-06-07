@@ -50,7 +50,7 @@ data SType
     | SType_Void
   deriving (Eq, Ord, Show, Read)
 
-data OpAssign = ProdEq | DivEq | ModEq | PlusEq | MinusEq
+data OpAssign = ProdEq | DivEq | ModEq | PlusEq | MinusEq | PowEq
   deriving (Eq, Ord, Show, Read)
 
 data Declaration

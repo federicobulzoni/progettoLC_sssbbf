@@ -30,8 +30,8 @@ Cose da fare:
     [X] Controllare se genLExp per gli array array è giusto. Non sembra, l'indice dovrebbe essere convertito.
     [X] Riga 289 del tac. Si pu; lanciare l'errore? Si
     [X] Aggiungere gestione del main nel TypeChecker. BF
-    [] Mettere tutti i casi di sugar assign.
-    [] Mettere che gli identificatori possono iniziare con _.
+    [X] Mettere tutti i casi di sugar assign.
+    [X] Mettere che gli identificatori possono iniziare con _.
     [X] Aggiungere un'etichetta in fondo al tac (raggiungibile con goto dopo le decl globali), se manca il main      SS
     [X] Todo del typechecker: BF
   		[X] fare in  modo che agli array si possano assegnare Array() di cardinalità minore rispetto a quella dell'array

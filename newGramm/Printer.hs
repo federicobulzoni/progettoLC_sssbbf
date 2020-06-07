@@ -244,6 +244,7 @@ instance Print AbsGramm.OpAssign where
     AbsGramm.ModEq -> prPrec i 0 (concatD [doc (showString "%=")])
     AbsGramm.PlusEq -> prPrec i 0 (concatD [doc (showString "+=")])
     AbsGramm.MinusEq -> prPrec i 0 (concatD [doc (showString "-=")])
+    AbsGramm.PowEq -> prPrec i 0 (concatD [doc (showString "^=")])
 
 instance Print AbsGramm.Params where
   prt i e = case e of

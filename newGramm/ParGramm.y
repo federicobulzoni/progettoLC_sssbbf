@@ -47,15 +47,16 @@ import ErrM
   '[' { PT _ (TS _ 32) }
   ']' { PT _ (TS _ 33) }
   '^' { PT _ (TS _ 34) }
-  'def' { PT _ (TS _ 35) }
-  'do' { PT _ (TS _ 36) }
-  'else' { PT _ (TS _ 37) }
-  'if' { PT _ (TS _ 38) }
-  'var' { PT _ (TS _ 39) }
-  'while' { PT _ (TS _ 40) }
-  '{' { PT _ (TS _ 41) }
-  '||' { PT _ (TS _ 42) }
-  '}' { PT _ (TS _ 43) }
+  '^=' { PT _ (TS _ 35) }
+  'def' { PT _ (TS _ 36) }
+  'do' { PT _ (TS _ 37) }
+  'else' { PT _ (TS _ 38) }
+  'if' { PT _ (TS _ 39) }
+  'var' { PT _ (TS _ 40) }
+  'while' { PT _ (TS _ 41) }
+  '{' { PT _ (TS _ 42) }
+  '||' { PT _ (TS _ 43) }
+  '}' { PT _ (TS _ 44) }
   L_integ  { PT _ (TI $$) }
   L_PTrue { PT _ (T_PTrue _) }
   L_PFalse { PT _ (T_PFalse _) }
@@ -154,6 +155,7 @@ OpAssign : '*=' { AbsGramm.ProdEq }
          | '%=' { AbsGramm.ModEq }
          | '+=' { AbsGramm.PlusEq }
          | '-=' { AbsGramm.MinusEq }
+         | '^=' { AbsGramm.PowEq }
 Params :: { Params }
 Params : '(' ListExp ')' { AbsGramm.ParExp $2 }
 ListParams :: { [Params] }
@@ -245,5 +247,6 @@ sugarAssign_ lexp_ MinusEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Minus exp_)
 sugarAssign_ lexp_ PlusEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Plus exp_)
 sugarAssign_ lexp_ DivEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Div exp_)
 sugarAssign_ lexp_ ModEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Mod exp_)
+sugarAssign_ lexp_ PowEq_ exp_ = SAssign lexp_ (op_ (ELExp lexp_) Pow exp_)
 }
 
