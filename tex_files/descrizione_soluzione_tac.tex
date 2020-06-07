@@ -1,7 +1,6 @@
 \subsection{Descrizione soluzione - Three Address Code}
 
-Il Three Address Code (TAC) viene costruito a partire dall'albero annotato risultante dall'analisi di semantica statica (Type Checking). Per la costruzione viene fatto largo uso della monade State, descritta nella sezione precedente. In particolare lo stato ha quattro campi: il numero di temporanei e di etichette finora utilizzati, la lista di istruzioni che compongono il TAC e una lista di liste di istruzioni (utili per la gestione degli scope e delle funzioni innestate).
-
+Il Three Address Code (TAC) viene costruito a partire dall'albero annotato risultante dall'analisi di semantica statica (Type Checking). Per la costruzione viene fatto largo uso della monade State, descritta nella sezione precedente.
 Nel TAC gli indirizzi utilizzati nelle istruzioni sono:
 \begin{itemize}
     \item Letterali: per valori costanti di tipo base.
@@ -15,29 +14,17 @@ Nel TAC gli indirizzi utilizzati nelle istruzioni sono:
 Inoltre, nel TAC sono presenti le etichette che vengono utilizzate per indicare una locazione univoca nel flusso di esecuzione. Nel caso delle funzioni, come etichetta, viene utilizzato il loro indirizzo.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% genProg, genDecls, genDecl
 
-La costruzione del Three Address Code inizia dalla funzione 
-\begin{center}
-    {\tt genProg :: Program -> Bool -> TacState ()} 
-\end{center}
-
-che ha i seguenti compiti:
+La costruzione del Three Address Code inizia dalla funzione {\tt genProg} che ha i seguenti compiti:
 \begin{itemize}
-    \item Inserire un'etichetta in fondo a tutte le istruzioni (e il relativo {\tt Goto} dopo le dichiarazioni globali) se durante l'analisi di semantica statica non è stato trovato un metodo main da cui far partire la computazione. In alternativa, viene inserita un'istruzione {\tt Goto} all'etichetta del main;
-    \item iniziare la discesa nell'albero annotato per poter costruire le singole istruzioni, tramite la funzione 
-    \begin{center}
-        {\tt genDecls :: [Declaration] -> TacState ()}
-    \end{center} 
+    \item Inserire un'etichetta in fondo a tutte le istruzioni (e il relativo {\tt Goto} dopo le dichiarazioni globali) se durante l'analisi di semantica statica non è stato trovato una funzione main da cui far partire la computazione. In alternativa, viene inserita un'istruzione {\tt Goto} all'etichetta del main;
+    \item iniziare la discesa nell'albero annotato per poter costruire le singole istruzioni, tramite la funzione {\tt genDecls}.
 \end{itemize}
 
-La funzione {\tt genDecls} prende in input una lista di dichiarazioni e le scorre producendo le relative istruzioni TAC. Questo avviene tramite la funzione 
-\begin{center}
-    {\tt genDecl :: Declaration -> TacState ()}
-\end{center}
-la quale divide le dichiarazioni nei quattro casi possibili:
+La funzione {\tt genDecls} prende in input una lista di dichiarazioni e le scorre producendo le relative istruzioni TAC. Questo avviene tramite la funzione {\tt genDecl}; questa divide le dichiarazioni nei quattro casi possibili:
 \begin{itemize}
     \item Dichiarazione di variabile con assegnamento: viene creato un nuovo indirizzo a partire dall'identificatore della variabile e dalla sua locazione di dichiarazione. Gli viene assegnato un valore tramite la funzione {\tt genExpAssign} che permette di evitare la creazione di temporanei inutili quando ci troviamo nel caso di un'espressione semplice (es. $x = 3$, $*y= x$, $x = y + z$ ecc.).
     \item Dichiarazione di variabile: come nel caso precente costruiamo un indirizzo a partire da identificatore e locazione, e gli assegnamo un valore di default (\label{table:valori_default}) tramite la funzione {\tt buildDefaultValue}.
-    \item Dichiarazione di funzione/procedura: in questo caso viene creata una nuova etichetta per la funzione. Viene chiamata la funzione {\tt genBlock} che (tramite {\tt genStms}) controlla la presenta dell'istruzione {\tt return} (nel caso delle procedure verrà aggiunto un'istruzione di return vuoto) e costruisce tutte le istruzioni TAC relative al corpo della funzione. Al termine di questo processo le istruzioni TAC che sono state create vengono estratte tramite operazione di pop dalla lista di liste di istruzioni dello stato e inserite in testa al codice globale del TAC. Questo per far sì che una funzione dichiarata nel corpo di un'altra venga inserita sopra quest'ultima a livello di Three Address Code, e non al suo interno.
+    \item Dichiarazione di funzione/procedura: in questo caso viene creata una nuova etichetta per la funzione. Viene chiamata la funzione {\tt genBlock} che (tramite {\tt genStms}) controlla la presenta dell'istruzione {\tt return} (nel caso delle procedure verrà aggiunto un'istruzione di return vuoto) e costruisce tutte le istruzioni TAC relative al corpo della funzione. Al termine di questo processo le istruzioni TAC che sono state create vengono estratte tramite operazione di pop dalla lista di liste di istruzioni dello stato e inserite in testa al codice globale del TAC. Questo viene fatto per far sì che una funzione dichiarata nel corpo di un'altra venga, inserita sopra quest'ultima a livello di Three Address Code, e non al suo interno.
 \end{itemize}
 
 \begin{table}
@@ -55,21 +42,14 @@ la quale divide le dichiarazioni nei quattro casi possibili:
         Array & - \\[1ex] 
         \hline
     \end{tabular}
-    \caption{Valori di default per dichiarazione senza assegnamento}
+    \caption{Valori di default}
     \label{table:valori_default}
 \end{table}
 
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% genBlock, genStms, genStm
 
-Ogni funzione è costituita da un insieme di statement (contenuti in un blocco). La funzione che si occupa di percorrere tutti gli statement di un blocco è 
-\begin{center}
-    {\tt genStms :: [Stm] -> TacState Bool}
-\end{center}
-che ritorna {\tt True} se l'ultimo statement è un {\tt return} (per evitare che nel TAC compaiano due istruzioni {\tt return} consecutive). Nel contempo vengono esaminati gli statement singolarmente tramite la funzione
-\begin{center}
-    {\tt genStm :: Stm -> TacState ()}
-\end{center}
+Ogni funzione è costituita da un insieme di statement (contenuti in un blocco). La funzione che si occupa di percorrere tutti gli statement di un blocco è {\tt genStms}, che restituisce {\tt True} se l'ultimo statement è un {\tt return} (per evitare che nel TAC compaiano due istruzioni {\tt return} consecutive). Nel contempo vengono esaminati gli statement singolarmente tramite la funzione {\tt genStm}.
 Quest'ultima prende in esame tutti i possibili statement:
 \begin{itemize}
     \item Dichiarazione: viene riutilizzata {\tt genDecl} per la gestione delle dichiarazioni interne al blocco.
@@ -78,23 +58,15 @@ Quest'ultima prende in esame tutti i possibili statement:
     \begin{center}
         {\tt Lexpression = RExpression}
     \end{center}
-    Le {\tt LExpression} comprendono: accessi ad array, variabili puntatori e identificatori di variabile.La loro gestione avviene tramite la funzione {\tt genLexp}. Le {\tt RExpression} oltre che le {\tt LExpression}, comprendono le espressioni.
+    Le {\tt LExpression} comprendono: accessi ad array, variabili puntatori e identificatori di variabile. La loro gestione avviene tramite la funzione {\tt genLexp}. Le {\tt RExpression} oltre che le {\tt LExpression}, comprendono le espressioni.
     \item Chiamata di procedura: vengono create le istruzioni che indicano i parametri passati alla funzione (tramite la funzione {\tt genParams} che crea istruzioni {\tt Param addr}) e viene creata un'istruzione {\tt Call} del TAC.
     \item Return: se l'istruzione {\tt return } ritorna un'espressione essa viene gestita tramite {\tt genExp}, che in caso di espressioni complesse (non binaria tra due identificatori o unaria) restituisce un temporaneo.
-    \item If e While: in entrambi i casi la gestione delle etichette viene gestita tramite la funzione 
-    \begin{center}
-        {\tt genCondition :: Exp -> Label -> Label -> TacState ()}
-    \end{center}
-    che, presa l'espressione della condizione e le due etichette che indicano dove spostarsi in caso essa sia vera o meno, gestitisce la creazione dei {\tt Goto} ed esegue il controllo del flusso.
+    \item If e While: in entrambi i casi la gestione delle etichette viene gestita tramite la funzione {\tt genCondition}, che, presa l'espressione della condizione e le due etichette che indicano dove spostarsi in caso essa sia vera o meno, gestitisce la creazione dei {\tt Goto} ed esegue il controllo del flusso.
 \end{itemize}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% genExp
 
-La generazione delle istruzioni riguardanti le espressioni viene gestita tramite la funzione
-\begin{center}
-    {\tt genExp :: Exp -> TacState Addr} 
-\end{center}
-che ritorna l'indirizzo TAC dell'espressione: un letterale nel caso di espressioni composte da un solo letterale o un nuovo temporaneo nel caso di dereferenziazioni, LExpression, accessi ad array o espressioni simili a quelle descritte nel caso dell'assegnamento (gestite tramite la funzione {\tt genExpAssign}).
+La generazione delle istruzioni riguardanti le espressioni viene gestita tramite la funzione {\tt genExp} che restituisce l'indirizzo TAC dell'espressione: un letterale nel caso di espressioni composte da un solo letterale o un nuovo temporaneo nel caso di dereferenziazioni, LExpression, accessi ad array o espressioni simili a quelle descritte nel caso dell'assegnamento (gestite tramite la funzione {\tt genExpAssign}).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Conslusione
 
