@@ -59,10 +59,11 @@ Quest'ultima prende in esame tutti i possibili statement:
         {\tt Lexpression = RExpression}
     \end{center}
     Le {\tt LExpression} comprendono: accessi ad array, variabili puntatori e identificatori di variabile. La loro gestione avviene tramite la funzione {\tt genLexp}. Le {\tt RExpression} oltre che le {\tt LExpression}, comprendono le espressioni.
-    \item Chiamata di procedura: vengono create le istruzioni che indicano i parametri passati alla funzione (tramite la funzione {\tt genParams} che crea istruzioni {\tt Param addr}) e viene creata un'istruzione {\tt Call} del TAC.
+    \item Chiamata di procedura: vengono create le istruzioni che indicano i parametri passati alla funzione (tramite la funzione {\tt genParams} che crea istruzioni {\tt Param addr}) e viene creata un'istruzione {\tt Call} del TAC. Al momento della stampa, le funzione già definite nel linguaggio (es. {\tt writeInt}) avranno, al posto della locazione specificata nell'indirizzo, la parola {\tt default} (es. {\tt writeInt@default}).
     \item Return: se l'istruzione {\tt return } ritorna un'espressione essa viene gestita tramite {\tt genExp}, che in caso di espressioni complesse (non binaria tra due identificatori o unaria) restituisce un temporaneo.
     \item If e While: in entrambi i casi la gestione delle etichette viene gestita tramite la funzione {\tt genCondition}, che, presa l'espressione della condizione e le due etichette che indicano dove spostarsi in caso essa sia vera o meno, gestitisce la creazione dei {\tt Goto} ed esegue il controllo del flusso.
 \end{itemize}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% genExp
 
