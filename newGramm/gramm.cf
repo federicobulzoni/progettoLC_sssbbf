@@ -2,7 +2,7 @@ position token PTrue	'T' 'r' 'u' 'e' ;
 position token PFalse	'F' 'a' 'l' 's' 'e' ;						
 position token PReturn	'r' 'e' 't' 'u' 'r' 'n' ;	
 position token PNull	'N' 'u' 'l' 'l';			
-position token PIdent ( letter (letter | digit | '_' )* );
+position token PIdent ( ('_' letter | letter) (letter | digit | '_' )* );
 position token PFloat ( (digit+ '.' digit+) | (digit+ '.') | ('.' digit+));
 position token PInteger ( digit+ );
 
@@ -57,6 +57,7 @@ DivEq. OpAssign ::= "/=" ;
 ModEq. OpAssign ::= "%=" ;
 PlusEq. OpAssign ::= "+=" ;
 MinusEq. OpAssign ::= "-=" ;
+PowEq.   OpAssign ::= "^=";
 
 ParExp. Params ::= "(" [Exp] ")";
 separator nonempty Params "";
@@ -131,7 +132,7 @@ define sugarAssign lexp MinusEq exp = SAssign lexp (op (ELExp lexp) Minus exp );
 define sugarAssign lexp PlusEq exp  = SAssign lexp (op (ELExp lexp)  Plus exp );
 define sugarAssign lexp DivEq exp   = SAssign lexp (op (ELExp lexp) Div exp );
 define sugarAssign lexp ModEq exp   = SAssign lexp (op (ELExp lexp) Mod exp );
-
+define sugarAssign lexp PowEq exp   = SAssign lexp (op (ELExp lexp) Pow exp );
 
 position token PString ( '"' ((char - ["\"\\"]) | ('\\' ["\"\\nt"]))* '"' );
 position token PChar ('\'' ((char - ["'\\"]) | ('\\' ["'\\nt"])) '\'' );
