@@ -216,22 +216,20 @@ genExpAssign addr texp@(ETyped exp typ _) = case exp of
 
 -- generazione indirizzo per le L-Expression
 genLexp :: LExp -> TacState Addr
-genLexp lexp = case lexp of
-    (LExpTyped lexp' typ _ ) -> case lexp' of
-        (LArr lexp'' exp) -> do
-            addrOffset <- newTemp
-            addrTemp <- newTemp
-            addrLexp'' <- genLexp lexp''
-            addrExp <- genExp exp
-            out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-            out $ AssignFromArray addrTemp addrLexp'' addrOffset (convertToTACType typ)
-            return addrTemp
-        _ -> genLexp lexp'
+genLexp (LExpTyped lexp typ _) = case lexp of
     LIdent (PIdent (dloc,ident)) -> return $ buildVarAddress ident dloc
     LRef lexp' -> do
         addrTemp <- newTemp
         addrLexp' <- genLexp lexp'
         out $ AssignFromPointer addrTemp addrLexp' (TACAddr)
+        return addrTemp
+    LArr lexp' exp -> do
+        addrOffset <- newTemp
+        addrTemp <- newTemp
+        addrLexp' <- genLexp lexp'
+        addrExp <- genExp exp
+        out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
+        out $ AssignFromArray addrTemp addrLexp' addrOffset (convertToTACType typ)
         return addrTemp
 
 -- generazione indirizzi delle espressioni

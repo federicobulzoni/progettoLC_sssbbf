@@ -394,18 +394,18 @@ inferLExp lexp env = case lexp of
     tlexp' <- inferLExp lexp' env
     if isTypeError tlexp' 
       then 
-        return $ LExpTyped (LRef lexp') (TSimple SType_Error) (getLoc tlexp')
+        return $ LExpTyped (LRef tlexp') (TSimple SType_Error) (getLoc tlexp')
       else
         case tlexp' of
           -- Quando l'operatore di referenziazione * è applicato ad x di tipo puntatore a typ, il tipo di 
           -- *x è typ.
           -- Si noti che in questo caso la LExpTyped viene costruita senza passare la lexp annidata tipata,
           -- questo viene fatto per mantenere leggera la rappresentazione evitando inutile ridondanza.
-          (LExpTyped _ (TPointer typ) loc) -> return $ LExpTyped (LRef lexp') typ loc
+          (LExpTyped _ (TPointer typ) loc) -> return $ LExpTyped (LRef tlexp') typ loc
           -- Se invece viene applicato ad un qualcosa che non è di tipo puntatore allora si lancia un errore.
           (LExpTyped _ typ' loc) -> do
             saveLog $ launchError loc (WrongPointerApplication lexp' typ')
-            return $ LExpTyped (LRef lexp') (TSimple SType_Error) loc
+            return $ LExpTyped (LRef tlexp') (TSimple SType_Error) loc
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   LArr lexp exp -> do
