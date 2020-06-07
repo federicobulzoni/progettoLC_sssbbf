@@ -1,6 +1,6 @@
 \subsection{Gestione delle istruzioni TAC tramite la monade State}
 
-Per la gestione della creazione e dell'ordine di esecuzione delle istruzioni TAC durante la creazione di quest'ultimo, è stata utilizzata la monade {\tt State a}. Questa permette di trattare l'inserimento di nuove istruzioni, la creazione di nuove etichette e di nuovi temporanei, come fossero un cambio di stato in una computazione. La monade {\tt State a} utilizza due funzioni per operare sullo stato corrente: {\tt get}, per ottenerlo, e {\tt put} per aggiornarlo. 
+Per la gestione della creazione delle istruzioni TAC durante la creazione di quest'ultimo, è stata utilizzata la monade {\tt State a}. Questa permette di manipolare l'inserimento di nuove istruzioni, la creazione di nuove etichette e di nuovi temporanei, in modo equiparabile ad un cambio di stato in una computazione. La creazione e l'inserimento di una nuova istruzione nel codice TAC corrispongono, appunto, ad una modifica dello stato corrente, La monade {\tt State a} utilizza due funzioni per operare su quest'ultimo: {\tt get}, per ottenere lo stato, e {\tt put} per aggiornarlo. 
 
 La monade {\tt State a} utilizzata durante la creazione del Three Address Code opera su stati formati da tuple di quattro elementi:
 \begin{itemize}
@@ -10,6 +10,6 @@ La monade {\tt State a} utilizzata durante la creazione del Three Address Code o
     \item una lista di liste di istruzioni TAC. Ogni lista contiene un insieme di istruzioni di una singola funzione. 
 \end{itemize}
 
-Lo stato viene modificato nel momento in cui si crea una nuova etichetta e/o un nuovo temporaneo (per evitare duplicazioni tra le istruzioni) (funzioni {\tt newLabel} e {\tt newTemp}, rispettivamente), quando una nuova istruzione TAC di una funzione viene inserita nella lista delle istruzioni di quella funzione (tramite {\tt out}) e, nel momento in cui tutti gli statetement di una funzione sono stati tradotti in istruzione TAC, quando l'insieme delle istruzione di quelle funzioni vengono aggiunte in testa all'insieme delle istruzioni TAC principale (quelle che compongono il TAC in output), tramite la funzione {\tt pushCurrentStream}.
+Lo stato viene modificato nel momento in cui: si crea una nuova etichetta e/o un nuovo temporaneo tramite le funzioni {\tt newLabel} e {\tt newTemp}, rispettivamente (per evitare duplicazioni tra le istruzioni) e quando una nuova istruzione TAC di una funzione viene inserita nella lista delle istruzioni di quella funzione (tramite la funzione {\tt out}). Inoltre, vi è una modifica dello stato nel momento in cui tutti gli statetement di una funzione sono stati tradotti in istruzione TAC: l'insieme delle istruzioni di quella funzione vengono aggiunte in testa all'insieme delle istruzioni TAC principale (quelle che compongono il TAC in output), tramite la funzione {\tt pushCurrentStream}.
 
-Nel file {\tt ThreeAddressCode.hs} è stato utilizzato l'alias {\tt TacState a} per {\tt State (Int, Int, [TAC], [[TAC]]) a}, dove {\tt TAC} è un'istruzione TAC.
+Nel file {\tt ThreeAddressCode.hs} è stato utilizzato {\tt TacState a} come alias per {\tt State (Int, Int, [TAC], [[TAC]]) a}, dove {\tt TAC} è un'istruzione TAC.
