@@ -189,36 +189,31 @@ genExpAssign addr texp@(ETyped exp typ _) = case exp of
         out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
 
 
-    ELExp (LExpTyped lexp typ _) -> case lexp of
-        LIdent (PIdent (dloc,ident)) -> out $ Assign addr (buildVarAddress ident dloc) (convertToTACType typ)
-        LRef lexp' -> do
-            addrLexp' <- genLexp lexp'
-            out $ AssignFromPointer addr addrLexp' (TACAddr)
-        LArr lexp' exp -> do
+    ELExp (LExpTyped lexp' typ _ ) -> case lexp' of
+        (LArr lexp'' exp) -> do
             addrOffset <- newTemp
-            addrLexp' <- genLexp lexp'
+            addrLexp'' <- genLexp lexp''
             addrExp <- genExp exp
             out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-            out $ AssignFromArray addr addrLexp' addrOffset (convertToTACType typ)
-
-    --ELExp lexp -> case lexp of
-    --    (LExpTyped lexp' typ _ ) -> case lexp' of
-    --        (LArr lexp'' exp) -> do
-    --            addrOffset <- newTemp
-    --            addrLexp'' <- genLexp lexp''
-    --            addrExp <- genExp exp
-    --            out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-    --            out $ AssignFromArray addr addrLexp'' addrOffset (convertToTACType typ)
-    --        LRef lexp'' -> do
-    --            addrLexp' <- genLexp lexp''
-    --            out $ AssignFromPointer addr addrLexp' (TACAddr)
-    --        _ -> do
-    --            addrTExp <- genExp texp
-    --            out $ Assign addr addrTExp (convertToTACType typ)
+            out $ AssignFromArray addr addrLexp'' addrOffset (convertToTACType typ)
+        LRef lexp'' -> do
+            addrLexp' <- genLexp lexp''
+            out $ AssignFromPointer addr addrLexp' (TACAddr)
+        _ -> do
+            addrTExp <- genExp texp
+            out $ Assign addr addrTExp (convertToTACType typ)
+    
+    --ELExp (LExpTyped lexp typ _) -> case lexp of
     --    LIdent (PIdent (dloc,ident)) -> out $ Assign addr (buildVarAddress ident dloc) (convertToTACType typ)
     --    LRef lexp' -> do
     --        addrLexp' <- genLexp lexp'
     --        out $ AssignFromPointer addr addrLexp' (TACAddr)
+    --    LArr lexp' exp -> do
+    --        addrOffset <- newTemp
+    --        addrLexp' <- genLexp lexp'
+    --        addrExp <- genExp exp
+    --        out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
+    --        out $ AssignFromArray addr addrLexp' addrOffset (convertToTACType typ)
     
     -- se l'espressione passata ha tipo più complicato di quelli sopra elencati allora utilizziamo genExp che
     -- crea un temporaneo e lo assegna all'indirizzo addr
