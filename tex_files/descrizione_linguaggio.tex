@@ -1,5 +1,5 @@
-\section{Descrizione del linguaggio \SBF}
-Nella descrizione del linguaggio sono evidenziate solo le caratteristiche salienti, omesse le scelte standard e le richieste presenti nella consegna.
+
+Nella seguente descrizione del linguaggio sono evidenziate solo le caratteristiche salienti, omesse le scelte standard e le richieste presenti nella consegna.
 
 \section{Struttura lessicale di \SBF}
 
@@ -12,7 +12,7 @@ Le parole riservate in \SBF\ sono le seguenti:
 
 \subsection*{Identificatori}
 
-Un identificatore $\token{Ident}$ è una lettera seguita da una sequenza arbitraria di lettere, cifre e del carattere '\_'.
+Un identificatore $\token{Ident}$ è una lettera o il carattere '\_' seguiti da una sequenza arbitraria di lettere, cifre e del carattere '\_'.
 
 \subsection*{Letterali}
 Vi sono letterali per numeri interi, numeri in virgola mobile, singoli caratteri, booleani, stringhe. Essi seguono le convenzioni della maggior parte dei linguaggi di programmazione.
@@ -106,7 +106,7 @@ I token possono essere separati dai caratteri di spaziatura standard o commenti.
 	
 	Invece $\token{OpAssign}$ è uno dei seguenti operatori di assegnamento:
 	\begin{equation*}
-	\token{OpAssign} ::=\ \texttt{=}\ |\ \texttt{+=}\ |\ \texttt{-=}\ |\ \texttt{*=}\ |\ \texttt{/=}\ |\ \texttt{\%=}
+	\token{OpAssign} ::=\ \texttt{=}\ |\ \texttt{+=}\ |\ \texttt{-=}\ |\ \texttt{*=}\ |\ \texttt{/=}\ |\ \texttt{\%=}\ |\ \texttt{\^{}=}
 	\end{equation*}
 	
 	\item Le \emph{left expressions} del linguaggio hanno la seguente forma:
@@ -169,5 +169,13 @@ I tipi degli operatori unari sono i seguenti.
 
 Le guardie di istruzioni $\texttt{if}$, $\texttt{do-while}$ e $\texttt{while}$ devono avere tipo $\texttt{Bool}$.
 
-\subsection*{Altri vincoli}
-\hl{TODO. Return.}
+Nelle espressioni $\token{Expr}$ della forma $\token{Ident}\ \token{ParamsList}$, $\token{Ident}$ deve riferirsi a una funzione (con tipo di ritorno).
+
+\subsection*{Vincoli deboli}
+La violazione dei seguenti punti non impedisce il proseguimento alle successive fasi della compilazione, tuttavia viene visualizzato un messaggio di avviso in quanto si ritiene che il comportamento ottenuto possa non essere quello cercato.
+
+\begin{itemize}
+	\item All'interno del blocco di codice di una funzione, deve essere presente almeno una istruzione $\texttt{return}\ \token{Expr}\ \texttt{;}$, con $\token{Expr}$ del tipo di ritorno della funzione, per ogni possibile percorso di esecuzione del blocco (per ogni valutazione delle guardie delle istruzioni $\texttt{if}$).
+	\item Il programma deve contenere la dichiarazione di una funzione o procedura con identificatore $\texttt{main}$ al top level.
+	\item Nelle istruzioni della forma $\token{Ident}\ \token{ParamsList}$, $\token{Ident}$ deve riferirsi ad una procedura.
+\end{itemize}

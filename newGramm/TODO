@@ -60,7 +60,7 @@ Cose da discutere:
    
        Io lo farei. Sara.
     [X] AbsGramm dovrebbe contenere sono la sintassi astratta, quindi i vari data e type, non la classe typed con relative implementazioni delle funzioni nelle istanze. Vanno da qualche altra parte.
-    [] Perché l'abbiamo chiamato Gramm? Tutti i file non dovrebbero avere un nome più significativo, tipo il nome del nostro linguaggio?
+    [X] Perché l'abbiamo chiamato Gramm? Tutti i file non dovrebbero avere un nome più significativo, tipo il nome del nostro linguaggio?
     [X] Il commento all'inizio di environment?
     [X] Rimuovere il file TestGramm
     [X] quando assegno ad un array di dimensione n una lista di valori di dimensione m, con n > m, è come se gli assegnassi tutti e n i valori e quelli che mancano sarebbero valori di default.
