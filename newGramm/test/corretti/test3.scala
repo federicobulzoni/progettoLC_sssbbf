@@ -7,4 +7,5 @@ def _foo() = {
 def main() = {
     var c : Int = b[1];
     *a[1] = 1;
+    c = *a[1];
 }
