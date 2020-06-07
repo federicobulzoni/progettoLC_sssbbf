@@ -1,5 +1,5 @@
-\section{Caratteristiche generali di \SBF}
-\hl{TODO}
+\section{Descrizione del linguaggio \SBF}
+Nella descrizione del linguaggio sono evidenziate solo le caratteristiche salienti, omesse le scelte standard e le richieste presenti nella consegna.
 
 \section{Struttura lessicale di \SBF}
 
@@ -139,4 +139,35 @@ I token possono essere separati dai caratteri di spaziatura standard o commenti.
 \end{itemize}
 
 \section{Vincoli di semantica statica di \SBF}
-\hl{TODO}
+\subsection*{Scoping}
+Il linguaggio ha scoping statico con visibilità dal punto di dichiarazione in poi. Le regole per la visibilità di dichiarazioni locali sono le usuali.
+
+Gli identificatori di variabili e funzioni/procedure devono essere unici. Lo spazio dei nomi è unico, ossia non è permesso dichiarare una variabile e una funzione/procedura con lo stesso nome. Ovviamente questo vale per identificatori con visibilità non disgiunta.
+
+\subsection*{Vincoli riguardanti i tipi}
+Il linguaggio ha 5 tipi base e 2 costruttori di tipo come indicato nella definizione di $\token{TypeSpec}$. Non sono previste compatibilità fra tipi diversi. Il valore $\texttt{Null}$ può essere assegnato solo a left-expression il cui tipo ha un puntatore al top-level.
+
+I tipi degli operatori binari sono i seguenti.
+\begin{table}[h]
+	\centering
+	\begin{tabular}{l|l}
+		$\texttt{+},\ \texttt{-},\ \texttt{*},\ \texttt{/},\ \texttt{\^{}},\ \texttt{\%} $ & $\texttt{Int} \times \texttt{Int} \to \texttt{Int}$ o $\texttt{Float} \times \texttt{Float} \to \texttt{Float}$\\ \hline
+		$\texttt{||},\ \texttt{\&\&} $ & $\texttt{Bool} \times \texttt{Bool} \to \texttt{Bool}$ \\ \hline
+		$\texttt{<},\ \texttt{<=},\ \texttt{>},\ \texttt{>=} $ & $\texttt{Int} \times \texttt{Int} \to \texttt{Bool}$ o $\texttt{Float} \times \texttt{Float} \to \texttt{Bool}$\\ \hline
+		$\texttt{==},\ \texttt{!=}$  & $\tau \times \tau \to \texttt{Bool}$ dove $\tau$ è un qualsiasi tipo
+	\end{tabular}
+\end{table}
+
+I tipi degli operatori unari sono i seguenti.
+\begin{table}[h]
+	\centering
+	\begin{tabular}{l|l}
+		$\texttt{!}$ & $\texttt{Bool} \to \texttt{Bool}$\\ \hline
+		$\texttt{-}$ & $\texttt{Int} \to \texttt{Int}$ o $\texttt{Float} \to \texttt{Float}$
+	\end{tabular}
+\end{table}
+
+Le guardie di istruzioni $\texttt{if}$, $\texttt{do-while}$ e $\texttt{while}$ devono avere tipo $\texttt{Bool}$.
+
+\subsection*{Altri vincoli}
+\hl{TODO. Return.}
