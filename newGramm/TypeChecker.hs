@@ -183,7 +183,7 @@ inferDecl decl env = case decl of
       where 
         functionHandler e = do
           -- Creare nuovo scope avviato con i parametri e il nome della fun.
-          (tstms, e') <- inferStms stms (startFunScope e id params typ)
+          (tstms, e') <- inferStms stms (startFunScope e id params typ) False
           -- Nel caso in cui stiam trattando una funzione, ma non è presente alcun
           -- return nel suo scope lo notifichiamo.
           if Env.hasReturn e' || isTypeVoid typ
@@ -208,7 +208,7 @@ inferDecl decl env = case decl of
           case (exp, isTypeVoid typ) of
             -- PROCEDURA con assegnata FUNZIONE
             (EFunCall id' params', True) -> do
-              (stmt, e') <- inferStm (SProcCall id' params') e
+              (stmt, e') <- inferStm (SProcCall id' params') e False
               return (DefFun id params typ (DBlock [stmt]), e')
             -- PROCEDURA con assegnata EXP
             (_,True) -> do
@@ -235,16 +235,16 @@ inferBlock (DBlock stms) ftyp env = do
   return $ (DBlock tstms, env')
 -}
 
-inferStms :: [Stm] -> Env -> Logger ([Stm], Env)
-inferStms [] env = return ([], env)
-inferStms (stm:stms) env = do
-  (tstm, env') <- inferStm stm env
-  (tstms, env'') <- inferStms stms env'
+inferStms :: [Stm] -> Env -> Bool -> Logger ([Stm], Env)
+inferStms [] env _ = return ([], env)
+inferStms (stm:stms) env inLoop = do
+  (tstm, env') <- inferStm stm env inLoop
+  (tstms, env'') <- inferStms stms env' inLoop
   return $ (tstm:tstms, env'') 
 
 
-inferStm :: Stm  -> Env -> Logger (Stm, Env)
-inferStm stm env = case stm of
+inferStm :: Stm  -> Env -> Bool -> Logger (Stm, Env)
+inferStm stm env inLoop = case stm of
   SWhile exp stm' -> do
     -- texp è l'espressione annotata col tipo.
     texp <- inferExp exp env
@@ -255,7 +255,7 @@ inferStm stm env = case stm of
       else
         return ()
     -- viene inferito lo stm del while.
-    (tstm', env') <- inferStm stm' env
+    (tstm', env') <- inferStm stm' env True
     -- e nel caso in cui un return sia stato trovato all'interno del corpo del while
     -- si segnala che è stato trovato anche nello scope in cui il while è contenuto.
     if Env.hasReturn env' 
@@ -272,8 +272,8 @@ inferStm stm env = case stm of
         saveLog $ launchError (getLoc texp) (WrongIfCondition exp (getType texp))
       else return ()
 
-    (tstmif, envif) <- inferStm stmif env
-    (tstmelse, envelse) <- inferStm stmelse env
+    (tstmif, envif) <- inferStm stmif env inLoop
+    (tstmelse, envelse) <- inferStm stmelse env inLoop
     -- Solo nel caso in cui sia il corpo dell'if che quello dell'else contengono
     -- una istruzione return viene segnalata la presenza di un return nello scope in 
     -- cui la istruzione if...else è contenuta.
@@ -298,7 +298,7 @@ inferStm stm env = case stm of
     where
       inferBlock (DBlock []) _ env = return $ (DBlock [], env)
       inferBlock (DBlock stms) ftyp env = do
-        (tstms, env') <- inferStms stms (Env.addScope env ftyp) 
+        (tstms, env') <- inferStms stms (Env.addScope env ftyp) inLoop
         return $ (DBlock tstms, env')
 
 -------------------------------------------------------------------------------------------------------------------------------------------
@@ -348,8 +348,18 @@ inferStm stm env = case stm of
       else
         return $ (SReturn preturn, env)
 -------------------------------------------------------------------------------------------------------------------------------------------
-  SBreak pbreak -> return $ (SBreak pbreak, env)
-  SContinue pcontinue -> return $ (SContinue pcontinue, env)
+  SBreak pbreak@(PBreak (loc,ident)) -> do
+    if inLoop
+      then return (SBreak pbreak, env)
+      else do
+        saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
+        return (SBreak pbreak, env)
+  SContinue pcontinue@(PContinue (loc,ident)) -> do
+    if inLoop
+      then return (SContinue pcontinue, env)
+      else do
+        saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
+        return (SContinue pcontinue, env)
 -------------------------------------------------------------------------------------------------------------------------------------------
                                     -- lista di liste ParExp [Exp]
   SProcCall id@(PIdent (loc, ident)) params -> do
@@ -386,7 +396,6 @@ inferStm stm env = case stm of
                 (_,False,True) -> saveLog $ launchWarning loc (UnusedReturnValue ident)
                 otherwise -> return ()
               return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
-
 
 inferLExp :: LExp -> Env -> Logger LExp
 inferLExp lexp env = case lexp of

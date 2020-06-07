@@ -55,6 +55,7 @@ data TCException
     | EnvNotDeclaredIdent Ident
     | InternalError
     | ExpAssignedToProcedure Ident Exp TypeSpec
+    | WrongFlowCrontrolStatement Ident
     deriving(Show,Eq)
   
 
@@ -179,6 +180,9 @@ getExceptionMsg except = case except of
     EnvNotDeclaredIdent ident -> 
         "Undeclared identifier " ++ color Default Italic (printTree ident) ++ "."
     
+    WrongFlowCrontrolStatement ident ->
+        ident ++ " statement not in loop statement."
+
     InternalError -> "Internal error."
 
 
