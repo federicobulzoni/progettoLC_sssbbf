@@ -18,7 +18,7 @@ I file principali che compongono il compilatore sono:
 * **```Typed.hs```**: definizione delle proprietà dei tipi dichiarati in ```AbsGramm.hs```.
 * **```Color.hs```**: funzioni per la gestione dei colori nell'output. Utile sia durante la stampa linearizzata dell'albero tipato, sia nella stampa del TAC.
 ## Compilazione
-I file vengono già forniti compilati e pronti per l'esecuzione. Se fosse necessario dover ricompilare è sufficiente utilizzare il comando: ```make```.
+Per compilare il progetto basta eseguire il comando: ```make```.
 
 ## Output del compilatore
 Il compilatore prende in input un file di test e dopo aver eseguito la generazione del codice intermedio stampa:
@@ -31,7 +31,7 @@ Il compilatore prende in input un file di test e dopo aver eseguito la generazio
 
 ## Esecuzione di un test
 Sono stati proposti alcuni esempi per far comprendere il funzionamento e la correttezza del compilatore **Scala40**.
-Per eseguire dei test semplici utili a vedere il risultato finale restituito dal compilatore, è sufficiente eseguire il comando ```make test```.
+Per eseguire dei test semplici utili a vedere il risultato finale restituito dal compilatore, è sufficiente eseguire il comando ```make demo```.
 I file di test risiedono nella castella *test* e sono suddivisi nelle cartelle *corretti* (contenente file di esempio senza errori) e *sbagliati* (contenente file di esempio con errori vari).
 Per eseguire test su file più specifici è sufficiente utilizzare il comando: 
 <center>
