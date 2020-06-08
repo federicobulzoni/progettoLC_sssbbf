@@ -23,7 +23,9 @@ I file vengono già forniti compilati e pronti per l'esecuzione. Se fosse necess
 ## Output del compilatore
 Il compilatore prende in input un file di test e dopo aver eseguito la generazione del codice intermedio stampa:
 * Il programma in input linearizzato
+* Il programma in input in sintassi astratta
 * Il programma in input tipato e linearizzato
+* Il programma tipato in sintassi astratta
 * La lista degli eventuali Warning ed errori
 * Il Three Address Code
 
