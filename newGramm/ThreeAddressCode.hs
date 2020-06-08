@@ -3,7 +3,7 @@
 -- l'albero viene percorso ed ogni istruzione viene convertita in istruzione TAC.
 -- Le istruzioni TAC, come anche gli indirizzi e le etichette, sono definiti nel file AbsTAC.hs
 
-module ThreeAddressCode where
+module ThreeAddressCode (genTAC) where
 
 import AbsTAC
 import AbsGramm
@@ -50,7 +50,7 @@ pushMain label = do
     put (k, l, revcode ++ [label], funs)
 
 -- inserimento dell'etichetta in coda al codice se manca una funzione main
-pushLastLabel :: Label -> TacState()
+pushLastLabel :: Label -> TacState ()
 pushLastLabel label = do
     (k,l,revcode,funs) <- get
     put (k, l, [Lab label] ++ revcode, funs)
@@ -202,19 +202,7 @@ genExpAssign addr texp@(ETyped exp typ _) = case exp of
         _ -> do
             addrTExp <- genExp texp
             out $ Assign addr addrTExp (convertToTACType typ)
-    
-    --ELExp (LExpTyped lexp typ _) -> case lexp of
-    --    LIdent (PIdent (dloc,ident)) -> out $ Assign addr (buildVarAddress ident dloc) (convertToTACType typ)
-    --    LRef lexp' -> do
-    --        addrLexp' <- genLexp lexp'
-    --        out $ AssignFromPointer addr addrLexp' (TACAddr)
-    --    LArr lexp' exp -> do
-    --        addrOffset <- newTemp
-    --        addrLexp' <- genLexp lexp'
-    --        addrExp <- genExp exp
-    --        out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-    --        out $ AssignFromArray addr addrLexp' addrOffset (convertToTACType typ)
-    
+                
     -- se l'espressione passata ha tipo più complicato di quelli sopra elencati allora utilizziamo genExp che
     -- crea un temporaneo e lo assegna all'indirizzo addr
     _ -> do
