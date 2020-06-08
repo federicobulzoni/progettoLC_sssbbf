@@ -1,6 +1,6 @@
 \subsection{Descrizione soluzione - Three Address Code}
 
-Il Three Address Code (TAC) viene costruito a partire dall'albero annotato risultante dall'analisi di semantica statica (Type Checking). Per la costruzione viene fatto largo uso della monade State, descritta nella sezione precedente.
+Il Three Address Code (TAC) viene costruito a partire dall'albero annotato risultante dall'analisi di semantica statica.. Per la costruzione viene fatto largo uso della monade State, descritta nella sezione precedente.
 Nel TAC gli indirizzi utilizzati nelle istruzioni sono:
 \begin{itemize}
     \item Letterali: per valori costanti di tipo base.
@@ -16,7 +16,7 @@ Inoltre, nel TAC sono presenti le etichette che vengono utilizzate per indicare 
 
 La costruzione del Three Address Code inizia dalla funzione {\tt genProg} che ha i seguenti compiti:
 \begin{itemize}
-    \item Inserire un'etichetta in fondo a tutte le istruzioni (e il relativo {\tt Goto} dopo le dichiarazioni globali) se durante l'analisi di semantica statica non è stato trovato una funzione main da cui far partire la computazione. In alternativa, viene inserita un'istruzione {\tt Goto} all'etichetta del main;
+    \item Inserire un'etichetta in fondo a tutte le istruzioni (e il relativo {\tt Call} dopo le dichiarazioni globali) se durante l'analisi di semantica statica non è stato trovato una funzione main da cui far partire la computazione. In alternativa, viene inserita un'istruzione {\tt Goto} all'etichetta del main;
     \item iniziare la discesa nell'albero annotato per poter costruire le singole istruzioni, tramite la funzione {\tt genDecls}.
 \end{itemize}
 

@@ -12,8 +12,8 @@
 \title{Descrizione del linguaggio Scala40}
 \date{}
 
-\author{Federico Bulzoni (142242)\\
-Sara Biavaschi (130512)\\
+\author{Sara Biavaschi (130512)\\
+Federico Bulzoni (142242)\\
 Simone Scaboro (143191)}
 
 % Nome del linguaggio.
@@ -37,15 +37,19 @@ Simone Scaboro (143191)}
 \begin{document}
     \maketitle
 
-La seguente relazione ha lo scopo di fornire una descrizione del liguaggio \SBF\, costruito a partire dal linguaggio {\bf Scala}, e del front-end di compilatore che è stato sviluppato.
+La seguente relazione ha lo scopo di fornire una descrizione del linguaggio \SBF\, costruito a partire dal linguaggio {\bf Scala}, e del front-end di compilatore che è stato sviluppato.
 
 La prima sezione riguarda la descrizione del linguaggio. Verranno presentati la struttura lessicale, la struttura sintattica e i vincoli di semantica statica del linguaggio. Sono evidenziate solo le caratteristiche salienti, omesse le scelte standard e le richieste presenti nella consegna.
 
 Successivamente verranno descritte le soluzioni non standard utilizzate per il compilatore, ovvero le due monadi {\tt Writer a} e {\tt State a}. Verranno descritti i due principali moduli che vanno a comporre il compilatore front-end del linguaggio \SBF, ovvero il modulo di analisi di semantica statica e il modulo di generazione del Three Address Code. In questa sezione viene data una descrizione generale dei moduli; per una descrizione più dettagliata si rimanda al codice nei rispettivi file. 
 
+Per le istruzioni di compilazione e di test si rimanda al file \texttt{README.md} nella cartella \texttt{Scala40Compiler}.
+
 \input{descrizione_linguaggio.tex}  
 \input{soluzioni_non_standard.tex}
 \input{descrizione_soluzione.tex}
+
+
 
 
 \end{document}

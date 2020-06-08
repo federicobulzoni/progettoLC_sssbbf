@@ -139,12 +139,13 @@ I token possono essere separati dai caratteri di spaziatura standard o commenti.
 \subsection*{Scoping}
 Il linguaggio ha scoping statico con visibilità dal punto di dichiarazione in poi. Le regole per la visibilità di dichiarazioni locali sono le usuali.
 
-Gli identificatori di variabili e funzioni/procedure devono essere unici. Lo spazio dei nomi è unico, ossia non è permesso dichiarare una variabile e una funzione/procedura con lo stesso nome. Ovviamente questo vale per identificatori con visibilità non disgiunta.
+Gli identificatori di variabili e funzioni/procedure devono essere unici all'interno di uno stesso scope. Lo spazio dei nomi è unico, ossia non è permesso dichiarare una variabile e una funzione/procedura con lo stesso nome. 
 
 \subsection*{Vincoli riguardanti i tipi}
 Il linguaggio ha 5 tipi base e 2 costruttori di tipo come indicato nella definizione di $\token{TypeSpec}$. Non sono previste compatibilità fra tipi diversi. Il valore $\texttt{Null}$ può essere assegnato solo a left-expression il cui tipo ha un puntatore al top-level.
 
-I tipi degli operatori binari sono i seguenti.
+I tipi degli operatori binari sono descritti in tabella \ref{tab:binari}, i tipi degli operatori unari sono descritti in tabella \ref{tab:unari}.
+
 \begin{table}[h]
 	\centering
 	\begin{tabular}{l|l}
@@ -153,15 +154,18 @@ I tipi degli operatori binari sono i seguenti.
 		$\texttt{<},\ \texttt{<=},\ \texttt{>},\ \texttt{>=} $ & $\texttt{Int} \times \texttt{Int} \to \texttt{Bool}$ o $\texttt{Float} \times \texttt{Float} \to \texttt{Bool}$\\ \hline
 		$\texttt{==},\ \texttt{!=}$  & $\tau \times \tau \to \texttt{Bool}$ dove $\tau$ è un qualsiasi tipo
 	\end{tabular}
+	\caption{Tabella con i tipi degli operatori binari.}
+	\label{tab:binari}
 \end{table}
 
-I tipi degli operatori unari sono i seguenti.
 \begin{table}[h]
 	\centering
 	\begin{tabular}{l|l}
 		$\texttt{!}$ & $\texttt{Bool} \to \texttt{Bool}$\\ \hline
 		$\texttt{-}$ & $\texttt{Int} \to \texttt{Int}$ o $\texttt{Float} \to \texttt{Float}$
 	\end{tabular}
+	\caption{Tabella con i tipi degli operatori unari.}
+	\label{tab:unari}
 \end{table}
 
 Le guardie di istruzioni $\texttt{if}$, $\texttt{do-while}$ e $\texttt{while}$ devono avere tipo $\texttt{Bool}$.
