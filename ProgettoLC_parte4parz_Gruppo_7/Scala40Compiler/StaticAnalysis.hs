@@ -174,7 +174,12 @@ inferDecl decl env = case decl of
         -- e se lo scope corrente è quello globale, allora abbiamo trovato il main del programma,
         -- lo notifichiamo grazie alla funzione Env.setReturnFound.
         if ident == "main" && Env.isGlobalScope env' then
-          functionHandler (Env.setReturnFound env')
+          if (not (isTypeVoid typ)) || (notEmptyParams params)
+            then do
+              saveLog $ launchError loc WrongMainSignature
+              functionHandler (Env.setReturnFound env)
+            else
+              functionHandler (Env.setReturnFound env')
         else
           functionHandler env'
       Failure except -> do
@@ -194,6 +199,9 @@ inferDecl decl env = case decl of
             else do
               saveLog $ launchWarning loc (MissingReturn ident)
               return $ (DefFun id params typ (DBlock tstms), e)
+
+        notEmptyParams [PArg []] = False
+        notEmptyParams par = True
 -------------------------------------------------------------------------------------------------------------------------------------------
   DefFunInLine id@(PIdent (loc, ident)) params typ exp -> 
     case update env ident (FunInfo loc typ params) of
