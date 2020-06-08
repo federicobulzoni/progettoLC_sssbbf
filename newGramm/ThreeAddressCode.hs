@@ -3,7 +3,7 @@
 -- l'albero viene percorso ed ogni istruzione viene convertita in istruzione TAC.
 -- Le istruzioni TAC, come anche gli indirizzi e le etichette, sono definiti nel file AbsTAC.hs
 
-module ThreeAddressCode where
+module ThreeAddressCode (genTAC) where
 
 import AbsTAC
 import AbsGramm
@@ -50,7 +50,7 @@ pushMain label = do
     put (k, l, revcode ++ [label], funs)
 
 -- inserimento dell'etichetta in coda al codice se manca una funzione main
-pushLastLabel :: Label -> TacState()
+pushLastLabel :: Label -> TacState ()
 pushLastLabel label = do
     (k,l,revcode,funs) <- get
     put (k, l, [Lab label] ++ revcode, funs)
@@ -153,7 +153,7 @@ genDecl decl = case decl of
         -- controllo per vedere se siamo in presenza del main (nello scope globale)
         if ident == "main" && isGlobal
             then do
-                pushMain $ Goto (buildFunLabel ident dloc)
+                pushMain $ Goto (buildFunLabel ident dloc) --(sum (map (\(ParExp x) -> length x) params))
                 return ()
             else
                 return ()
@@ -201,26 +201,38 @@ genExpAssign addr texp@(ETyped exp typ _) = case exp of
             out $ AssignFromPointer addr addrLexp' (TACAddr)
         _ -> do
             addrTExp <- genExp texp
-            out $ Assign addr addrTExp (convertToTACType typ)
-    
-    --ELExp (LExpTyped lexp typ _) -> case lexp of
-    --    LIdent (PIdent (dloc,ident)) -> out $ Assign addr (buildVarAddress ident dloc) (convertToTACType typ)
-    --    LRef lexp' -> do
-    --        addrLexp' <- genLexp lexp'
-    --        out $ AssignFromPointer addr addrLexp' (TACAddr)
-    --    LArr lexp' exp -> do
-    --        addrOffset <- newTemp
-    --        addrLexp' <- genLexp lexp'
-    --        addrExp <- genExp exp
-    --        out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-    --        out $ AssignFromArray addr addrLexp' addrOffset (convertToTACType typ)
-    
+            out $ Assign addr addrTExp (convertToTACType typ)                
     -- se l'espressione passata ha tipo più complicato di quelli sopra elencati allora utilizziamo genExp che
     -- crea un temporaneo e lo assegna all'indirizzo addr
     _ -> do
         addrTExp <- genExp texp
         out $ Assign addr addrTExp (convertToTACType typ)
 
+    where
+        -- conversione da operazione della sintassi astratta a operazione del TAC
+        -- scopo: differenziazione operazioni tra TS e TAC e distinguere operazioni
+        -- tra interi e float
+        convertOperation op typ = case (op,typ) of
+            (Plus , (TSimple SType_Int)  )  -> PlusInt
+            (Plus , (TSimple SType_Float))  -> PlusFloat
+            (Minus, (TSimple SType_Int)  )  -> MinusInt
+            (Minus, (TSimple SType_Float))  -> MinusFloat
+            (Prod , (TSimple SType_Int)  )  -> ProdInt
+            (Prod , (TSimple SType_Float))  -> ProdFloat
+            (Div  , (TSimple SType_Int)  )  -> DivInt
+            (Div  , (TSimple SType_Float))  -> DivFloat
+            (Mod  , (TSimple SType_Int)  )  -> ModInt
+            (Mod  , (TSimple SType_Float))  -> ModFloat
+            (Pow  , (TSimple SType_Int)  )  -> PowInt
+            (Pow  , (TSimple SType_Float))  -> PowFloat
+            (AbsGramm.Or       , _)         -> AbsTAC.Or
+            (AbsGramm.And      , _)         -> AbsTAC.And
+            (AbsGramm.Equal    , _)         -> AbsTAC.Equal
+            (AbsGramm.NotEq    , _)         -> AbsTAC.NotEqual
+            (AbsGramm.Less     , _)         -> AbsTAC.Less
+            (AbsGramm.LessEq   , _)         -> AbsTAC.LessEq
+            (AbsGramm.Greater  , _)         -> AbsTAC.Greater
+            (AbsGramm.GreaterEq, _)         -> AbsTAC.GreaterEq
 
 -- generazione indirizzo per le L-Expression
 genLexp :: LExp -> TacState Addr
@@ -284,6 +296,10 @@ genExp texp@(ETyped exp typ loc) = case exp of
             temp <- newTemp
             out $ AssignBinOp temp (LitInt i) AbsTAC.ProdInt (LitInt $ sizeOf typ') (convertToTACType (TSimple SType_Int))
             out $ AssignToArray base temp x (convertToTACType typ')
+
+        getArrayType (TArray typ' _) = typ'
+        getArrayType typ = error $ "Errore: " ++ printTree typ
+            
 
 -- ritorna true se l'ultima istruzione è un return. Per evitare ripetizioni
 genBlock :: Block -> TacState Bool
@@ -431,31 +447,29 @@ genCondition texp@(ETyped exp typ loc) lblTrue lblFalse = case exp of
             Fall -> return ()
             _ -> out $ Goto label
 
--- conversione da operazione della sintassi astratta a operazione del TAC
--- scopo: differenziazione operazioni tra TS e TAC e distinguere operazioni
--- tra interi e float
-convertOperation :: Op -> TypeSpec -> BinOp
-convertOperation op typ = case (op,typ) of
-    (Plus , (TSimple SType_Int)  )  -> PlusInt
-    (Plus , (TSimple SType_Float))  -> PlusFloat
-    (Minus, (TSimple SType_Int)  )  -> MinusInt
-    (Minus, (TSimple SType_Float))  -> MinusFloat
-    (Prod , (TSimple SType_Int)  )  -> ProdInt
-    (Prod , (TSimple SType_Float))  -> ProdFloat
-    (Div  , (TSimple SType_Int)  )  -> DivInt
-    (Div  , (TSimple SType_Float))  -> DivFloat
-    (Mod  , (TSimple SType_Int)  )  -> ModInt
-    (Mod  , (TSimple SType_Float))  -> ModFloat
-    (Pow  , (TSimple SType_Int)  )  -> PowInt
-    (Pow  , (TSimple SType_Float))  -> PowFloat
-    (AbsGramm.Or       , _)         -> AbsTAC.Or
-    (AbsGramm.And      , _)         -> AbsTAC.And
-    (AbsGramm.Equal    , _)         -> AbsTAC.Equal
-    (AbsGramm.NotEq    , _)         -> AbsTAC.NotEqual
-    (AbsGramm.Less     , _)         -> AbsTAC.Less
-    (AbsGramm.LessEq   , _)         -> AbsTAC.LessEq
-    (AbsGramm.Greater  , _)         -> AbsTAC.Greater
-    (AbsGramm.GreaterEq, _)         -> AbsTAC.GreaterEq
+        isTrue (ETyped (ETrue _) _ _) = True
+        isTrue _ = False
+
+        isFalse (ETyped (EFalse _) _ _) = True
+        isFalse _ = False
+
+        -- conversione da operatore binario a operatore binario del TAC
+        convertToTACOp op = case op of
+            AbsGramm.Equal     -> AbsTAC.Equal
+            AbsGramm.NotEq     -> AbsTAC.NotEqual
+            AbsGramm.Less      -> AbsTAC.Less
+            AbsGramm.LessEq    -> AbsTAC.LessEq
+            AbsGramm.Greater   -> AbsTAC.Greater
+            AbsGramm.GreaterEq -> AbsTAC.GreaterEq
+
+        -- conversione da operatore binario a operatore binario del TAC opposto
+        convertToOppositeTACOp op = case op of
+            AbsGramm.Equal     -> AbsTAC.NotEqual
+            AbsGramm.NotEq     -> AbsTAC.Equal
+            AbsGramm.Less      -> AbsTAC.GreaterEq
+            AbsGramm.LessEq    -> AbsTAC.Greater
+            AbsGramm.Greater   -> AbsTAC.LessEq
+            AbsGramm.GreaterEq -> AbsTAC.Less
 
 -- creazione dell'istruzione Param per il passaggio dei parametri
 -- in una chiamata di funzione
@@ -470,8 +484,6 @@ genParams (param:params) = do
             addrExp <- genExp exp
             out $ (Param addrExp)
             genParamAux (ParExp exps)
-
-
 
 
 -- Costruzione indirizzi variabili basandosi su: identificatore, locazione --> ident@loc
@@ -496,11 +508,6 @@ buildDefaultValue etyp@(TPointer typ) = (ETyped (ENull (PNull ((0,0),"Null"))) e
 buildDefaultValue etyp@(TArray typ (PInteger (_,n))) = (ETyped (EArray ( replicate (read n :: Int) (buildDefaultValue typ))) etyp (0,0))
 
 
-isReturnStm :: Stm -> Bool
-isReturnStm (SReturn _ ) = True
-isReturnStm (SReturnExp _ _ ) = True
-isReturnStm _ = False
-
 -- preso un tipo ritorna lo spazio occupato da quel tipo
 sizeOf :: TypeSpec -> Int
 sizeOf (TSimple typ)  = case typ of
@@ -513,31 +520,6 @@ sizeOf (TSimple typ)  = case typ of
 sizeOf (TArray typ (PInteger (_,size))) = (read size :: Int)  * (sizeOf typ)
 sizeOf (TPointer typ) = 4
 
-getArrayType :: TypeSpec -> TypeSpec
-getArrayType (TArray typ' _) = typ'
-getArrayType typ = error $ "Errore: " ++ printTree typ
-
-
--- conversione da operatore binario a operatore binario del TAC opposto
-convertToOppositeTACOp :: Op -> BinOp
-convertToOppositeTACOp op = case op of
-    AbsGramm.Equal     -> AbsTAC.NotEqual
-    AbsGramm.NotEq     -> AbsTAC.Equal
-    AbsGramm.Less      -> AbsTAC.GreaterEq
-    AbsGramm.LessEq    -> AbsTAC.Greater
-    AbsGramm.Greater   -> AbsTAC.LessEq
-    AbsGramm.GreaterEq -> AbsTAC.Less
-
--- conversione da operatore binario a operatore binario del TAC
-convertToTACOp :: Op -> BinOp
-convertToTACOp op = case op of
-    AbsGramm.Equal     -> AbsTAC.Equal
-    AbsGramm.NotEq     -> AbsTAC.NotEqual
-    AbsGramm.Less      -> AbsTAC.Less
-    AbsGramm.LessEq    -> AbsTAC.LessEq
-    AbsGramm.Greater   -> AbsTAC.Greater
-    AbsGramm.GreaterEq -> AbsTAC.GreaterEq
-
 convertToTACType :: TypeSpec -> TACType
 convertToTACType typ = case typ of
     (TSimple SType_Float)  -> TACFloat
@@ -548,12 +530,7 @@ convertToTACType typ = case typ of
     (TSimple _ )           -> error "Internal error: converting void or error to TAC type."
     _                      -> TACAddr  
 
-
-
-isTrue :: Exp -> Bool
-isTrue (ETyped (ETrue _) _ _) = True
-isTrue _ = False
-
-isFalse :: Exp -> Bool
-isFalse (ETyped (EFalse _) _ _) = True
-isFalse _ = False
+isReturnStm :: Stm -> Bool
+isReturnStm (SReturn _ ) = True
+isReturnStm (SReturnExp _ _ ) = True
+isReturnStm _ = False

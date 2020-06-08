@@ -5,7 +5,7 @@
 -- quali ad esempio il tipo delle R-espressioni e delle L-espressioni.
 -- La funzione principale del modulo è typeCheck che preso in input un programma in sintassi astratta
 -- ritorna in output tale programma annotato e gli eventuali Warning ed Errori (LogElement) scovati durante l'annotazione.
-module StaticAnalysis where
+module StaticAnalysis (genAnnotatedTree) where
 
 import AbsGramm
 import Environment as Env
@@ -61,12 +61,13 @@ startingEnv =
 
 -- startFunScope
 -- Si occupa di inizializzare l'environment prima dell'inferenza degli statement contenuti nel suo body.
-startFunScope :: Env -> PIdent -> [ParamClause] -> TypeSpec -> Env
-startFunScope env id@(PIdent (loc, ident)) params typ = 
-  let 
-    (Success env') = foldM (\x (ident', info) -> Env.update x ident' info) (Env.addScope env typ) funInfo
-  in
-    env'
+startFunScope :: Env -> PIdent -> [ParamClause] -> TypeSpec -> Logger Env
+startFunScope env id@(PIdent (loc, ident)) params typ = do
+  case foldM (\x (ident', info) -> Env.update x ident' info) (Env.addScope env typ) funInfo of
+    Success env' -> return env'
+    Failure except -> do
+      saveLog $ launchError loc except
+      return env
   where
     argsInfo = map (\(DArg argId@(PIdent (argLoc, argIdent)) argTyp) -> (argIdent, VarInfo argLoc argTyp)) (concat ( map (\(PArg args) -> args) params ))
     funInfo = (ident, FunInfo loc typ params):argsInfo
@@ -182,7 +183,9 @@ inferDecl decl env = case decl of
       where 
         functionHandler e = do
           -- Creare nuovo scope avviato con i parametri e il nome della fun.
-          (tstms, e') <- inferStms stms (startFunScope e id params typ)
+          newScope <- startFunScope e id params typ
+          (tstms, e') <- inferStms stms newScope
+
           -- Nel caso in cui stiam trattando una funzione, ma non è presente alcun
           -- return nel suo scope lo notifichiamo.
           if Env.hasReturn e' || isTypeVoid typ
@@ -211,7 +214,8 @@ inferDecl decl env = case decl of
               return (DefFun id params typ (DBlock [stmt]), e')
             -- PROCEDURA con assegnata EXP
             (_,True) -> do
-              texp <- inferExp exp (startFunScope e id params typ)
+              newScope <-  startFunScope e id params typ
+              texp <- inferExp exp newScope
               if isTypeError texp then
                 return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
               else do
@@ -219,7 +223,8 @@ inferDecl decl env = case decl of
                 return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
             -- FUNZIONE
             (_,False) -> do
-              texp <- inferExp exp (startFunScope e id params typ)
+              newScope <- startFunScope e id params typ
+              texp <- inferExp exp newScope
               if isTypeError texp || isCompatible texp typ 
                 then
                   return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
