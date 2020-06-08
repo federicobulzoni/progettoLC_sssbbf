@@ -5,7 +5,7 @@
 -- quali ad esempio il tipo delle R-espressioni e delle L-espressioni.
 -- La funzione principale del modulo è typeCheck che preso in input un programma in sintassi astratta
 -- ritorna in output tale programma annotato e gli eventuali Warning ed Errori (LogElement) scovati durante l'annotazione.
-module StaticAnalysis where
+module StaticAnalysis (genAnnotatedTree) where
 
 import AbsGramm
 import Environment as Env
@@ -68,10 +68,6 @@ startFunScope env id@(PIdent (loc, ident)) params typ = do
     Failure except -> do
       saveLog $ launchError loc except
       return env
-  --let 
-  --  (Success env') = 
-  --in
-  --  env'
   where
     argsInfo = map (\(DArg argId@(PIdent (argLoc, argIdent)) argTyp) -> (argIdent, VarInfo argLoc argTyp)) (concat ( map (\(PArg args) -> args) params ))
     funInfo = (ident, FunInfo loc typ params):argsInfo

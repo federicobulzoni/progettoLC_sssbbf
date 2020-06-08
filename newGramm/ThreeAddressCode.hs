@@ -1,9 +1,9 @@
 -- Modulo ThreeAddressCode.hs
--- il seguente modulo prende in input l'albero annotato prodotto durante la fase di analisi di semantica statica
--- l'albero viene percorso ed ogni istruzione viene convertita in istruzione TAC.
--- Le istruzioni TAC, come anche gli indirizzi e le etichette, sono definiti nel file AbsTAC.hs
+-- il seguente modulo prende in input l'albero annotato prodotto durante la fase di analisi di semantica statica.
+-- L'albero viene percorso ed ogni istruzione viene convertita in istruzioni TAC.
+-- Le istruzioni TAC, come anche gli indirizzi e le etichette, sono definiti nel file AbsTAC.hs.
 
-module ThreeAddressCode where
+module ThreeAddressCode (genTAC) where
 
 import AbsTAC
 import AbsGramm
@@ -28,8 +28,6 @@ out instr = do
     -- in testa al suo "scope" di utilizzo
     put (k, l, revcode, (instr : (head funs)) : (tail funs))
 
-
-
 -- inserimento delle istruzioni di una funzione all'interno del codice principale
 pushCurrentStream :: TacState ()
 pushCurrentStream = do
@@ -43,14 +41,14 @@ pushCurrentStream = do
         else
             put (k, l,  (head funs) ++ revcode, tail funs)
 
--- inserimento etichetta Goto al main se presente
+-- inserimento istruzione Call al main se presente
 pushMain :: TAC -> TacState ()
-pushMain label = do
+pushMain instr = do
     (k, l, revcode, funs) <- get
-    put (k, l, revcode ++ [label], funs)
+    put (k, l, revcode ++ [instr], funs)
 
 -- inserimento dell'etichetta in coda al codice se manca una funzione main
-pushLastLabel :: Label -> TacState()
+pushLastLabel :: Label -> TacState ()
 pushLastLabel label = do
     (k,l,revcode,funs) <- get
     put (k, l, [Lab label] ++ revcode, funs)
@@ -79,14 +77,14 @@ newLabel = do
 getTACCode :: (Int, Int, [TAC], [[TAC]]) -> [TAC]
 getTACCode (k, l, code, _) = code
 
--- Entry point.
+-- Entry point. Genera il codice TAC del programma prog.
 -- hasMain = True, se nell'analisi di semantica statica è stato trovato un main
 genTAC :: Program -> Bool -> [TAC]
-genTAC prog hasMain = reverse $ getTACCode $ execState ( genProg prog hasMain) (0, 0 ,[], [[]])
+genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [[]])
 
 
 genProg :: Program -> Bool -> TacState ()
-genProg (Prog decls) hasMain= do
+genProg (Prog decls) hasMain = do
     -- controlla la presenta di un main
     if not hasMain
         then do
@@ -137,7 +135,9 @@ genDecl decl = case decl of
                 out $ CommentArgs $ args
             else
                 return ()
-        -- controllo della presenza di un return come ultima istruzione e generazione istruzioni interne
+        -- controllo della presenza di un return come ultima istruzione e generazione istruzioni interne.
+        -- se si è in una funzione e l'ultima istruzione non è già un return, si aggiunge un return che
+        -- restituisce un valore di default
         lastIsReturn <- genBlock block
         case (lastIsReturn,typ) of
             (False, TSimple SType_Void) -> out $ (ReturnVoid)
@@ -148,6 +148,7 @@ genDecl decl = case decl of
         case typ of
             TSimple SType_Void -> out $ Comment "End procedure"
             otherwise -> out $ Comment "End function"
+        -- chiusura dello stream contenente le istruzioni della funzione
         pushCurrentStream
         isGlobal <- isGlobalScope
         -- controllo per vedere se siamo in presenza del main (nello scope globale)
@@ -163,8 +164,8 @@ genDecl decl = case decl of
             return $ length funs == 1 
 
 
--- funzione ausiliaria per la generazione delle espressioni utile ad evitare
--- che vengano utilizzati temporanei superflui
+-- funzione ausiliaria per la generazione dell'assegnamento di un'espressione ad un
+-- indirizzo utile ad evitare che vengano utilizzati temporanei superflui
 genExpAssign :: Addr -> Exp -> TacState ()
 genExpAssign addr texp@(ETyped exp typ _) = case exp of 
     EOp e1 op e2 -> do
@@ -201,7 +202,9 @@ genExpAssign addr texp@(ETyped exp typ _) = case exp of
             out $ AssignFromPointer addr addrLexp' (TACAddr)
         _ -> do
             addrTExp <- genExp texp
-            out $ Assign addr addrTExp (convertToTACType typ)
+            out $ Assign addr addrTExp (convertToTACType typ)                
+    -- se l'espressione passata ha tipo più complicato di quelli sopra elencati allora utilizziamo genExp che
+    -- crea un temporaneo, che viene successivamente assegnato all'indirizzo addr
     _ -> do
         addrTExp <- genExp texp
         out $ Assign addr addrTExp (convertToTACType typ)
@@ -268,7 +271,7 @@ genExp texp@(ETyped exp typ loc) = case exp of
         out $ AssignFromRef addrTemp addrLexp' (convertToTACType typ)
         return addrTemp
     
-    -- se l'avveri dovesse avere zero elementi allora il valore
+    -- se l'array dovesse avere zero elementi allora il valore
     -- assegnato sarebbe Null
     EArray exps -> do
         if length exps == 0
@@ -299,11 +302,11 @@ genExp texp@(ETyped exp typ loc) = case exp of
         getArrayType typ = error $ "Errore: " ++ printTree typ
             
 
--- ritorna true se l'ultima istruzione è un return. Per evitare ripetizioni
+-- ritorna true se l'ultima istruzione è un return
 genBlock :: Block -> TacState Bool
 genBlock (DBlock stms) = genStms stms
 
--- Rritorna true se l'ultima istruzione è un return. Per evitare ripetizioni.
+-- ritorna true se l'ultima istruzione è un return
 -- genera anche le istruzioni degli statement
 genStms :: [Stm] -> TacState Bool
 genStms [] = return False
@@ -327,10 +330,14 @@ genStm stm = case stm of
         return ()
 
     SAssign (LExpTyped lexp typ loc) texp -> do
+        -- Se lexp è del tipo array o puntatore, si vogliono utilizzare le istruzioni del tac x[y]=z e
+        -- *x=y per evitare la creazione di un temporaneo inutile per la left expression.
         case lexp of
             (LRef lexp') -> do
+                -- generazione del codice della left expression prima di quello della right expression
                 addrLexp' <- genLexp lexp'
                 addrExp <- genExp texp
+                -- istruzione ( * addrLexp' = addrExp )
                 out $ AssignToPointer addrLexp' addrExp (convertToTACType typ)
             (LArr lexp' texp') -> do
                 addrOffset <- newTemp
@@ -356,6 +363,7 @@ genStm stm = case stm of
         labelElse <- if isBlockEmpty stm_else then return labelNext else newLabel
         genCondition texp Fall labelElse
         genStm stm_if
+        -- se si tratta di uno statement if senza else, evito di generare etichette inutili
         if (not $ isBlockEmpty stm_else)
             then do
                 out $ (Goto labelNext)
@@ -381,10 +389,9 @@ genStm stm = case stm of
 
 -- FUNZIONI AUSILIARIE
 
-
 -- gestione delle condizioni di un'istruzione While e If
 -- lo scopo è quello di evitare controlli superflui e far saltare il flusso di controllo nel punto giusto
--- es. (a && b), se a = False non valutiamo b, il controllo passerà direttamente al caso else
+-- es. (a && b), se a = False non valutiamo b, il controllo passerà direttamente al caso else.
 genCondition :: Exp -> Label -> Label -> TacState ()
 genCondition texp@(ETyped exp typ loc) lblTrue lblFalse = case exp of
     ETrue _ -> checkLabel lblTrue
@@ -441,6 +448,7 @@ genCondition texp@(ETyped exp typ loc) lblTrue lblFalse = case exp of
                 out $ (Goto lblFalse)
 
     where
+        -- se l'etichetta è FALL, non c'è bisogno di un Goto
         checkLabel label = case label of
             Fall -> return ()
             _ -> out $ Goto label
@@ -469,7 +477,7 @@ genCondition texp@(ETyped exp typ loc) lblTrue lblFalse = case exp of
             AbsGramm.Greater   -> AbsTAC.LessEq
             AbsGramm.GreaterEq -> AbsTAC.Less
 
--- creazione dell'istruzione Param per il passaggio dei parametri
+-- creazione delle istruzioni ( param x ) per il passaggio dei parametri
 -- in una chiamata di funzione
 genParams :: [Params] -> TacState ()
 genParams [] = return ()
@@ -500,7 +508,7 @@ buildDefaultValue etyp@(TSimple typ) = case typ of
     SType_Char      -> (ETyped (EChar (PChar ((0,0), "'\\0'")))     etyp (0,0))
     SType_String    -> (ETyped (EString (PString ((0,0), "\"\"")))  etyp (0,0))
     SType_Bool      -> (ETyped (EFalse (PFalse ((0,0), "False")))   etyp (0,0))
-    _               -> error $ "Chiamata sbagliata: " ++ show etyp
+    _               -> error $ "Internal error: called buildDefaultValue on " ++ show etyp
 
 buildDefaultValue etyp@(TPointer typ) = (ETyped (ENull (PNull ((0,0),"Null"))) etyp (0,0))
 buildDefaultValue etyp@(TArray typ (PInteger (_,n))) = (ETyped (EArray ( replicate (read n :: Int) (buildDefaultValue typ))) etyp (0,0))
