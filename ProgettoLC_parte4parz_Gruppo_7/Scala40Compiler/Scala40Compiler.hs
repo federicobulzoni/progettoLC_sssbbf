@@ -35,9 +35,9 @@ runFile v p f = putStrLn f >> readFile f >>= run v p
 run :: Verbosity -> ParseFun Program -> String -> IO ()
 run v p s = let ts = myLLexer s in case p ts of
            Bad s  -> do 
-                          putStrLn $ color Red Bold "\nParse              Failed...\n"
-                          putStrV v "Tokens:"
-                          putStrV v $ show ts
+                          putStrLn $ color Red Bold "\nParse failed...\n"
+                          --putStrV v "Tokens:"
+                          --putStrV v $ show ts
                           putStrLn s
                           exitFailure
            Ok tree -> do 
