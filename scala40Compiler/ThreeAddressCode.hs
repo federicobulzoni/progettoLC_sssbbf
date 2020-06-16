@@ -154,7 +154,7 @@ genDecl decl = case decl of
         -- controllo per vedere se siamo in presenza del main (nello scope globale)
         if ident == "main" && isGlobal
             then do
-                pushMain $ Goto (buildFunLabel ident dloc) --(sum (map (\(ParExp x) -> length x) params))
+                pushMain $ Call (buildFunLabel ident dloc) 0 
                 return ()
             else
                 return ()

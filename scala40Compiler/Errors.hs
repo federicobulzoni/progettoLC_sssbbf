@@ -55,6 +55,7 @@ data TCException
     | EnvNotDeclaredIdent Ident
     | InternalError
     | ExpAssignedToProcedure Ident Exp TypeSpec
+    | WrongMainSignature
     deriving(Show,Eq)
   
 
@@ -181,4 +182,5 @@ getExceptionMsg except = case except of
     
     InternalError -> "Internal error."
 
+    WrongMainSignature -> "Wrong main function signature. The function should have signature " ++ color Default Italic ("void main()") 
 

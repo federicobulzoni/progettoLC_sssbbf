@@ -26,7 +26,7 @@ printTACAux (x:xs) = (padStringLabel "" ++ buildTACInstruction x):(printTACAux x
 buildTACInstruction :: TAC -> String
 buildTACInstruction instr = case instr of
     AssignBinOp addr1 addr2 op addr3 typ -> 
-        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,buildAddr addr2,buildBinOpr op,buildAddr addr3]
+        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,buildAddr addr2,buildBinOpr op,buildAddr addr3, opComment op]
 
     AssignUnOp addr1 op addr2 typ ->
         intercalate " " [buildAddr addr1,"=",buildColAssignType typ,buildUnOpr op,buildAddr addr2]
@@ -84,6 +84,9 @@ buildTACInstruction instr = case instr of
             then "None"
             else intercalate ", " (map (\(t,a) -> (buildAssignType t) ++ " " ++ (buildAddr a)) tactyp_addr)
 
+
+opComment :: BinOp -> String
+opComment op =  color Default Italic $ color Default Faint $ "\t // " ++ show op
 
 buildBinOpr :: BinOp -> String
 buildBinOpr op = case op of

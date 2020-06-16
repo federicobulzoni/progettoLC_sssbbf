@@ -13,6 +13,7 @@ import qualified Data.Bits as Bits
 import qualified GHC.Exts as Happy_GHC_Exts
 import Control.Applicative(Applicative(..))
 import Control.Monad (ap)
+import Color
 
 -- parser produced by Happy Version 1.19.12
 
@@ -1491,7 +1492,7 @@ thenM = (>>=)
 
 happyError :: [Token] -> Err a
 happyError ts =
-  Bad $ "syntax error at " ++ tokenPos ts ++
+  Bad $ (color Red Bold "Error") ++ "(" ++ tokenPos ts ++ "): syntax error" ++
   case ts of
     []      -> []
     [Err _] -> " due to lexer error"
