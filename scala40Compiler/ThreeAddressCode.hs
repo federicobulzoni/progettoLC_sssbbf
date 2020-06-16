@@ -327,15 +327,15 @@ genExp texp@(ETyped exp typ' loc) typ = case exp of
     EDeref lexp' -> do
         addrRes <- newTemp 
         addrLexp' <- genLexp lexp'
-        if typ /= typ'
-            then do
-                addrTemp <- newTemp
-                out $ AssignFromRef addrTemp addrLexp' (convertToTACType typ)
-                out $ AssignUnOp addrRes (Cast $ convertToTACType typ) addrTemp (convertToTACType typ)
-                return addrRes
-            else do
-                out $ AssignFromRef addrRes addrLexp' (convertToTACType typ)
-                return addrRes
+        --if typ /= typ'
+        --    then do
+        --        addrTemp <- newTemp
+        --        out $ AssignFromRef addrTemp addrLexp' (convertToTACType typ)
+        --        out $ AssignUnOp addrRes (Cast $ convertToTACType typ) addrTemp (convertToTACType typ)
+        --        return addrRes
+        --    else do
+        out $ AssignFromRef addrRes addrLexp' (convertToTACType typ)
+        return addrRes
     
     -- se l'array dovesse avere zero elementi allora il valore
     -- assegnato sarebbe Null
