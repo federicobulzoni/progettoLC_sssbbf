@@ -474,7 +474,7 @@ inferExp exp env = case exp of
           -- Prende una lista di espressioni tipate, un tipo, e ritorna una coppia con il primo elemento
           -- che dice se si è trovato almeno un elemento con tipo (TSimple SType_Error), ed il secondo elemento che dice
           -- se tutte le espressioni hanno tipo type o meno.
-          inferArrayAux texps = ( (any (\x -> getType x == (TSimple SType_Error)) texps),( (all (\x -> isCompatible x (TSimple SType_Float)) texps) || (all (\x -> getType x == (TSimple SType_String)) texps)  ))
+          inferArrayAux texps = ( any (\x -> getType x == (TSimple SType_Error)) texps, all (\x -> isCompatible x (maximum (map getType texps))) texps)
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------
