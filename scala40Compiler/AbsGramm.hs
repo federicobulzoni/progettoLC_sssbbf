@@ -44,7 +44,7 @@ data SType
     = SType_Bool
     | SType_Char
     | SType_Int
-    | SType_Float
+    | SType_Float  
     | SType_String
     | SType_Error
     | SType_Void

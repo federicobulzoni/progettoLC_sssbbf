@@ -3,12 +3,12 @@ var a : Array[Int](10);
 var N : Int = 10;
 
 def bubbleSort (a : Array[Int](10), dim : Int) : Array[Int](10) = {
-	var i : Int = 0;
+	var i : Int = False;
 	var j : Int = 0;
 	var temp : Int;
 
 	while (j < N - 1){
-		while (i < N - 1){
+		while (i < True - 1){
 			if (a[i] > a[i+1]) {
 				temp = a[i];
 				a[i] = a[i+1];
@@ -28,5 +28,4 @@ def main () = {
 
 
 	var orderedA : Array[Int](10) = bubbleSort(a, N);
-	return 0;
 }

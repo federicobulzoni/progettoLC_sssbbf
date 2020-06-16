@@ -46,6 +46,7 @@ data UnOp
     = NegInt
     | NegFloat
     | Not
+    | Cast TACType
   deriving (Eq, Ord, Show, Read)
 
 data TACType = TACInt | TACFloat | TACChar | TACBool | TACString | TACAddr

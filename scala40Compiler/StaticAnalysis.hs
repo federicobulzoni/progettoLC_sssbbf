@@ -92,23 +92,6 @@ getTypeOp op = case op of
   Equal     -> EqOp
   NotEq     -> EqOp
 
--- isConsistent
--- preso il tipo di un operatore binario ed i tipi delle due sotto-espressioni di cui si vuol fare expl op expr,
--- restituisce un booleano che indica se i tipi delle sotto-espressioni sono consistenti con il tipo dell'operatore.
-isConsistent :: TypeOp -> TypeSpec -> TypeSpec -> Bool
-isConsistent NumericOp typl typr = (typl == typr) && (checkNumericTyp typl)
-isConsistent BooleanOp typl typr = (typl == typr) && (checkBooleanTyp typl)
-isConsistent EqOp typl typr      = (typl == typr)
-isConsistent RelOp typl typr     = (typl == typr) && (checkNumericTyp typl)
-
-checkNumericTyp :: TypeSpec  -> Bool
-checkNumericTyp typ = ( (typ == (TSimple SType_Int) )|| (typ == (TSimple SType_Float)) )
-
-checkBooleanTyp :: TypeSpec -> Bool
-checkBooleanTyp (TSimple SType_Bool) = True
-checkBooleanTyp _ = False
-
-
 ------------------------------------------------------------------------------------------------------------------------
 
 genAnnotatedTree :: Program -> (Program, [LogElement])
@@ -582,19 +565,39 @@ inferBinOp expl op expr env = do
   case ((getTypeOp op), (getType texpl), (getType texpr) ) of
     (_ , TSimple SType_Error, _ ) -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
     (_ , _ , TSimple SType_Error) -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
+    
     (EqOp, typl, typr) ->
-      if isConsistent EqOp typl typr
+      if typl == typr || (max typl typr) < (TSimple SType_String)
+      -- if isConsistent EqOp typl typr
         then return $ ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
         else returnBinOpError texpl op texpr
     (RelOp, typl, typr) ->
-      if isConsistent RelOp typl typr
+      if (max typl typr) < (TSimple SType_String)
+      -- if isConsistent RelOp typl typr
         then return $ ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
         else returnBinOpError texpl op texpr
-    (_, typl, typr) ->
-      if isConsistent (getTypeOp op) typl typr
-        then return $ ETyped (EOp texpl op texpr) typl (getLoc texpl)
+    (BooleanOp, typl, typr) ->
+      if typl == (TSimple SType_Bool) && typr == (TSimple SType_Bool)
+        then return $ ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
         else returnBinOpError texpl op texpr
+    (NumericOp, typl, typr) ->
+      if (max typl typr) < (TSimple SType_String)
+        then return $ ETyped (EOp texpl op texpr) (max typl typr) (getLoc texpl)
+        else returnBinOpError texpl op texpr
+    -- (_, typl, typr) ->
+    --   if isConsistent (getTypeOp op) typl typr
+    --     then return $ ETyped (EOp texpl op texpr) typl (getLoc texpl)
+    --     else returnBinOpError texpl op texpr
   where
     returnBinOpError texpl op texpr = do
       saveLog $ launchError (getLoc texpl) (WrongOpApplication op (getType texpl) (getType texpr))
+
+
+
+
+
+
+
+
+
       return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
