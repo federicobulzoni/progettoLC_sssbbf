@@ -116,6 +116,7 @@ buildUnOpr op = case op of
     AbsTAC.NegInt    -> "!"
     AbsTAC.NegFloat  -> "!"
     AbsTAC.Not       -> "-"
+    AbsTAC.Cast typ  -> "(" ++ buildAssignType typ ++ ")"
 
 buildAddr :: Addr -> String
 buildAddr addr = case addr of

@@ -1,6 +1,7 @@
 Cose da fare:
     [ ] per via degli zuccheri sintattici, ci sono casi in cui errori del tipo "variabile non dichiarata" vengono ripetuti più volte del necessario.
     [ ] nella gestione degli errori bisognerebbe dedicare una attenzione particolare a NULL e non stamparlo come  * Void.
+    [ ] modificare errore compatibilità tipi in EArray.
     [X]  mettere a posto main nel TAC.
 	[X] mettere tipi tac                     SB
     [X] sistemare layout stampa tac          SB/SS

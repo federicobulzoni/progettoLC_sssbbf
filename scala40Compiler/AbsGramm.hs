@@ -45,6 +45,7 @@ data SType
     | SType_Char
     | SType_Int
     | SType_Float  
+    
     | SType_String
     | SType_Error
     | SType_Void

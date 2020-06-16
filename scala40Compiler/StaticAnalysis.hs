@@ -463,10 +463,10 @@ inferExp exp env = case exp of
         -- Altrimenti se nessuna espressione ha errori al proprio interno,
         -- e se tutte le espressioni hanno tipo compatibile tra loro, allora l'espressione Array(exp1, ..., expn)
         -- ha il tipo delle sotto-espressioni exp1, ..., expn e dimensione <lunghezza exps>.
-        let (anyError, allCompatible) = inferArrayAux texps (getType (head texps) ) in
+        let (anyError, allCompatible) = inferArrayAux texps in
           case (anyError, allCompatible) of
             (True, _) -> return $ ETyped (EArray texps) (TArray (TSimple SType_Error) (PInteger ( (getLoc (head texps)) , show (length texps)  ) )) (getLoc (head texps)) 
-            (_, True) -> return $ ETyped (EArray texps) (TArray (getType (head texps) )  (PInteger ( (getLoc (head texps)), show (length texps)  ))) (getLoc (head texps))
+            (_, True) -> return $ ETyped (EArray texps) (TArray (maximum (map getType texps))  (PInteger ( (getLoc (head texps)), show (length texps)  ))) (getLoc (head texps))
             (_ , _) -> do
               saveLog $ launchError (getLoc (head texps)) ArrayInconsistency
               return $ ETyped (EArray texps) (TSimple SType_Error) (getLoc (head texps))
@@ -474,7 +474,7 @@ inferExp exp env = case exp of
           -- Prende una lista di espressioni tipate, un tipo, e ritorna una coppia con il primo elemento
           -- che dice se si è trovato almeno un elemento con tipo (TSimple SType_Error), ed il secondo elemento che dice
           -- se tutte le espressioni hanno tipo type o meno.
-          inferArrayAux texps typ = ( (any (\x -> getType x == (TSimple SType_Error)) texps),(all (\x -> isCompatible x typ) texps) )
+          inferArrayAux texps = ( (any (\x -> getType x == (TSimple SType_Error)) texps),( (all (\x -> isCompatible x (TSimple SType_Float)) texps) || (all (\x -> getType x == (TSimple SType_String)) texps)  ))
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------
@@ -581,23 +581,11 @@ inferBinOp expl op expr env = do
         then return $ ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
         else returnBinOpError texpl op texpr
     (NumericOp, typl, typr) ->
-      if (max typl typr) < (TSimple SType_String)
-        then return $ ETyped (EOp texpl op texpr) (max typl typr) (getLoc texpl)
-        else returnBinOpError texpl op texpr
-    -- (_, typl, typr) ->
-    --   if isConsistent (getTypeOp op) typl typr
-    --     then return $ ETyped (EOp texpl op texpr) typl (getLoc texpl)
-    --     else returnBinOpError texpl op texpr
+      case (max typl typr) of
+        (TSimple SType_String) -> returnBinOpError texpl op texpr
+        (TSimple SType_Float) -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Float) (getLoc texpl)
+        _ -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Int) (getLoc texpl)
   where
     returnBinOpError texpl op texpr = do
       saveLog $ launchError (getLoc texpl) (WrongOpApplication op (getType texpl) (getType texpr))
-
-
-
-
-
-
-
-
-
       return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 

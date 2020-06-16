@@ -9,6 +9,7 @@ import AbsTAC
 import AbsGramm
 import Control.Monad.State.Lazy
 import Printer
+import Typed
 
 -- definizione del nuovo tipo TacState, attraverso la monade State
 type TacState a = State (
@@ -112,11 +113,11 @@ genDecl :: Declaration -> TacState ()
 genDecl decl = case decl of
     -- dichiarazione di variabile con assegnamento
     DefVar id@(PIdent (dloc, ident)) typ texp -> let addrId = buildVarAddress ident dloc in
-        genExpAssign addrId texp
+        genExpAssign addrId texp typ
 
     -- dichiarazione di variabile: gli si assegna un valore di default
     DecVar id@(PIdent (dloc, ident)) typ ->
-        genExpAssign (buildVarAddress ident dloc) (buildDefaultValue typ)
+        genExpAssign (buildVarAddress ident dloc) (buildDefaultValue typ) typ
 
     -- definizione di funzione
     DefFun id@(PIdent (dloc, ident)) params typ block -> do
@@ -142,7 +143,7 @@ genDecl decl = case decl of
         case (lastIsReturn,typ) of
             (False, TSimple SType_Void) -> out $ (ReturnVoid)
             (False, _ ) -> do
-                addrDef <- genExp $ buildDefaultValue typ
+                addrDef <- genExp (buildDefaultValue typ) typ
                 out $ (ReturnAddr addrDef)
             otherwise -> return ()
         case typ of
@@ -166,48 +167,95 @@ genDecl decl = case decl of
 
 -- funzione ausiliaria per la generazione dell'assegnamento di un'espressione ad un
 -- indirizzo utile ad evitare che vengano utilizzati temporanei superflui
-genExpAssign :: Addr -> Exp -> TacState ()
-genExpAssign addr texp@(ETyped exp typ _) = case exp of 
+genExpAssign :: Addr -> Exp -> TypeSpec -> TacState ()
+genExpAssign addr texp@(ETyped exp typ' _) typ = case exp of 
     EOp e1 op e2 -> do
-        addrE1 <- genExp e1
-        addrE2 <- genExp e2
-        out $ AssignBinOp addr addrE1 (convertOperation op typ) addrE2 (convertToTACType typ)
+        addrE1 <- genExp e1 typ'
+        addrE2 <- genExp e2 typ'
+        if typ /= typ'
+            then do
+                expAddr <- newTemp 
+                out $ AssignBinOp expAddr addrE1 (convertOperation op typ) addrE2 (convertToTACType typ)
+                out $ AssignUnOp addr (Cast $ convertToTACType typ) expAddr (convertToTACType typ)
+            else 
+                out $ AssignBinOp addr addrE1 (convertOperation op typ) addrE2 (convertToTACType typ)
 
     ENeg e1 -> do
-        addrE1 <- genExp e1
-        out $ AssignUnOp addr (if (typ == TSimple SType_Int) then NegInt else NegFloat) addrE1 (convertToTACType typ)
+        addrE1 <- genExp e1 typ'
+        if typ /= typ'
+            then do
+                expAddr <- newTemp
+                out $ AssignUnOp expAddr (if (typ == TSimple SType_Int) then NegInt else NegFloat) addrE1 (convertToTACType typ)
+                out $ AssignUnOp addr (Cast $ convertToTACType typ) expAddr (convertToTACType typ)
+            else
+                out $ AssignUnOp addr (if (typ == TSimple SType_Int) then NegInt else NegFloat) addrE1 (convertToTACType typ)
 
     ENot e1 -> do
-        addrE1 <- genExp e1
-        out $ AssignUnOp addr Not addrE1 (convertToTACType typ)
+        addrE1 <- genExp e1 typ'
+        if typ /= typ'
+            then do
+                expAddr <- newTemp
+                out $ AssignUnOp expAddr Not addrE1 (convertToTACType typ)
+                out $ AssignUnOp addr (Cast $ convertToTACType typ) expAddr (convertToTACType typ)
+            else
+                out $ AssignUnOp addr Not addrE1 (convertToTACType typ)
 
+    -- è da gestire il casting?
     EDeref lexp -> do
-        addrLexp <- genLexp lexp
+        addrLexp <- genLexp lexp 
         out $ AssignFromRef addr addrLexp (TACAddr)
 
     EFunCall id@(PIdent (dloc,ident)) params -> do
         genParams params
-        out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
+        if typ /= typ'
+            then do
+                expAddr <- newTemp
+                out $ AssignFromFunction expAddr (buildFunLabel ident dloc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
+                out $ AssignUnOp addr (Cast $ convertToTACType typ) expAddr (convertToTACType typ)
+            else
+                out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
 
 
-    ELExp (LExpTyped lexp' typ _ ) -> case lexp' of
+    ELExp (LExpTyped lexp' typ'' _ ) -> case lexp' of
         (LArr lexp'' exp) -> do
             addrOffset <- newTemp
             addrLexp'' <- genLexp lexp''
-            addrExp <- genExp exp
-            out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-            out $ AssignFromArray addr addrLexp'' addrOffset (convertToTACType typ)
+            addrExp <- genExp exp (TSimple SType_Int)
+            if typ /= typ'
+                then do
+                    lexpAddr <- newTemp
+                    out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
+                    out $ AssignFromArray lexpAddr addrLexp'' addrOffset (convertToTACType typ)
+                    out $ AssignUnOp addr (Cast $ convertToTACType typ) lexpAddr (convertToTACType typ)
+                else do
+                    out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
+                    out $ AssignFromArray addr addrLexp'' addrOffset (convertToTACType typ)
         LRef lexp'' -> do
             addrLexp' <- genLexp lexp''
-            out $ AssignFromPointer addr addrLexp' (TACAddr)
+            if typ /= typ'
+                then do
+                    lexpAddr <- newTemp
+                    out $ AssignFromPointer lexpAddr addrLexp' (TACAddr)
+                    out $ AssignUnOp addr (Cast $ convertToTACType typ) lexpAddr (convertToTACType typ)
+                else
+                    out $ AssignFromPointer addr addrLexp' (TACAddr)
+
         _ -> do
-            addrTExp <- genExp texp
-            out $ Assign addr addrTExp (convertToTACType typ)                
+            addrTExp <- genExp texp typ'
+            if typ /= typ'
+                then 
+                    out $ AssignUnOp addr (Cast $ convertToTACType typ) addrTExp (convertToTACType typ)
+                else
+                    out $ Assign addr addrTExp (convertToTACType typ)                
     -- se l'espressione passata ha tipo più complicato di quelli sopra elencati allora utilizziamo genExp che
     -- crea un temporaneo, che viene successivamente assegnato all'indirizzo addr
     _ -> do
-        addrTExp <- genExp texp
-        out $ Assign addr addrTExp (convertToTACType typ)
+        addrTExp <- genExp texp typ'
+        if typ /= typ'
+            then 
+                out $ AssignUnOp addr (Cast $ convertToTACType typ) addrTExp (convertToTACType typ)
+            else
+                out $ Assign addr addrTExp (convertToTACType typ)       
 
     where
         -- conversione da operazione della sintassi astratta a operazione del TAC
@@ -248,55 +296,83 @@ genLexp (LExpTyped lexp typ _) = case lexp of
         addrOffset <- newTemp
         addrTemp <- newTemp
         addrLexp' <- genLexp lexp'
-        addrExp <- genExp exp
+        addrExp <- genExp exp (TSimple SType_Int)
         out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
         out $ AssignFromArray addrTemp addrLexp' addrOffset (convertToTACType typ)
         return addrTemp
 
+
+genLiteral :: Addr -> TypeSpec -> TypeSpec -> TacState Addr
+genLiteral addrLiteral typ typ' = do
+    if typ /= typ'
+        then do
+            addrRes <- newTemp
+            out $ AssignUnOp addrRes (Cast $ convertToTACType typ) addrLiteral (convertToTACType typ)
+            return addrRes
+        else
+            return addrLiteral
+
 -- generazione indirizzi delle espressioni
-genExp :: Exp -> TacState Addr
-genExp texp@(ETyped exp typ loc) = case exp of
+genExp :: Exp -> TypeSpec -> TacState Addr
+genExp texp@(ETyped exp typ' loc) typ = case exp of
     -- i tipi base (quindi delle costanti) utilizzano come indirizzo un letterale
-    EInt (PInteger (loc,ident)) -> return $ LitInt ( read ident :: Int )
-    EFloat (PFloat (loc,ident)) -> return $ LitFloat ( read ident :: Float )
-    EChar (PChar (loc,ident)) -> return $ LitChar ( read ident :: Char )
-    EString (PString (loc, ident)) -> return $ LitString ident
-    ETrue _ -> return $ LitBool True
-    EFalse _ -> return $ LitBool False
-    ENull _ -> return $ LitNull
+    EInt (PInteger (loc,ident)) -> genLiteral (LitInt ( read ident :: Int )) typ typ'
+    EFloat (PFloat (loc,ident)) -> genLiteral (LitFloat ( read ident :: Float )) typ typ'
+    EChar (PChar (loc,ident)) -> genLiteral (LitChar ( read ident :: Char )) typ typ'
+    EString (PString (loc, ident)) -> genLiteral (LitString ident) typ typ'
+    ETrue _ -> genLiteral (LitBool True) typ typ'
+    EFalse _ -> genLiteral (LitBool False) typ typ'
+    ENull _ -> genLiteral (LitNull) typ typ'
     
     EDeref lexp' -> do
-        addrTemp <- newTemp 
+        addrRes <- newTemp 
         addrLexp' <- genLexp lexp'
-        out $ AssignFromRef addrTemp addrLexp' (convertToTACType typ)
-        return addrTemp
+        if typ /= typ'
+            then do
+                addrTemp <- newTemp
+                out $ AssignFromRef addrTemp addrLexp' (convertToTACType typ)
+                out $ AssignUnOp addrRes (Cast $ convertToTACType typ) addrTemp (convertToTACType typ)
+                return addrRes
+            else do
+                out $ AssignFromRef addrRes addrLexp' (convertToTACType typ)
+                return addrRes
     
     -- se l'array dovesse avere zero elementi allora il valore
     -- assegnato sarebbe Null
     EArray exps -> do
-        if length exps == 0
-            then
-                return $ LitNull
-            else do
-                arrVals <- mapM (genExp) exps
-                addrTemp <- newTemp
-                -- allocazione dello spazio nell'array per tutti gli elementi assegnati
-                zipWithM (\x i -> aux addrTemp x i (getArrayType typ)) arrVals [0..((length exps)-1)]
-                return addrTemp
+        arrVals <- mapM (\x -> genExp x (getArrayType typ)) exps
+        addrRes <- newTemp
+        -- allocazione dello spazio nell'array per tutti gli elementi assegnati
+        zipWithM (\x i -> aux addrRes x i (getArrayType typ)) arrVals [0..((length exps)-1)]
+        return addrRes
 
 
-    ELExp lexp' -> genLexp lexp'
+    ELExp lexp' -> do
+        addrLexp <- genLexp lexp'
+        if typ /= typ'
+            then do
+                addrRes <- newTemp
+                out $ AssignUnOp addrRes (Cast $ convertToTACType typ) addrLexp (convertToTACType typ)
+                return addrRes
+            else
+                return addrLexp
 
     _ -> do
-        addrTemp <- newTemp
-        genExpAssign addrTemp texp
-        return addrTemp
+        addrExp <- newTemp
+        genExpAssign addrExp texp typ'
+        if typ /= typ'
+            then do
+                addrRes <- newTemp
+                out $ AssignUnOp addrRes (Cast $ convertToTACType typ) addrExp (convertToTACType typ)
+                return addrRes
+            else
+                return addrExp
     
     where 
         aux base x i typ' = do 
-            temp <- newTemp
-            out $ AssignBinOp temp (LitInt i) AbsTAC.ProdInt (LitInt $ sizeOf typ') (convertToTACType (TSimple SType_Int))
-            out $ AssignToArray base temp x (convertToTACType typ')
+            offset <- newTemp
+            out $ AssignBinOp offset (LitInt i) AbsTAC.ProdInt (LitInt $ sizeOf typ') (convertToTACType (TSimple SType_Int))
+            out $ AssignToArray base offset x (convertToTACType typ')
 
         getArrayType (TArray typ' _) = typ'
         getArrayType typ = error $ "Errore: " ++ printTree typ
@@ -329,25 +405,25 @@ genStm stm = case stm of
         genBlock block
         return ()
 
-    SAssign (LExpTyped lexp typ loc) texp -> do
+    SAssign (LExpTyped lexp typ _) texp -> do
         -- Se lexp è del tipo array o puntatore, si vogliono utilizzare le istruzioni del tac x[y]=z e
         -- *x=y per evitare la creazione di un temporaneo inutile per la left expression.
         case lexp of
             (LRef lexp') -> do
                 -- generazione del codice della left expression prima di quello della right expression
                 addrLexp' <- genLexp lexp'
-                addrExp <- genExp texp
+                addrExp <- genExp texp typ
                 -- istruzione ( * addrLexp' = addrExp )
                 out $ AssignToPointer addrLexp' addrExp (convertToTACType typ)
             (LArr lexp' texp') -> do
                 addrOffset <- newTemp
                 addrLexp' <- genLexp lexp'
-                addrExp' <- genExp texp'
+                addrExp' <- genExp texp' (TSimple SType_Int)
                 out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-                addrExp <- genExp texp
+                addrExp <- genExp texp typ
                 out $ AssignToArray addrLexp' addrOffset addrExp (convertToTACType typ)
             (LIdent id@(PIdent (dloc,ident))) -> 
-                genExpAssign (buildVarAddress ident dloc) texp
+                genExpAssign (buildVarAddress ident dloc) texp typ
 
     SWhile texp@(ETyped exp _ _) tstm -> do
         labelWhile <- newLabel
@@ -379,8 +455,8 @@ genStm stm = case stm of
     SReturn preturn -> 
         out $ ReturnVoid
 
-    SReturnExp  preturn texp -> do
-        addrTexp <- genExp texp
+    SReturnExp  preturn texp@(ETyped _ typ _) -> do
+        addrTexp <- genExp texp typ
         out $ ReturnAddr addrTexp
 
     where 
@@ -426,9 +502,9 @@ genCondition texp@(ETyped exp typ loc) lblTrue lblFalse = case exp of
                     then out $ (Lab newLbl)
                     else return ()
     
-    (EOp e1 rel e2) -> do
-        addrE1 <- genExp e1
-        addrE2 <- genExp e2
+    (EOp e1@(ETyped _ typl _) rel e2@(ETyped _ typr _)) -> do
+        addrE1 <- genExp e1  typl
+        addrE2 <- genExp e2  typr
         case (lblTrue, lblFalse) of
             (_, Fall) -> out $ (IfRel (convertToTACOp rel) addrE1 addrE2 lblTrue)
             (Fall, _) -> out $ (IfRel (convertToOppositeTACOp rel) addrE1 addrE2 lblFalse)
@@ -439,7 +515,7 @@ genCondition texp@(ETyped exp typ loc) lblTrue lblFalse = case exp of
     ENot e1 -> genCondition e1 lblFalse lblTrue
 
     _ -> do
-        addrExp <- genExp texp
+        addrExp <- genExp texp typ
         case (lblTrue, lblFalse) of
             (_,Fall) -> out $ (IfBool addrExp lblTrue)
             (Fall,_) -> out $ (IfFalse addrExp lblFalse)
@@ -486,8 +562,8 @@ genParams (param:params) = do
     genParams params
     where
         genParamAux (ParExp []) = return ()
-        genParamAux (ParExp (exp:exps)) = do
-            addrExp <- genExp exp
+        genParamAux (ParExp (exp@(ETyped _ typ _):exps)) = do
+            addrExp <- genExp exp typ
             out $ (Param addrExp)
             genParamAux (ParExp exps)
 
