@@ -42,6 +42,6 @@ Per eseguire test su file più specifici è sufficiente utilizzare il comando:
 dove ```<tipo_esempio>``` corrisponde a *corretti* o *sbagliati*, mentre ```<nome_file>``` è il nome del file che si vuole compilare.
 
 ### Autori
-* Federico Bulzoni (142242)
 * Sara Biavaschi (130512)
+* Federico Bulzoni (142242)
 * Simone Scaboro (143191)

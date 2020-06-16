@@ -1,5 +1,5 @@
 // HelloWorld - corretto.
-def main () : Int = {
+def main ()  = {
 	writeString("Hello World!");
-	return 0;
+	return;
 }

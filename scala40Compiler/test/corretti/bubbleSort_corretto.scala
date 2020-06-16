@@ -21,7 +21,7 @@ def bubbleSort (a : Array[Int](10), dim : Int) : Array[Int](10) = {
 	return a;
 }
 
-def main () : Int = {
+def main () = {
 	var i : Int = 0;
 	while (i < N)
 		a[i] = readInt();

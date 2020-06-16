@@ -35,9 +35,7 @@ isTypeVoid typ = typ == (TSimple SType_Void)
 -- All'interno di questa funzione è possibile differenziare le compatibilità per i diversi tipi presenti
 -- nella grammatica astratta.
 isCompatible :: Exp -> TypeSpec -> Bool
-isCompatible texp typ = case typ of
-  (TPointer typ') -> getType texp == (TPointer (TSimple SType_Void)) || getType texp == typ
-  _               -> getType texp == typ
+isCompatible texp typ = getType texp <= typ
 
 -- startingEnv
 -- Definizione dell'environment iniziale di un programma. Contiene le informazioni a riguardo delle
@@ -207,7 +205,12 @@ inferDecl decl env = case decl of
     case update env ident (FunInfo loc typ params) of
       Success env' -> do
         if ident == "main" && Env.isGlobalScope env' then
-          functionHandler (Env.setReturnFound env')
+          if (not (isTypeVoid typ)) || (notEmptyParams params)
+            then do
+              saveLog $ launchError loc WrongMainSignature
+              functionHandler (Env.setReturnFound env)
+            else
+              functionHandler (Env.setReturnFound env')
         else
           functionHandler env'
       Failure except -> do
@@ -240,6 +243,8 @@ inferDecl decl env = case decl of
                   saveLog $ launchError loc (WrongExpType exp (getType texp) typ)
                   return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
 
+        notEmptyParams [PArg []] = False
+        notEmptyParams par = True
 
   
 {-
@@ -335,21 +340,21 @@ inferStm stm env = case stm of
         then
           return $ (SReturnExp preturn texp, env)
         else
-          -- Nel caso in cui l'espressione ritornata sia compatibile con il tipo
-          -- dello scope viene segnalato che un return adeguato nello scope è stato trovato.
-          if isCompatible texp ftyp
-            then
-              return $ (SReturnExp preturn texp, Env.setReturnFound env)
-            else
+          if isTypeVoid ftyp
+            then do
               -- Se il tipo dello scope è Void, allora ci troviamo all'interno di una procedura
               -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
-              if isTypeVoid ftyp
-                then do
-                  saveLog $ launchError loc (UnexpectedReturn exp)
-                  return $ (SReturnExp preturn texp, env)
-                -- se il tipo dello scope non è void, ma è incompatibile con quello dell'espressione
-                -- allora si lancia un'errore.
+              saveLog $ launchError loc (UnexpectedReturn exp)
+              return $ (SReturnExp preturn texp, env)
+            else 
+              -- Nel caso in cui l'espressione ritornata sia compatibile con il tipo
+              -- dello scope viene segnalato che un return adeguato nello scope è stato trovato.
+              if isCompatible texp ftyp
+                then
+                  return $ (SReturnExp preturn texp, Env.setReturnFound env)
                 else do
+                  -- se il tipo dello scope non è void, ma è incompatibile con quello dell'espressione
+                  -- allora si lancia un'errore.
                   saveLog $ launchError loc (WrongExpType exp (getType texp) ftyp)
                   return $ (SReturnExp preturn texp, env)
 
@@ -486,7 +491,7 @@ inferExp exp env = case exp of
           -- Prende una lista di espressioni tipate, un tipo, e ritorna una coppia con il primo elemento
           -- che dice se si è trovato almeno un elemento con tipo (TSimple SType_Error), ed il secondo elemento che dice
           -- se tutte le espressioni hanno tipo type o meno.
-          inferArrayAux texps typ = ( (any (\x -> isCompatible x (TSimple SType_Error)) texps),(all (\x -> isCompatible x typ) texps) )
+          inferArrayAux texps typ = ( (any (\x -> getType x == (TSimple SType_Error)) texps),(all (\x -> isCompatible x typ) texps) )
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------
@@ -538,7 +543,7 @@ inferExp exp env = case exp of
 -------------------------------------------------------------------------------------------------------------------------------------------
   ENeg exp -> do
     texp <- inferExp exp env
-    if isTypeError texp || isCompatible texp (TSimple SType_Int) || isCompatible texp (TSimple SType_Float)
+    if isTypeError texp || isCompatible texp (TSimple SType_Float)
       then return $ ETyped (ENeg texp) (getType texp) (getLoc texp)
       else do
         saveLog $ launchError (getLoc texp) (WrongNegApplication exp (getType texp))

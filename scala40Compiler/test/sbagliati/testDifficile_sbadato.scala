@@ -50,7 +50,7 @@ def mm () : Int = {
     }
     do {
         // j non è visibile qua.
-        j += 1;
+        j += 1; // j = j + 1
         writeInt(i);
     } while(i < i);
     return i;

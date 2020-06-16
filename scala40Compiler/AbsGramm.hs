@@ -38,14 +38,14 @@ data Program = Prog [Declaration]
 
 data TypeSpec
     = TSimple SType | TPointer TypeSpec | TArray TypeSpec PInteger
-  deriving (Ord, Show, Read)
+  deriving (Show, Read)
 
 data SType
-    = SType_Float
-    | SType_Int
+    = SType_Bool
     | SType_Char
+    | SType_Int
+    | SType_Float
     | SType_String
-    | SType_Bool
     | SType_Error
     | SType_Void
   deriving (Eq, Ord, Show, Read)
@@ -124,6 +124,13 @@ data LExp
     | LIdent PIdent
     | LExpTyped LExp TypeSpec Loc
   deriving (Eq, Ord, Show, Read)
+
+instance Ord TypeSpec where
+  (<=) (TSimple typ1) (TSimple typ2) = typ1 <= typ2
+  (<=) (TPointer (TSimple SType_Void)) (TPointer typ2) = True
+  (<=) (TPointer typ1) (TPointer typ2) = typ1 <= typ2
+  (<=) (TArray typ1 (PInteger (_,dim1))) (TArray typ2 (PInteger (_,dim2))) = dim1 == dim2 && typ1 <= typ2
+  (<=) _ _ = False
 
 
 instance Eq TypeSpec where

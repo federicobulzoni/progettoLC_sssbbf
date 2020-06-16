@@ -14,7 +14,7 @@ def bubbleSort (a : Array[Int](10), dim : Int) : Array[Int](10) = {
 				// temp non dichiarato.
 				temp = a[i];
 				a[i] = a[i+1];
-				// tempo non dichiarato.
+				// temp non dichiarato.
 				a[i+1] = temp;
 			}
 			i += 1; 
@@ -25,7 +25,7 @@ def bubbleSort (a : Array[Int](10), dim : Int) : Array[Int](10) = {
 	return dim;
 }
 
-def main () : Int = {
+def main () = {
 	// i non dichiarato.
 	while (i < N)
 		a[i] = readInt();
