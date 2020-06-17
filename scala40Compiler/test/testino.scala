@@ -1,3 +1,8 @@
 def main () = {
-	var a : Float = 3 + 3;
+	var c : Int = 3;
+	var b : Array[*Int](3);
+	var a : Array[Array[*Int](3)](2);
+
+	*b[1] = 3;
+	a[1] = b;
 }
