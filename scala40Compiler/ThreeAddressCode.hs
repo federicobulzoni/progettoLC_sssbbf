@@ -165,22 +165,42 @@ genDecl decl = case decl of
             (k, l, revcode, funs) <- get
             return $ length funs == 1 
 
-
 genExp :: Addr -> Exp -> TypeSpec -> TacState ()
 genExp addr texp@(ETyped exp _ _) typ = case exp of
     EOp texpl op texpr -> do
-        addrExpl <- newTemp
-        addrExpr <- newTemp
-        genExp addrExpl texpl (getType texpl)
-        genExp addrExpr texpr (getType texpr)
+        addrExpl <- if isLiteral texpl then genLiteral texpl else if isLExp texpl then genLexp (innerLExp texpl) else newTemp
+        addrExpr <- if isLiteral texpr then genLiteral texpr else if isLExp texpr then genLexp (innerLExp texpr) else newTemp
+        
+        if not (isLiteral texpl || isLExp texpl) || getType texpl /= getType texp
+            then genExp addrExpl texpl (getType texp)
+            else return ()
+
+        if not (isLiteral texpr || isLExp texpr) || getType texpr /= getType texp
+            then genExp addrExpr texpr typ
+            else return ()
+
+        castedExpl <- if getType texpl /= getType texp then newTemp else return addrExpl
+        castedExpr <- if getType texpr /= getType texp then newTemp else return addrExpr
+
+        if getType texpl /= getType texp 
+            then 
+                out $ AssignUnOp castedExpl (Cast $ convertToTACType (getType texp)) addrExpl (convertToTACType (getType texp))
+            else
+                return ()
+
+        if getType texpr /= getType texp
+            then
+                out $ AssignUnOp castedExpr (Cast $ convertToTACType (getType texp)) addrExpr (convertToTACType (getType texp))
+            else
+                return ()
 
         if typ /= getType texp
             then do
                 addrExp <- newTemp
-                out $ AssignBinOp addrExp addrExpl (convertOperation op typ) addrExpr (convertToTACType (getType texp))
+                out $ AssignBinOp addrExp castedExpl (convertOperation op typ) castedExpr (convertToTACType (getType texp))
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrExp (convertToTACType typ)
             else
-                out $ AssignBinOp addr addrExpl (convertOperation op typ) addrExpr (convertToTACType typ)
+                out $ AssignBinOp addr castedExpl (convertOperation op typ) castedExpr (convertToTACType typ)
         where
             -- conversione da operazione della sintassi astratta a operazione del TAC
             -- scopo: differenziazione operazioni tra TS e TAC e distinguere operazioni
@@ -208,26 +228,42 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
                 (AbsGramm.GreaterEq, _)         -> AbsTAC.GreaterEq
 
     ENeg texp' -> do
-        addrExp' <- newTemp
-        genExp addrExp' texp' (getType texp')
+        addrExp' <- if isLiteral texp' then genLiteral texp' else if isLExp texp' then genLexp (innerLExp texp') else newTemp
+        if not (isLiteral texp' || isLExp texp') then genExp addrExp' texp' (getType texp') else return ()
+
+        castedExp' <- if getType texp' /= getType texp then newTemp else return addrExp'
+        if getType texp' /= getType texp 
+            then 
+                out $ AssignUnOp castedExp' (Cast $ convertToTACType (getType texp)) addrExp' (convertToTACType (getType texp))
+            else
+                return ()
+
         if typ /= getType texp
             then do
                 addrExp <- newTemp
-                out $ AssignUnOp addrExp (if (typ == TSimple SType_Int) then NegInt else NegFloat) addrExp' (convertToTACType (getType texp))
+                out $ AssignUnOp addrExp (if (typ == TSimple SType_Int) then NegInt else NegFloat) castedExp' (convertToTACType (getType texp))
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrExp (convertToTACType typ)
             else
-                out $ AssignUnOp addr (if (typ == TSimple SType_Int) then NegInt else NegFloat) addrExp' (convertToTACType typ)
+                out $ AssignUnOp addr (if (typ == TSimple SType_Int) then NegInt else NegFloat) castedExp' (convertToTACType typ)
 
     ENot texp' -> do
-        addrExp' <- newTemp
-        genExp addrExp' texp' (getType texp')
+        addrExp' <- if isLiteral texp' then genLiteral texp' else if isLExp texp' then genLexp (innerLExp texp') else newTemp
+        if not (isLiteral texp' || isLExp texp') then genExp addrExp' texp' (getType texp') else return ()
+
+        castedExp' <- if getType texp' /= getType texp then newTemp else return addrExp'
+        if getType texp' /= getType texp 
+            then 
+                out $ AssignUnOp castedExp' (Cast $ convertToTACType (getType texp)) addrExp' (convertToTACType (getType texp))
+            else
+                return ()
+
         if typ /= getType texp
             then do
                 addrExp <- newTemp
-                out $ AssignUnOp addrExp Not addrExp' (convertToTACType (getType texp))
+                out $ AssignUnOp addrExp Not castedExp' (convertToTACType (getType texp))
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrExp (convertToTACType typ)
             else
-                out $ AssignUnOp addr Not addrExp' (convertToTACType typ)
+                out $ AssignUnOp addr Not castedExp' (convertToTACType typ)
 
     EDeref tlexp -> do
         addrLexp <- genLexp tlexp
@@ -262,8 +298,8 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
             assignElem base e i typ = do 
                 offset <- newTemp
                 out $ AssignBinOp offset (LitInt i) AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-                addrE <- newTemp
-                genExp addrE e (getType e)
+                addrE <- if isLiteral e then genLiteral e else if isLExp e then genLexp (innerLExp e) else newTemp
+                if not (isLiteral e || isLExp e) then genExp addrE e (getType e) else return ()
                 if typ /= getType e
                     then do
                         castedE <- newTemp
@@ -277,24 +313,17 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
                 _              -> error $ "Errore: " ++ printTree texp
 
     -- i tipi base (quindi delle costanti) utilizzano come indirizzo un letterale
-    EInt (PInteger (loc,ident)) -> assignLiteral addr (LitInt (read ident :: Int)) typ (getType texp)
-    EFloat (PFloat (loc,ident)) -> assignLiteral addr (LitFloat ( read ident :: Float )) typ (getType texp)
-    EChar (PChar (loc,ident)) -> assignLiteral addr (LitChar ( read ident :: Char )) typ (getType texp)
-    EString (PString (loc, ident)) -> assignLiteral addr (LitString ident) typ (getType texp)
-    ETrue _ -> assignLiteral addr (LitBool True) typ (getType texp)
-    EFalse _ -> assignLiteral addr (LitBool False) typ (getType texp)
-    ENull _ -> assignLiteral addr (LitNull) typ (getType texp)
-    
-    where
-        assignLiteral :: Addr -> Addr -> TypeSpec -> TypeSpec -> TacState ()
-        assignLiteral addr addrLit typ typLit = do
-            if typ /= typLit
-                then
-                    out $ AssignUnOp addr (Cast $ convertToTACType typ) addrLit (convertToTACType typ)
-                else
-                    out $ Assign addr addrLit (convertToTACType typ)
-
-
+    _ -> do
+        addrLit <- genLiteral texp
+        assignLiteral addr addrLit typ (getType texp)
+    -- EInt (PInteger (loc,ident)) -> assignLiteral addr (LitInt (read ident :: Int)) typ (getType texp)
+    -- EFloat (PFloat (loc,ident)) -> assignLiteral addr (LitFloat ( read ident :: Float )) typ (getType texp)
+    -- EChar (PChar (loc,ident)) -> assignLiteral addr (LitChar ( read ident :: Char )) typ (getType texp)
+    -- EString (PString (loc, ident)) -> assignLiteral addr (LitString ident) typ (getType texp)
+    -- ETrue _ -> assignLiteral addr (LitBool True) typ (getType texp)
+    -- EFalse _ -> assignLiteral addr (LitBool False) typ (getType texp)
+    -- ENull _ -> assignLiteral addr (LitNull) typ (getType texp)
+        
 
 -- funzione ausiliaria per la generazione dell'assegnamento di un'espressione ad un
 -- indirizzo utile ad evitare che vengano utilizzati temporanei superflui
@@ -549,8 +578,9 @@ genStm stm = case stm of
             (LRef lexp') -> do
                 -- generazione del codice della left expression prima di quello della right expression
                 addrLexp' <- genLexp lexp'
-                addrExp <- newTemp
-                genExp addrExp texp (getType texp)
+                addrExp <- if isLiteral texp then genLiteral texp else if isLExp texp then genLexp (innerLExp texp) else newTemp
+                if not (isLiteral texp || isLExp texp) then genExp addrExp texp (getType texp) else return ()
+
                 if typ /= getType texp
                     then do
                         castedExp <- newTemp
@@ -563,12 +593,14 @@ genStm stm = case stm of
             (LArr lexp' texp') -> do
                 addrOffset <- newTemp
                 addrLexp' <- genLexp lexp'
-                addrExp' <- newTemp
-                genExp addrExp' texp' (TSimple SType_Int)
+                -- Probabilmente è da controllare il casting.
+                addrExp' <- if isLiteral texp' then genLiteral texp' else if isLExp texp' then genLexp (innerLExp texp') else newTemp
+                if not (isLiteral texp' || isLExp texp') then genExp addrExp' texp' (TSimple SType_Int) else return ()
 
                 out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-                addrExp <- newTemp
-                genExp addrExp texp (getType texp)
+                addrExp <- if isLiteral texp then genLiteral texp else if isLExp texp then genLexp (innerLExp texp) else newTemp
+                if not (isLiteral texp || isLExp texp) then genExp addrExp texp (getType texp) else return ()
+                
                 if typ /= getType texp
                     then do
                         castedExp <- newTemp
@@ -578,8 +610,9 @@ genStm stm = case stm of
                         out $ AssignToArray addrLexp' addrOffset addrExp (convertToTACType typ)
 
             (LIdent id@(PIdent (dloc,ident))) -> do
-                addrExp <- newTemp
-                genExp addrExp texp (getType texp)
+                addrExp <- if isLiteral texp then genLiteral texp else if isLExp texp then genLexp (innerLExp texp) else newTemp
+                if not (isLiteral texp || isLExp texp) then genExp addrExp texp (getType texp) else return ()
+                
                 if typ /= getType texp
                     then
                         out $ AssignUnOp (buildVarAddress ident dloc) (Cast $ convertToTACType typ)  addrExp (convertToTACType typ)
@@ -617,8 +650,8 @@ genStm stm = case stm of
         out $ ReturnVoid
 
     SReturnExp  preturn texp -> do
-        addrExp <- newTemp
-        genExp addrExp texp (getType texp)
+        addrExp <- if isLiteral texp then genLiteral texp else if isLExp texp then genLexp (innerLExp texp) else newTemp
+        if not (isLiteral texp || isLExp texp) then genExp addrExp texp (getType texp) else return ()
         out $ ReturnAddr addrExp
 
     where 
@@ -665,40 +698,42 @@ genCondition texp@(ETyped exp typ loc) lblTrue lblFalse = case exp of
                     else return ()
     
     (EOp e1 rel e2) -> let typ = max (getType e1) (getType e2) in do
-        tmpE1 <- newTemp
-        genExp tmpE1 e1 (getType e1)
-        tmpE2 <- newTemp
-        genExp tmpE2 e2 (getType e2)
+        addrE1 <- if isLiteral e1 then genLiteral e1 else if isLExp e1 then genLexp (innerLExp e1) else newTemp
+        if not (isLiteral e1 || isLExp e1) then genExp addrE1 e1 (getType e1) else return ()
+        addrE2 <- if isLiteral e2 then genLiteral e2 else if isLExp e2 then genLexp (innerLExp e2) else newTemp
+        if not (isLiteral e2 || isLExp e2) then genExp addrE2 e2 (getType e2) else return ()
 
-        -- Inizializzazione.
-        addrE1 <- return tmpE1
-        addrE2 <- return tmpE2
+        castedE1 <- return addrE1
+        castedE2 <- return addrE2
+
         if typ /= getType e1
             then do
-                addrE1 <- newTemp
-                out $ AssignUnOp addrE1 (Cast $ convertToTACType typ) tmpE1 (convertToTACType typ)
+                castedE1 <- newTemp
+                out $ AssignUnOp castedE1 (Cast $ convertToTACType typ) addrE1 (convertToTACType typ)
             else do
                 return ()
 
         if typ /= getType e2
             then do
-                out $ AssignUnOp addrE2 (Cast $ convertToTACType typ) tmpE2 (convertToTACType typ)
+                castedE2 <- newTemp
+                out $ AssignUnOp castedE2 (Cast $ convertToTACType typ) addrE2 (convertToTACType typ)
             else do 
-                addrE2 <- return tmpE2
                 return ()
 
+
         case (lblTrue, lblFalse) of
-            (_, Fall) -> out $ (IfRel (convertToTACOp rel) addrE1 addrE2 lblTrue)
-            (Fall, _) -> out $ (IfRel (convertToOppositeTACOp rel) addrE1 addrE2 lblFalse)
+            (_, Fall) -> out $ (IfRel (convertToTACOp rel) castedE1 castedE2 lblTrue)
+            (Fall, _) -> out $ (IfRel (convertToOppositeTACOp rel) castedE1 castedE2 lblFalse)
             (_, _) -> do
-                out $ (IfRel (convertToTACOp rel) addrE1 addrE2 lblTrue)
+                out $ (IfRel (convertToTACOp rel) castedE1 castedE2 lblTrue)
                 out $ (Goto lblFalse)
 
     ENot e1 -> genCondition e1 lblFalse lblTrue
 
     _ -> do
-        addrExp <- newTemp
-        genExp addrExp texp (getType texp)
+        addrExp <- if isLiteral texp then genLiteral texp else if isLExp texp then genLexp (innerLExp texp) else newTemp
+        if not (isLiteral texp || isLExp texp) then genExp addrExp texp (getType texp) else return ()
+        
         case (lblTrue, lblFalse) of
             (_,Fall) -> out $ (IfBool addrExp lblTrue)
             (Fall,_) -> out $ (IfFalse addrExp lblFalse)
@@ -751,6 +786,48 @@ genParams (param:params) = do
             out $ (Param addrExp)
             genParamAux (ParExp texps)
 
+
+-- Utilities 
+isLiteral :: Exp -> Bool
+isLiteral texp@(ETyped exp _ _) = 
+    case exp of
+        ETrue _ -> True
+        EFalse _ -> True
+        EChar _ -> True
+        EInt _ -> True
+        EFloat _ -> True
+        EString _ -> True
+        ENull _ -> True
+        otherwise -> False
+
+isLExp :: Exp -> Bool
+isLExp texp@(ETyped exp _ _) = 
+    case exp of
+        ELExp _ -> True
+        otherwise -> False
+
+innerLExp :: Exp -> LExp
+innerLExp (ETyped (ELExp tlexp) _ _) = tlexp
+
+genLiteral :: Exp  -> TacState Addr
+genLiteral texp@(ETyped exp _ _) = 
+    case exp of
+        ETrue _ -> return $ LitBool True
+        EFalse _ -> return $ LitBool False
+        EChar (PChar (loc,ident)) -> return $ LitChar (read ident :: Char)
+        EInt (PInteger (loc,ident)) -> return $ LitInt (read ident :: Int)
+        EFloat (PFloat (loc,ident)) -> return $ LitFloat (read ident :: Float)
+        EString (PString (loc,ident)) -> return $ LitString ident
+        ENull _ -> return $ LitNull
+
+
+assignLiteral :: Addr -> Addr -> TypeSpec -> TypeSpec -> TacState ()
+assignLiteral addr addrLit typ typLit = do
+    if typ /= typLit
+        then
+            out $ AssignUnOp addr (Cast $ convertToTACType typ) addrLit (convertToTACType typ)
+        else
+            out $ Assign addr addrLit (convertToTACType typ)
 
 -- Costruzione indirizzi variabili basandosi su: identificatore, locazione --> ident@loc
 buildVarAddress :: Ident -> Loc -> Addr
