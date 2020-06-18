@@ -82,8 +82,8 @@ buildTACInstruction instr = case instr of
     CommentArgs tactyp_addr -> 
         color Default Italic $ color Default Faint $ "// Args: " ++ if (length tactyp_addr == 0)
             then "None"
-            else intercalate ", " (map (\(t,a) -> (buildAssignType t) ++ " " ++ (buildAddr a)) tactyp_addr)
-
+            --else intercalate ", " (map (\(t,a) -> (buildAssignType t) ++ " " ++ (buildAddr a)) tactyp_addr)
+            else intercalate ", " (map (\(t,a) -> (buildAddr a)) tactyp_addr)
 
 opComment :: BinOp -> String
 opComment op =  color Default Italic $ color Default Faint $ "\t // " ++ show op
