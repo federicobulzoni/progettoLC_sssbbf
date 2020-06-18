@@ -262,23 +262,22 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrExp (convertToTACType typ)
             False -> out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExpTyped x) -> length x) params)) (convertToTACType typ)
 
-    ELExp tlexp -> do
+    ELExp tlexp@(LExpTyped lexp _ _) -> do
         if typ /= getType tlexp
             then do
                 addrLexp <- genLexp tlexp
                 -- genLexp addrLexp tlexp
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrLexp (convertToTACType typ)
             else
-                let (LExpTyped lexp _ _) = tlexp in 
                 case lexp of
                     (LRef lexp') -> do
                         -- generazione del codice della left expression prima di quello della right expression
                         addrLexp' <- genLexp lexp'
                         out $ AssignFromPointer addr addrLexp' (convertToTACType typ)
+
                     (LArr lexp' texp') -> do
-                        addrOffset <- newTemp
                         addrLexp' <- genLexp lexp'
-                       
+                        addrOffset <- newTemp
                         addrExp' <- genExpAddr texp' (TSimple SType_Int)
                         out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
 
@@ -289,7 +288,7 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
 
     -- Dubbi su questo.
     EArray texps -> do
-        zipWithM (\e i -> assignElem addr i e (getElementType texp) ) [0 .. ( (length texps) - 1)] texps
+        zipWithM (\e i -> assignElem addr i e (getElementType typ) ) [0 .. ( (length texps) - 1)] texps
         return ()
         where 
             assignElem base e i typ = do 
@@ -298,9 +297,8 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
                 addrE <- genExpAddr e typ
                 out $ AssignToArray base offset addrE (convertToTACType typ)
 
-            getElementType texp = case (getType texp) of
-                (TArray typ _) -> typ
-                _              -> error $ "Errore: " ++ printTree texp
+            getElementType (TArray typ' _) = typ'
+            getElementType _ = error $ "Fatal error."
 
     -- i tipi base (quindi delle costanti) utilizzano come indirizzo un letterale
     _ -> do
@@ -374,18 +372,15 @@ genStm stm = case stm of
                 out $ AssignToPointer addrLexp' addrExp (convertToTACType typ)
 
             (LArr lexp' texp') -> do
-                addrOffset <- newTemp
                 addrLexp' <- genLexp lexp'
-                -- Probabilmente è da controllare il casting.
                 addrExp' <- genExpAddr texp' (TSimple SType_Int)
+                addrOffset <- newTemp
                 out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-
                 addrExp <- genExpAddr texp typ
                 out $ AssignToArray addrLexp' addrOffset addrExp (convertToTACType typ)
 
-            (LIdent id@(PIdent (dloc,ident))) -> do
-                addrExp <- genExpAddr texp typ
-                out $ Assign (buildVarAddress ident dloc) addrExp (convertToTACType typ)
+            (LIdent id@(PIdent (dloc,ident))) -> 
+                genExp (buildVarAddress ident dloc) texp typ
 
     SWhile texp@(ETyped exp _ _) tstm -> do
         labelWhile <- newLabel
