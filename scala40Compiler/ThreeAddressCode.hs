@@ -209,9 +209,9 @@ genExpAssign addr texp@(ETyped exp typ' _) typ = case exp of
         case areTypesDiff typ typ' of
             True -> do
                 expAddr <- newTemp
-                out $ AssignFromFunction expAddr (buildFunLabel ident dloc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
+                out $ AssignFromFunction expAddr (buildFunLabel ident dloc) (sum (map (\(ParExpTyped x) -> length x) params)) (convertToTACType typ)
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) expAddr (convertToTACType typ)
-            False -> out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
+            False -> out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExpTyped x) -> length x) params)) (convertToTACType typ)
 
 
     ELExp (LExpTyped lexp' typ'' _ ) -> case lexp' of
@@ -434,7 +434,7 @@ genStm stm = case stm of
   
     SProcCall (PIdent (loc, ident)) params -> do
         genParams params
-        out $ Call (buildFunLabel ident loc) (sum (map (\(ParExp x) -> length x) params))
+        out $ Call (buildFunLabel ident loc) (sum (map (\(ParExpTyped x) -> length x) params))
 
     SReturn preturn -> 
         out $ ReturnVoid
@@ -545,11 +545,11 @@ genParams (param:params) = do
     genParamAux param
     genParams params
     where
-        genParamAux (ParExp []) = return ()
-        genParamAux (ParExp (exp@(ETyped _ typ _):exps)) = do
-            addrExp <- genExp exp typ
+        genParamAux (ParExpTyped []) = return ()
+        genParamAux (ParExpTyped ((texp, typ):xs)) = do
+            addrExp <- genExp texp typ
             out $ (Param addrExp)
-            genParamAux (ParExp exps)
+            genParamAux (ParExpTyped xs)
 
 
 -- Costruzione indirizzi variabili basandosi su: identificatore, locazione --> ident@loc

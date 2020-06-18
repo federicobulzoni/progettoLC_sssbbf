@@ -81,7 +81,9 @@ data Stm
     | SProcCall PIdent [Params]
   deriving (Eq, Ord, Show, Read)
 
-data Params = ParExp [Exp]
+data Params 
+  = ParExp [Exp]
+  | ParExpTyped [(Exp,TypeSpec)]
   deriving (Eq, Ord, Show, Read)
 
 data Op
