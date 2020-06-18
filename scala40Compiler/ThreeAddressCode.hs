@@ -167,26 +167,22 @@ genDecl decl = case decl of
 
 genExpAddr :: Exp -> TypeSpec -> TacState Addr
 genExpAddr texp typ =
-    if isLiteral texp
-        then literalCase $ getType texp == typ
-        else notLiteralCase $ isLExp texp
-    where
-        literalCase True = genLiteral texp
-        literalCase False = do
-            addrExp <- newTemp
+    case (getType texp == typ, isLiteral texp, isLExp texp) of
+        (True, True, False) -> genLiteral texp
+        (True, False, True) -> genLexp (innerLExp texp)
+        (False, True, False) -> do
             addrLit <- genLiteral texp
+            addrExp <- newTemp
             assignLiteral addrExp addrLit typ (getType texp)
             return addrExp
-        notLiteralCase True = lexpCase $ getType texp == typ
-        notLiteralCase False = do
+        (False, False, True) -> do
+            addrLexp <- genLexp (innerLExp texp)
+            addrExp <- newTemp
+            out $ AssignUnOp addrExp (Cast $ convertToTACType typ) addrLexp (convertToTACType typ)
+            return addrExp
+        _ -> do
             addrExp <- newTemp
             genExp addrExp texp typ
-            return addrExp
-        lexpCase True = genLexp (innerLExp texp)
-        lexpCase False = do
-            addrExp <- newTemp
-            addrLexp <- genLexp (innerLExp texp)
-            out $ AssignUnOp addrExp (Cast $ convertToTACType typ) addrLexp (convertToTACType typ)
             return addrExp
 
 genExp :: Addr -> Exp -> TypeSpec -> TacState ()
@@ -201,31 +197,6 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
                 out $ AssignBinOp addrExp addrExpl (convertOperation op typ) addrExpr (convertToTACType (getType texp))
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrExp (convertToTACType typ)
             False -> out $ AssignBinOp addr addrExpl (convertOperation op typ) addrExpr (convertToTACType typ)
-        where
-            -- conversione da operazione della sintassi astratta a operazione del TAC
-            -- scopo: differenziazione operazioni tra TS e TAC e distinguere operazioni
-            -- tra interi e float
-            convertOperation op typ = case (op,typ) of
-                (Plus , (TSimple SType_Int)  )  -> PlusInt
-                (Plus , (TSimple SType_Float))  -> PlusFloat
-                (Minus, (TSimple SType_Int)  )  -> MinusInt
-                (Minus, (TSimple SType_Float))  -> MinusFloat
-                (Prod , (TSimple SType_Int)  )  -> ProdInt
-                (Prod , (TSimple SType_Float))  -> ProdFloat
-                (Div  , (TSimple SType_Int)  )  -> DivInt
-                (Div  , (TSimple SType_Float))  -> DivFloat
-                (Mod  , (TSimple SType_Int)  )  -> ModInt
-                (Mod  , (TSimple SType_Float))  -> ModFloat
-                (Pow  , (TSimple SType_Int)  )  -> PowInt
-                (Pow  , (TSimple SType_Float))  -> PowFloat
-                (AbsGramm.Or       , _)         -> AbsTAC.Or
-                (AbsGramm.And      , _)         -> AbsTAC.And
-                (AbsGramm.Equal    , _)         -> AbsTAC.Equal
-                (AbsGramm.NotEq    , _)         -> AbsTAC.NotEqual
-                (AbsGramm.Less     , _)         -> AbsTAC.Less
-                (AbsGramm.LessEq   , _)         -> AbsTAC.LessEq
-                (AbsGramm.Greater  , _)         -> AbsTAC.Greater
-                (AbsGramm.GreaterEq, _)         -> AbsTAC.GreaterEq
 
     ENeg texp' -> do
         addrExp' <- genExpAddr texp' (getType texp)
@@ -249,9 +220,7 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
 
     EDeref tlexp -> do
         addrLexp <- genLexp tlexp
-        -- genLexp addrLexp tlexp
         out $ AssignFromRef addr addrLexp (TACAddr)
-
 
     EFunCall id@(PIdent (dloc,ident)) params -> do
         genParams params
@@ -263,12 +232,11 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
             False -> out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExpTyped x) -> length x) params)) (convertToTACType typ)
 
     ELExp tlexp@(LExpTyped lexp _ _) -> do
-        if typ /= getType tlexp
-            then do
+        case areTypesDiff of
+            True -> do
                 addrLexp <- genLexp tlexp
-                -- genLexp addrLexp tlexp
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrLexp (convertToTACType typ)
-            else
+            False -> do
                 case lexp of
                     (LRef lexp') -> do
                         -- generazione del codice della left expression prima di quello della right expression
@@ -280,13 +248,11 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
                         addrOffset <- newTemp
                         addrExp' <- genExpAddr texp' (TSimple SType_Int)
                         out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
-
                         out $ AssignFromArray addr addrLexp' addrOffset (convertToTACType typ)
 
                     (LIdent id@(PIdent (dloc,ident))) -> 
                         out $ Assign addr (buildVarAddress ident dloc) (convertToTACType typ)
 
-    -- Dubbi su questo.
     EArray texps -> do
         zipWithM (\e i -> assignElem addr i e (getElementType typ) ) [0 .. ( (length texps) - 1)] texps
         return ()
@@ -307,6 +273,30 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
 
     where
         areTypesDiff = typ /= getType texp
+        -- conversione da operazione della sintassi astratta a operazione del TAC
+        -- scopo: differenziazione operazioni tra TS e TAC e distinguere operazioni
+        -- tra interi e float
+        convertOperation op typ = case (op,typ) of
+            (Plus , (TSimple SType_Int)  )  -> PlusInt
+            (Plus , (TSimple SType_Float))  -> PlusFloat
+            (Minus, (TSimple SType_Int)  )  -> MinusInt
+            (Minus, (TSimple SType_Float))  -> MinusFloat
+            (Prod , (TSimple SType_Int)  )  -> ProdInt
+            (Prod , (TSimple SType_Float))  -> ProdFloat
+            (Div  , (TSimple SType_Int)  )  -> DivInt
+            (Div  , (TSimple SType_Float))  -> DivFloat
+            (Mod  , (TSimple SType_Int)  )  -> ModInt
+            (Mod  , (TSimple SType_Float))  -> ModFloat
+            (Pow  , (TSimple SType_Int)  )  -> PowInt
+            (Pow  , (TSimple SType_Float))  -> PowFloat
+            (AbsGramm.Or       , _)         -> AbsTAC.Or
+            (AbsGramm.And      , _)         -> AbsTAC.And
+            (AbsGramm.Equal    , _)         -> AbsTAC.Equal
+            (AbsGramm.NotEq    , _)         -> AbsTAC.NotEqual
+            (AbsGramm.Less     , _)         -> AbsTAC.Less
+            (AbsGramm.LessEq   , _)         -> AbsTAC.LessEq
+            (AbsGramm.Greater  , _)         -> AbsTAC.Greater
+            (AbsGramm.GreaterEq, _)         -> AbsTAC.GreaterEq
 
 
 -- generazione indirizzo per le L-Expression
@@ -319,10 +309,10 @@ genLexp tlexp@(LExpTyped lexp _ _) = case lexp of
         out $ AssignFromPointer addrRes addrLexp' (TACAddr)
         return addrRes
     LArr tlexp' texp -> do
-        addrOffset <- newTemp
-        addrRes <- newTemp
         addrLexp' <- genLexp tlexp'
+        addrOffset <- newTemp
         addrExp <- genExpAddr texp (TSimple SType_Int)
+        addrRes <- newTemp
         out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf (getElementType tlexp')) (convertToTACType (TSimple SType_Int))
         out $ AssignFromArray addrRes addrLexp' addrOffset (convertToTACType (getElementType tlexp'))
         return addrRes
@@ -426,7 +416,7 @@ genStm stm = case stm of
 -- lo scopo è quello di evitare controlli superflui e far saltare il flusso di controllo nel punto giusto
 -- es. (a && b), se a = False non valutiamo b, il controllo passerà direttamente al caso else.
 genCondition :: Exp -> Label -> Label -> TacState ()
-genCondition texp@(ETyped exp typ loc) lblTrue lblFalse = case exp of
+genCondition texp@(ETyped exp _ _) lblTrue lblFalse = case exp of
     ETrue _ -> checkLabel lblTrue
     EFalse _ -> checkLabel lblFalse
     (EOp e1 AbsGramm.And e2) -> do
