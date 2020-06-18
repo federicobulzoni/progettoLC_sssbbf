@@ -12,4 +12,7 @@ def main () = {
 	var g : Char;
 	var k : Float = prova(c)(t, &g);
 	prova2(c)(t, &g);
+
+
+	var ciao : Array[Float](3) = Array('c',1,True);
 }

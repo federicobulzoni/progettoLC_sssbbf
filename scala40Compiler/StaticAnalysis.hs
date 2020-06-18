@@ -513,8 +513,7 @@ inferExp exp env = case exp of
                 saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
                 return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
 
-              _ ->  return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
-        
+              _ ->  return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                            
           --if any (isTypeError) (concat tparams)
           --  then 
           --    return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
