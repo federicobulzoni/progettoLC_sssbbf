@@ -502,21 +502,34 @@ inferExp exp env = case exp of
         return $ ETyped (EFunCall (PIdent ((0,0), ident)) (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
       Success (FunInfo dloc typ paramclauses) ->
         let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
-          if any (isTypeError) (concat tparams)
-            then 
-              return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
-            else
-              if allCompatible tparams typ_args
-                then 
-                  if isTypeVoid typ
-                    then do
-                      saveLog $ launchError loc (UnexpectedProc ident)
-                      return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
-                    else
-                      return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) typ loc                    
-                else do
-                  saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-                  return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
+          do
+            case (any (isTypeError) (concat tparams), allCompatible tparams typ_args, isTypeVoid typ) of
+              (False, True, False) -> return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) typ loc
+              (False, True, True)  -> do
+                saveLog $ launchError loc (UnexpectedProc ident)
+                return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
+
+              (False, False, _)    -> do
+                saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+                return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
+
+              _ ->  return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
+        
+          --if any (isTypeError) (concat tparams)
+          --  then 
+          --    return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
+          --  else
+          --    if allCompatible tparams typ_args
+          --      then 
+          --        if isTypeVoid typ
+          --          then do
+          --            saveLog $ launchError loc (UnexpectedProc ident)
+          --            return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
+          --          else
+          --            return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) typ loc                    
+          --      else do
+          --        saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+          --        return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
         --where 
         --  aux :: [[TypeSpec]] -> [[TypeSpec]] -> Bool
         --  aux [] [] = True
