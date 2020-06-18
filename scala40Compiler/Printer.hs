@@ -142,7 +142,7 @@ instance Print [AbsGramm.Declaration] where
   
 
 instance Print AbsGramm.Loc where
-  prt i (line, column) =  (concatD [doc (showString "("), prt 0 line, doc (showString ","), prt 0 column, doc (showString ")")])
+  prt i (line, column) =  (concatD [doc (showString "(line "), prt 0 line, doc (showString ", column "), prt 0 column, doc (showString ")")])
   
 
 instance Print AbsGramm.TypeSpec where
