@@ -1,3 +1,7 @@
 def main () = {
-	var a : Float = 3 + 3;
+	def proc (x : Int)(y : Float, z : *Char) = {
+		y = x;
+	}
+	var a : Char = True;
+	proc (3)(3, &a);
 }

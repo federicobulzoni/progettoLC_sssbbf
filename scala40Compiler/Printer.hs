@@ -249,9 +249,15 @@ instance Print AbsGramm.OpAssign where
 instance Print AbsGramm.Params where
   prt i e = case e of
     AbsGramm.ParExp exps -> prPrec i 0 (concatD [doc (showString "("), prt 0 exps, doc (showString ")")])
+    AbsGramm.ParExpTyped exps -> prPrec i 0 (concatD [doc (showString "("), prt 0 exps, doc (showString ")")])
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, prt 0 xs]
 
+instance Print [(AbsGramm.Exp, AbsGramm.TypeSpec)] where
+  prt = prtList
+
+instance Print (AbsGramm.Exp, AbsGramm.TypeSpec) where
+  prt i (exp, typ) = prPrec i 0 (concatD [doc (showString $ t "("), prt 0 exp, doc (showString $ t ")"), doc (showString $ t "<="), prt2 0 typ])
 instance Print [AbsGramm.Params] where
   prt = prtList
 

@@ -45,7 +45,7 @@ data SType
     | SType_Char
     | SType_Int
     | SType_Float  
-    
+
     | SType_String
     | SType_Error
     | SType_Void
@@ -81,7 +81,10 @@ data Stm
     | SProcCall PIdent [Params]
   deriving (Eq, Ord, Show, Read)
 
-data Params = ParExp [Exp]
+data Params 
+    = ParExp [Exp]
+    -- Lista di coppie (espressione, tipo_argomento)
+    | ParExpTyped [(Exp, TypeSpec)]
   deriving (Eq, Ord, Show, Read)
 
 data Op
@@ -102,9 +105,9 @@ data Op
   deriving (Eq, Ord, Show, Read)
 
 data Exp
-    = ENot Exp
+    = ENot Exp 
     | ENeg Exp
-    | ELExp LExp
+    | ELExp LExp 
     | EDeref LExp
     | EInt PInteger
     | EFloat PFloat

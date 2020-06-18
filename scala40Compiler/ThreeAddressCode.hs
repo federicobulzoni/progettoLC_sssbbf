@@ -168,31 +168,26 @@ genDecl decl = case decl of
 genExpAddr :: Exp -> TypeSpec -> TacState Addr
 genExpAddr texp typ =
     if isLiteral texp
-        then
-            if getType texp == typ
-                then
-                    genLiteral texp
-                else do
-                    addrExp <- newTemp
-                    addrLit <- genLiteral texp
-                    assignLiteral addrExp addrLit typ (getType texp)
-                    return addrExp
-        else
-            if isLExp texp
-                then
-                    if getType texp == typ
-                        then
-                            genLexp (innerLExp texp)
-                        else do
-                            addrExp <- newTemp
-                            addrLexp <- genLexp (innerLExp texp)
-                            out $ AssignUnOp addrExp (Cast $ convertToTACType typ) addrLexp (convertToTACType typ)
-                            return addrExp
-                else do
-                    addrExp <- newTemp
-                    genExp addrExp texp typ
-                    return addrExp
-
+        then literalCase $ getType texp == typ
+        else notLiteralCase $ isLExp texp
+    where
+        literalCase True = genLiteral texp
+        literalCase False = do
+            addrExp <- newTemp
+            addrLit <- genLiteral texp
+            assignLiteral addrExp addrLit typ (getType texp)
+            return addrExp
+        notLiteralCase True = lexpCase $ getType texp == typ
+        notLiteralCase False = do
+            addrExp <- newTemp
+            genExp addrExp texp typ
+            return addrExp
+        lexpCase True = genLexp (innerLExp texp)
+        lexpCase False = do
+            addrExp <- newTemp
+            addrLexp <- genLexp (innerLExp texp)
+            out $ AssignUnOp addrExp (Cast $ convertToTACType typ) addrLexp (convertToTACType typ)
+            return addrExp
 
 genExp :: Addr -> Exp -> TypeSpec -> TacState ()
 genExp addr texp@(ETyped exp _ _) typ = case exp of
@@ -200,13 +195,12 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
         addrExpl <- genExpAddr texpl (getType texp)
         addrExpr <- genExpAddr texpr (getType texp)
        
-        if typ /= getType texp
-            then do
+        case areTypesDiff of
+            True -> do
                 addrExp <- newTemp
                 out $ AssignBinOp addrExp addrExpl (convertOperation op typ) addrExpr (convertToTACType (getType texp))
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrExp (convertToTACType typ)
-            else
-                out $ AssignBinOp addr addrExpl (convertOperation op typ) addrExpr (convertToTACType typ)
+            False -> out $ AssignBinOp addr addrExpl (convertOperation op typ) addrExpr (convertToTACType typ)
         where
             -- conversione da operazione della sintassi astratta a operazione del TAC
             -- scopo: differenziazione operazioni tra TS e TAC e distinguere operazioni
@@ -236,24 +230,22 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
     ENeg texp' -> do
         addrExp' <- genExpAddr texp' (getType texp)
 
-        if typ /= getType texp
-            then do
+        case areTypesDiff of
+            True -> do
                 addrExp <- newTemp
                 out $ AssignUnOp addrExp (if (typ == TSimple SType_Int) then NegInt else NegFloat) addrExp' (convertToTACType (getType texp))
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrExp (convertToTACType typ)
-            else
-                out $ AssignUnOp addr (if (typ == TSimple SType_Int) then NegInt else NegFloat) addrExp' (convertToTACType typ)
+            False -> out $ AssignUnOp addr (if (typ == TSimple SType_Int) then NegInt else NegFloat) addrExp' (convertToTACType typ)
 
     ENot texp' -> do
         addrExp' <- genExpAddr texp' (getType texp)
 
-        if typ /= getType texp
-            then do
+        case areTypesDiff of
+            True -> do
                 addrExp <- newTemp
                 out $ AssignUnOp addrExp Not addrExp' (convertToTACType (getType texp))
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrExp (convertToTACType typ)
-            else
-                out $ AssignUnOp addr Not addrExp' (convertToTACType typ)
+            False -> out $ AssignUnOp addr Not addrExp' (convertToTACType typ)
 
     EDeref tlexp -> do
         addrLexp <- genLexp tlexp
@@ -263,13 +255,12 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
 
     EFunCall id@(PIdent (dloc,ident)) params -> do
         genParams params
-        if typ /= getType texp
-            then do
+        case areTypesDiff of
+            True -> do
                 addrExp <- newTemp
-                out $ AssignFromFunction addrExp (buildFunLabel ident dloc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType (getType texp))
+                out $ AssignFromFunction addrExp (buildFunLabel ident dloc) (sum (map (\(ParExpTyped x) -> length x) params)) (convertToTACType (getType texp))
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrExp (convertToTACType typ)
-            else
-                out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExp x) -> length x) params)) (convertToTACType typ)
+            False -> out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExpTyped x) -> length x) params)) (convertToTACType typ)
 
     ELExp tlexp -> do
         addrLexp <- genLexp tlexp
@@ -319,6 +310,9 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
     _ -> do
         addrLit <- genLiteral texp
         assignLiteral addr addrLit typ (getType texp)
+
+    where
+        areTypesDiff = typ /= getType texp
 
 
 -- generazione indirizzo per le L-Expression
@@ -421,7 +415,7 @@ genStm stm = case stm of
   
     SProcCall (PIdent (loc, ident)) params -> do
         genParams params
-        out $ Call (buildFunLabel ident loc) (sum (map (\(ParExp x) -> length x) params))
+        out $ Call (buildFunLabel ident loc) (sum (map (\(ParExpTyped x) -> length x) params))
 
     SReturn preturn -> 
         out $ ReturnVoid
@@ -534,11 +528,11 @@ genParams (param:params) = do
     genParamAux param
     genParams params
     where
-        genParamAux (ParExp []) = return ()
-        genParamAux (ParExp (texp:texps)) = do
-            addrExp <- genExpAddr texp (getType texp)
+        genParamAux (ParExpTyped []) = return ()
+        genParamAux (ParExpTyped ((texp, typ):xs)) = do
+            addrExp <- genExpAddr texp typ
             out $ (Param addrExp)
-            genParamAux (ParExp texps)
+            genParamAux (ParExpTyped xs)
 
 
 -- Utilities 
