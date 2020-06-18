@@ -502,7 +502,7 @@ inferExp exp env = case exp of
               then 
                 return $ ETyped (EFunCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
               else
-                if typ_args == typ_params 
+                if aux typ_params typ_args  
                   then 
                     if isTypeVoid typ
                       then do
@@ -513,6 +513,12 @@ inferExp exp env = case exp of
                   else do
                     saveLog $ launchError loc (WrongFunctionParams ident typ_args typ_params typ)
                     return $ ETyped (EFunCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
+        where 
+          aux :: [[TypeSpec]] -> [[TypeSpec]] -> Bool
+          aux [] [] = True
+          aux [] _ = False
+          aux _ [] = False
+          aux (typ1:typs1) (typ2:typs2) = (length typ1) == (length typ2) && (all (==True) (zipWith (<=) typ1 typ2)) && (aux typs1 typs2)
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   ENot exp -> do
