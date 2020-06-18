@@ -263,9 +263,9 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
             False -> out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExpTyped x) -> length x) params)) (convertToTACType typ)
 
     ELExp tlexp -> do
-        addrLexp <- genLexp tlexp
         if typ /= getType tlexp
-            then
+            then do
+                addrLexp <- genLexp tlexp
                 -- genLexp addrLexp tlexp
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrLexp (convertToTACType typ)
             else
@@ -274,22 +274,18 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
                     (LRef lexp') -> do
                         -- generazione del codice della left expression prima di quello della right expression
                         addrLexp' <- genLexp lexp'
-                        addrExp <- genExpAddr texp typ
-                        out $ AssignToPointer addrLexp' addrExp (convertToTACType typ)
+                        out $ AssignFromPointer addr addrLexp' (convertToTACType typ)
                     (LArr lexp' texp') -> do
                         addrOffset <- newTemp
                         addrLexp' <- genLexp lexp'
-                        -- Probabilmente è da controllare il casting.
+                       
                         addrExp' <- genExpAddr texp' (TSimple SType_Int)
                         out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
 
-                        addrExp <- genExpAddr texp typ
-                        out $ AssignToArray addrLexp' addrOffset addrExp (convertToTACType typ)
+                        out $ AssignFromArray addr addrLexp' addrOffset (convertToTACType typ)
 
-                    (LIdent id@(PIdent (dloc,ident))) -> do
-                        addrExp <- genExpAddr texp typ
-                        out $ Assign (buildVarAddress ident dloc) addrExp (convertToTACType typ)
-                        out $ Assign addr addrLexp (convertToTACType typ)
+                    (LIdent id@(PIdent (dloc,ident))) -> 
+                        out $ Assign addr (buildVarAddress ident dloc) (convertToTACType typ)
 
     -- Dubbi su questo.
     EArray texps -> do
@@ -366,6 +362,7 @@ genStm stm = case stm of
         genBlock block
         return ()
 
+    -- Qua abbiamo ancora problemi.
     SAssign tlexp@(LExpTyped lexp typ _) texp -> do
         -- Se lexp è del tipo array o puntatore, si vogliono utilizzare le istruzioni del tac x[y]=z e
         -- *x=y per evitare la creazione di un temporaneo inutile per la left expression.

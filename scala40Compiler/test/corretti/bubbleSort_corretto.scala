@@ -3,7 +3,7 @@ var a : Array[Int](10);
 var N : Int = 10;
 
 def bubbleSort (a : Array[Int](10), dim : Int) : Array[Int](10) = {
-	var i : Int = !False;
+	var i : Int = False;
 	var j : Int = 0;
 	var temp : Int;
 
