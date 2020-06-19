@@ -200,7 +200,7 @@ inferDecl decl env = case decl of
         functionHandler e = do
           -- Creare nuovo scope avviato con i parametri e il nome della fun.
           newScope <- startFunScope e id params typ
-          (tstms, e') <- inferStms stms newScope
+          (tstms, e') <- inferStms stms newScope False
 
           -- Nel caso in cui stiam trattando una funzione, ma non è presente alcun
           -- return nel suo scope lo notifichiamo.
@@ -234,7 +234,7 @@ inferDecl decl env = case decl of
           case (exp, isTypeVoid typ) of
             -- PROCEDURA con assegnata FUNZIONE
             (EFunCall id' params', True) -> do
-              (stmt, e') <- inferStm (SProcCall id' params') e
+              (stmt, e') <- inferStm (SProcCall id' params') e False
               return (DefFun id params typ (DBlock [stmt]), e')
             -- PROCEDURA con assegnata EXP
             (_,True) -> do
@@ -268,16 +268,16 @@ inferBlock (DBlock stms) ftyp env = do
   return $ (DBlock tstms, env')
 -}
 
-inferStms :: [Stm] -> Env -> Logger ([Stm], Env)
-inferStms [] env = return ([], env)
-inferStms (stm:stms) env = do
-  (tstm, env') <- inferStm stm env
-  (tstms, env'') <- inferStms stms env'
+inferStms :: [Stm] -> Env -> Bool -> Logger ([Stm], Env)
+inferStms [] env _ = return ([], env)
+inferStms (stm:stms) env inLoop = do
+  (tstm, env') <- inferStm stm env inLoop
+  (tstms, env'') <- inferStms stms env' inLoop
   return $ (tstm:tstms, env'') 
 
 
-inferStm :: Stm  -> Env -> Logger (Stm, Env)
-inferStm stm env = case stm of
+inferStm :: Stm  -> Env -> Bool -> Logger (Stm, Env)
+inferStm stm env inLoop = case stm of
   SWhile exp stm' -> do
     -- texp è l'espressione annotata col tipo.
     texp <- inferExp exp env
@@ -288,7 +288,7 @@ inferStm stm env = case stm of
       else
         return ()
     -- viene inferito lo stm del while.
-    (tstm', env') <- inferStm stm' env
+    (tstm', env') <- inferStm stm' env True
     -- e nel caso in cui un return sia stato trovato all'interno del corpo del while
     -- si segnala che è stato trovato anche nello scope in cui il while è contenuto.
     if Env.hasReturn env' 
@@ -305,8 +305,8 @@ inferStm stm env = case stm of
         saveLog $ launchError (getLoc texp) (WrongIfCondition exp (getType texp))
       else return ()
 
-    (tstmif, envif) <- inferStm stmif env
-    (tstmelse, envelse) <- inferStm stmelse env
+    (tstmif, envif) <- inferStm stmif env inLoop
+    (tstmelse, envelse) <- inferStm stmelse env inLoop
     -- Solo nel caso in cui sia il corpo dell'if che quello dell'else contengono
     -- una istruzione return viene segnalata la presenza di un return nello scope in 
     -- cui la istruzione if...else è contenuta.
@@ -331,7 +331,7 @@ inferStm stm env = case stm of
     where
       inferBlock (DBlock []) _ env = return $ (DBlock [], env)
       inferBlock (DBlock stms) ftyp env = do
-        (tstms, env') <- inferStms stms (Env.addScope env ftyp) 
+        (tstms, env') <- inferStms stms (Env.addScope env ftyp) inLoop
         return $ (DBlock tstms, env')
 
 -------------------------------------------------------------------------------------------------------------------------------------------
@@ -383,20 +383,20 @@ inferStm stm env = case stm of
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   -- DA GESTIRE - PROPOSTE SOTTO
-  SBreak pbreak@(PBreak (loc,ident)) -> return (SBreak pbreak, env)
-  SContinue pcontinue@(PContinue (loc,ident)) -> return (SContinue pcontinue, env)
-  --SBreak pbreak@(PBreak (loc,ident)) -> do
-  --  if inLoop
-  --    then return (SBreak pbreak, env)
-  --    else do
-  --      saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
-  --      return (SBreak pbreak, env)
-  --SContinue pcontinue@(PContinue (loc,ident)) -> do
-  --  if inLoop
-  --    then return (SContinue pcontinue, env)
-  --    else do
-  --      saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
-  --      return (SContinue pcontinue, env)
+  --SBreak pbreak@(PBreak (loc,ident)) -> return (SBreak pbreak, env)
+  --SContinue pcontinue@(PContinue (loc,ident)) -> return (SContinue pcontinue, env)
+  SBreak pbreak@(PBreak (loc,ident)) -> do
+    if inLoop
+      then return (SBreak pbreak, env)
+      else do
+        saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
+        return (SBreak pbreak, env)
+  SContinue pcontinue@(PContinue (loc,ident)) -> do
+    if inLoop
+      then return (SContinue pcontinue, env)
+      else do
+        saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
+        return (SContinue pcontinue, env)
 -------------------------------------------------------------------------------------------------------------------------------------------
                                     -- lista di liste ArgExp [Exp]
   SProcCall id@(PIdent (loc, ident)) params -> do
@@ -610,12 +610,13 @@ inferExp exp env = case exp of
         saveLog $ launchError (getLoc texp_cond) (WrongIfCondition exp_cond (getType texp_cond))
         return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_cond)
       else
-        case (isTypeError texp_if || isTypeError texp_else, compatible (getType texp_if) (getType texp_else)) of
-          (True,_) -> return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_cond)
-          (False, True) -> return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (max (getType texp_if) (getType texp_else)) (getLoc texp_cond)
-          (False, False) -> do
-            saveLog $ launchError (getLoc texp_cond) (WrongIfElseExp texp_if texp_else)
-            return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_cond)
+        let maxTyp = max (getType texp_if) (getType texp_else) in
+          case (isTypeError texp_if || isTypeError texp_else, (compatible (getType texp_if) maxTyp  && compatible (getType texp_else) maxTyp)) of
+            (True,_) -> return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_cond)
+            (False, True) -> return $ ExpTyped (EIfElse texp_cond texp_if texp_else) maxTyp (getLoc texp_cond)
+            (False, False) -> do
+              saveLog $ launchError (getLoc texp_cond) (WrongIfElseExp texp_if texp_else)
+              return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_cond)
 
 -- Prese due espressioni ed un operatore binario ritorna la corrispondente espressione tipizzata
 inferBinOp :: Exp -> Op -> Exp -> Env -> Logger Exp

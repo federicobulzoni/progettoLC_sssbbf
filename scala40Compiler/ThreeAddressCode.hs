@@ -16,72 +16,94 @@ type TacState a = State (
     Int,      -- temporanei
     Int,      -- label
     [TAC],    -- codice
-    [[TAC]]   -- funzioni
+    [[TAC]],   -- funzioni
+    Label,     -- label continue
+    Label      -- label break
     ) 
     a
+
+setBreak :: Label -> TacState ()
+setBreak label = do
+    (k, l, revcode, funs, found_continue, found_break) <- get
+    put (k, l, revcode, funs, found_continue, label)
+
+setContinue :: Label -> TacState ()
+setContinue label = do
+    (k, l, revcode, funs, found_continue, found_break) <- get
+    put (k, l, revcode, funs, label, found_break)
+
+foundBreak :: TacState Label 
+foundBreak = do
+    (k, l, revcode, funs, found_continue, found_break) <- get
+    return found_break
+
+foundContinue :: TacState Label 
+foundContinue = do
+    (k, l, revcode, funs, found_continue, found_break) <- get
+    return found_continue
 
 -- funzione per l'inserimento di un'istruzione TAC in testa
 -- alla lista di istruzioni della funzione in cui è utilizzata
 out :: TAC -> TacState ()
 out instr = do
-    (k, l, revcode, funs) <- get
+    (k, l, revcode, funs, found_continue, found_break) <- get
     -- il codice globale rimane il medesimo, si aggiunge solo l'istruzione 
     -- in testa al suo "scope" di utilizzo
-    put (k, l, revcode, (instr : (head funs)) : (tail funs))
+    put (k, l, revcode, (instr : (head funs)) : (tail funs), found_continue, found_break)
 
 -- inserimento delle istruzioni di una funzione all'interno del codice principale
 pushCurrentStream :: TacState ()
 pushCurrentStream = do
-    (k, l, revcode, funs) <- get
+    (k, l, revcode, funs, found_continue, found_break) <- get
     if length funs == 1 
         then
             -- nel caso in cui fossimo nello scope globale le istruzioni
             -- vengono inserite in coda al codice per far sì che chiamando
             -- la funzione reverse in genTAC, esse compaiano sempre in testa
-            put (k, l, revcode ++ (head funs), tail funs)
+            put (k, l, revcode ++ (head funs), tail funs, found_continue, found_break)
         else
-            put (k, l,  (head funs) ++ revcode, tail funs)
+            put (k, l,  (head funs) ++ revcode, tail funs, found_continue, found_break)
 
 -- inserimento istruzione Call al main se presente
 pushMain :: TAC -> TacState ()
 pushMain instr = do
-    (k, l, revcode, funs) <- get
-    put (k, l, revcode ++ [instr], funs)
+    (k, l, revcode, funs, found_continue, found_break) <- get
+    put (k, l, revcode ++ [instr], funs, found_continue, found_break)
 
 -- inserimento dell'etichetta in coda al codice se manca una funzione main
 pushLastLabel :: Label -> TacState ()
 pushLastLabel label = do
-    (k,l,revcode,funs) <- get
-    put (k, l, [Lab label] ++ revcode, funs)
+    (k,l,revcode,funs, found_continue, found_break) <- get
+    put (k, l, [Lab label] ++ revcode, funs, found_continue, found_break)
 
 -- creazione di una nuova stream per quando si crea un blocco (funzione)
 -- utile per definire l'ordine delle funzioni innestate
 createStream :: TacState ()
 createStream = do
-    (k, l, revcode, funs) <- get
-    put (k,l, revcode, [] : funs)
+    (k, l, revcode, funs, found_continue, found_break) <- get
+    put (k,l, revcode, [] : funs, found_continue, found_break)
 
 
 newTemp :: TacState Addr
 newTemp = do
-    (k, l, revcode, funs) <- get
-    put (k+1, l, revcode, funs)
+    (k, l, revcode, funs, found_continue, found_break) <- get
+    put (k+1, l, revcode, funs, found_continue, found_break)
     return $ Temp k
 
 newLabel :: TacState Label
 newLabel = do
-    (k, l , revcode, funs) <- get
-    put (k, l+1, revcode, funs)
+    (k, l , revcode, funs, found_continue, found_break) <- get
+    put (k, l+1, revcode, funs, found_continue, found_break)
     return $ LabStm l
   
 
-getTACCode :: (Int, Int, [TAC], [[TAC]]) -> [TAC]
-getTACCode (k, l, code, _) = code
+getTACCode :: (Int, Int, [TAC], [[TAC]], Label, Label) -> [TAC]
+getTACCode (k, l, code, _, _, _) = code
 
 -- Entry point. Genera il codice TAC del programma prog.
 -- hasMain = True, se nell'analisi di semantica statica è stato trovato un main
 genTAC :: Program -> Bool -> [TAC]
-genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [[]])
+genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [[]], (LabStm $ -1), (LabStm $ -1))
 
 
 genProg :: Program -> Bool -> TacState ()
@@ -162,7 +184,7 @@ genDecl decl = case decl of
                 return ()
     where
         isGlobalScope = do
-            (k, l, revcode, funs) <- get
+            (k, l, revcode, funs, found_continue, found_break) <- get
             return $ length funs == 1 
 
 genExpAddr :: Exp -> TypeSpec -> TacState Addr
@@ -265,6 +287,42 @@ genExp addr texp@(ExpTyped exp _ _) typ = case exp of
 
             getElementType (TArray typ' _) = typ'
             getElementType _ = error $ "Fatal error."
+
+            --SIfElse texp@(ExpTyped exp _ _) stm_if stm_else -> do
+            --    labelNext <- newLabel
+            --    labelElse <- if isBlockEmpty stm_else then return labelNext else newLabel
+            --    genCondition texp Fall labelElse
+            --    genStm stm_if
+            --    -- se si tratta di uno statement if senza else, evito di generare etichette inutili
+            --    if (not $ isBlockEmpty stm_else)
+            --        then do
+            --            out $ (Goto labelNext)
+            --            out $ (Lab labelElse)
+            --            genStm stm_else
+            --        else return ()
+            --    out $ Lab labelNext
+
+
+    EIfElse texp_cond texp_if texp_else -> do
+        addr_if <- genExpAddr texp_if (getType texp)
+        addr_else <- genExpAddr texp_else (getType texp)
+        labelNext <- newLabel
+        labelElse <- newLabel
+        genCondition texp_cond Fall labelElse
+        if areTypesDiff 
+            then
+                out $ AssignUnOp addr (Cast $ convertToTACType typ) addr_if (convertToTACType typ)
+            else 
+                out $ Assign addr addr_if (convertToTACType $ getType texp)
+        out $ Goto labelNext
+        out $ Lab labelElse
+        if areTypesDiff 
+            then 
+                out $ AssignUnOp addr (Cast $ convertToTACType typ) addr_else (convertToTACType typ)
+            else
+                out $ Assign addr addr_else (convertToTACType $ getType texp)
+
+        out $ Lab labelNext
 
     -- i tipi base (quindi delle costanti) utilizzano come indirizzo un letterale
     _ -> do
@@ -375,6 +433,8 @@ genStm stm = case stm of
     SWhile texp@(ExpTyped exp _ _) tstm -> do
         labelWhile <- newLabel
         labelFalse <- newLabel
+        setBreak labelFalse
+        setContinue labelWhile
         out $ (Lab labelWhile)
         genCondition texp Fall labelFalse
         genStm tstm
@@ -405,7 +465,16 @@ genStm stm = case stm of
     SReturnExp  preturn texp -> do
         addrExp <- genExpAddr texp (getType texp)
         out $ ReturnAddr addrExp
+    
+    SBreak pbreak -> do
+        labelBreak <- foundBreak
+        out $ Comment "Break Goto"
+        out $ Goto labelBreak
 
+    SContinue pcontinue -> do
+        labelContinue <- foundContinue
+        out $ Comment "Continue Goto"
+        out $ Goto labelContinue
     where 
         isBlockEmpty bl = if (SBlock (DBlock []) == bl ) then True else False
 

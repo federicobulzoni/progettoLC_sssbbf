@@ -57,6 +57,7 @@ data TCException
     | ExpAssignedToProcedure Ident Exp TypeSpec
     | WrongMainSignature
     | WrongIfElseExp Exp Exp
+    | WrongFlowCrontrolStatement Ident
     deriving(Show,Eq)
   
 
@@ -187,3 +188,6 @@ getExceptionMsg except = case except of
 
     WrongIfElseExp texp1@(ExpTyped exp1 typ1 _) texp2@(ExpTyped exp2 typ2 _) -> "Wrong conditional expression " ++ color Default Italic (printTree exp1) ++ " has type "
         ++ printTree typ1 ++ ", but expression " ++ color Default Italic (printTree exp2) ++ " has type " ++ printTree typ2 ++ "."
+
+    WrongFlowCrontrolStatement ident ->
+        ident ++ " statement not in loop statement."
