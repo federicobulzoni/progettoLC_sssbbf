@@ -361,27 +361,40 @@ inferStm stm env inLoop = case stm of
   SReturnExp preturn@(PReturn (loc, id)) exp -> let ftyp = Env.getScopeType env in
     do
       texp <- inferExp exp env
-      if isTypeError texp
-        then
+      case (isTypeError texp, isTypeVoid ftyp, compatible (getType texp) ftyp) of
+        (False, False, True) -> return $ (SReturnExp preturn texp, Env.setReturnFound env)
+        (False, False, False) -> do
+          -- se il tipo dello scope non è void, ma è incompatibile con quello dell'espressione
+          -- allora si lancia un'errore.
+          saveLog $ launchError loc (WrongExpType exp (getType texp) ftyp)
           return $ (SReturnExp preturn texp, env)
-        else
-          if isTypeVoid ftyp
-            then do
-              -- Se il tipo dello scope è Void, allora ci troviamo all'interno di una procedura
-              -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
-              saveLog $ launchError loc (UnexpectedReturn exp)
-              return $ (SReturnExp preturn texp, env)
-            else 
-              -- Nel caso in cui l'espressione ritornata sia compatibile con il tipo
-              -- dello scope viene segnalato che un return adeguato nello scope è stato trovato.
-              if compatible (getType texp) ftyp
-                then
-                  return $ (SReturnExp preturn texp, Env.setReturnFound env)
-                else do
-                  -- se il tipo dello scope non è void, ma è incompatibile con quello dell'espressione
-                  -- allora si lancia un'errore.
-                  saveLog $ launchError loc (WrongExpType exp (getType texp) ftyp)
-                  return $ (SReturnExp preturn texp, env)
+        (False, True, _) -> do
+          -- Se il tipo dello scope è Void, allora ci troviamo all'interno di una procedura
+          -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
+          saveLog $ launchError loc (UnexpectedReturn exp)
+          return $ (SReturnExp preturn texp, env)
+        (True, _, _) -> return $ (SReturnExp preturn texp, env)
+      --if isTypeError texp
+      --  then
+      --    return $ (SReturnExp preturn texp, env)
+      --  else
+      --    if isTypeVoid ftyp
+      --      then do
+      --        -- Se il tipo dello scope è Void, allora ci troviamo all'interno di una procedura
+      --        -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
+      --        saveLog $ launchError loc (UnexpectedReturn exp)
+      --        return $ (SReturnExp preturn texp, env)
+      --      else 
+      --        -- Nel caso in cui l'espressione ritornata sia compatibile con il tipo
+      --        -- dello scope viene segnalato che un return adeguato nello scope è stato trovato.
+      --        if compatible (getType texp) ftyp
+      --          then
+      --            return $ (SReturnExp preturn texp, Env.setReturnFound env)
+      --          else do
+      --            -- se il tipo dello scope non è void, ma è incompatibile con quello dell'espressione
+      --            -- allora si lancia un'errore.
+      --            saveLog $ launchError loc (WrongExpType exp (getType texp) ftyp)
+      --            return $ (SReturnExp preturn texp, env)
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   SReturn preturn@(PReturn (loc, _))-> let ftyp = Env.getScopeType env in
@@ -597,32 +610,47 @@ inferExp exp env = case exp of
       Failure except -> do
         saveLog $ launchError loc except
         return $ ExpTyped (EFunCall (PIdent ((0,0), ident)) (map (\x -> (ArgExp x)) tparams)) (TSimple SType_Error) loc
-      Success (FunInfo dloc typ paramclauses) ->
-        -- Argomenti di quando lo dichiati
-        -- Lista di liste di tipi degli argomenti.
-        if any (isTypeError) (concat tparams)
-          then 
-              return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) (TSimple SType_Error) loc                    
-          else
-            if checkExpsMod (concat tparams) (concat typ_mod_args)
-              then
-                if allCompatible tparams typ_args
-                  then 
-                    if isTypeVoid typ
-                      then do
-                        saveLog $ launchError loc (UnexpectedProc ident)
-                        return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) (TSimple SType_Error) loc                    
-                      else 
-                        return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) typ loc                    
-                  else do
-                    saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-                    return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) (TSimple SType_Error) loc
-              else do
-                saveLog $ launchError loc (WrongParamMethod ident)
-                return $ ExpTyped (EFunCall (PIdent (dloc, ident)) params) (TSimple SType_Error) loc
+      Success (FunInfo dloc typ paramclauses) -> 
+        do
+          -- Argomenti di quando lo dichiati
+          -- Lista di liste di tipi degli argomenti.
+          case ((any (isTypeError) (concat tparams)), (checkExpsMod (concat tparams) (concat typ_mod_args)), (allCompatible tparams typ_args), isTypeVoid typ) of
+            (False, True, True, False) -> returnProcWithType typ
+            (False, True, True, True) -> do
+              saveLog $ launchError loc (UnexpectedProc ident)
+              returnProcWithType (TSimple SType_Error) 
+            (False, True, False, _)   -> do
+              saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+              returnProcWithType (TSimple SType_Error) 
+            (False, False, _, _)      -> do
+              saveLog $ launchError loc (WrongParamMethod ident)
+              returnProcWithType (TSimple SType_Error) 
+            otherwise                         -> returnProcWithType (TSimple SType_Error)
+        --if any (isTypeError) (concat tparams)
+        --  then returnProcWithType (TSimple SType_Error)                 
+        --  else
+        --    if checkExpsMod (concat tparams) (concat typ_mod_args)
+        --      then
+        --        if allCompatible tparams typ_args
+        --          then 
+        --            if isTypeVoid typ
+        --              then do
+        --                saveLog $ launchError loc (UnexpectedProc ident)
+        --                returnProcWithType (TSimple SType_Error)                   
+        --              else 
+        --                returnProcWithType typ              
+        --          else do
+        --            saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+        --            returnProcWithType (TSimple SType_Error)
+        --      else do
+        --        saveLog $ launchError loc (WrongParamMethod ident)
+        --        returnProcWithType (TSimple SType_Error)
+      
         where 
           typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
-          typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses                    
+          typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses
+          
+          returnProcWithType typ' = return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) typ' loc 
  -------------------------------------------------------------------------------------------------------------------------------------------
   ENot exp -> do
     texp <- inferExp exp env
