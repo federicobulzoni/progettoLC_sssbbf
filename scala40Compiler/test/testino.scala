@@ -35,8 +35,8 @@ def foo () : Int = {
 
 	}
 	var t : Int = 4;
-	while ( 3 < 4) t = 3;
-	for (c <- 1.3 until True by True) {
+	while ( "ciao" == "ciao") t = 3;
+	for (c <- 1 until True by True) {
 		t = 3;
 		return 3;
 	}

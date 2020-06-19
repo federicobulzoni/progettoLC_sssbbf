@@ -665,17 +665,6 @@ inferBinOp expl op expr env = do
   case ((getTypeOp op), (getType texpl), (getType texpr) ) of
     (_ , TSimple SType_Error, _ ) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
     (_ , _ , TSimple SType_Error) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
-    
-    (EqOp, typl, typr) ->
-      if typl == typr || (max typl typr) < (TSimple SType_String)
-      -- if isConsistent EqOp typl typr
-        then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
-        else returnBinOpError texpl op texpr
-    (RelOp, typl, typr) ->
-      if (max typl typr) < (TSimple SType_String)
-      -- if isConsistent RelOp typl typr
-        then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
-        else returnBinOpError texpl op texpr
     (BooleanOp, typl, typr) ->
       if typl == (TSimple SType_Bool) && typr == (TSimple SType_Bool)
         then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
@@ -685,6 +674,11 @@ inferBinOp expl op expr env = do
         (TSimple SType_String) -> returnBinOpError texpl op texpr
         (TSimple SType_Float) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Float) (getLoc texpl)
         _ -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Int) (getLoc texpl)
+    (_, typl, typr) ->
+      if compatible typr typl &&  compatible typl typr
+        then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
+        else returnBinOpError texpl op texpr
+    
   where
     returnBinOpError texpl op texpr = do
       saveLog $ launchError (getLoc texpl) (WrongOpApplication op (getType texpl) (getType texpr))
