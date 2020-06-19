@@ -675,7 +675,7 @@ inferBinOp expl op expr env = do
         (TSimple SType_Float) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Float) (getLoc texpl)
         _ -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Int) (getLoc texpl)
     (_, typl, typr) ->
-      if compatible typr typl &&  compatible typl typr
+      if compatible (min typl typr) (max typl typr)
         then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
         else returnBinOpError texpl op texpr
     
