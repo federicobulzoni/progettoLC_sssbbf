@@ -35,7 +35,7 @@ def foo () : Int = {
 
 	}
 	var t : Int = 4;
-	while ( "ciao" == "ciao") t = 3;
+	while ( 5 == True) t = 3;
 	for (c <- 1 until True by True) {
 		t = 3;
 		return 3;
