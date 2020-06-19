@@ -79,6 +79,7 @@ data ParamPassMod
     | ParamPassMod_ref
     | ParamPassMod_res
     | ParamPassMod_valres
+    | NoParam
   deriving (Eq, Ord, Show, Read)
 
 data Stm
@@ -101,7 +102,7 @@ data OpAssign = ProdEq | DivEq | ModEq | PlusEq | MinusEq | PowEq
 
 data Args 
   = ArgExp [Exp]
-  | ArgExpTyped [(Exp,TypeSpec)]
+  | ArgExpTyped [(Exp,TypeSpec,ParamPassMod)]
   deriving (Eq, Ord, Show, Read)
 
 data Op
@@ -144,6 +145,7 @@ data LExp
     = LRef LExp
     | LArr LExp Exp
     | LIdent PIdent
+    | LIdentMod PIdent ParamPassMod
     | LExpTyped LExp TypeSpec Loc
   deriving (Eq, Ord, Show, Read)
 

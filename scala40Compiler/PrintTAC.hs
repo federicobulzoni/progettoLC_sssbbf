@@ -121,6 +121,7 @@ buildUnOpr op = case op of
 buildAddr :: Addr -> String
 buildAddr addr = case addr of
     Var ident (r,c)   -> id ident ++ "@(" ++ show r ++ "," ++ show c ++ ")"
+    VarCopy ident (r,c) -> id ident ++ "@copy@(" ++ show r ++ "," ++ show c ++ ")"
     Temp n            -> id "t" ++ show n
     LitString n       -> n
     LitFloat n        -> show n
