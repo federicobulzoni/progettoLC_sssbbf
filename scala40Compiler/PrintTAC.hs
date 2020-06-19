@@ -50,28 +50,28 @@ buildTACInstruction instr = case instr of
         intercalate " " ["*",buildAddr addr1,"=",buildColAssignType typ,buildAddr addr2] 
         
     AssignFromFunction addr1 label n typ ->
-        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,"fcall",buildLabel label,",",show n] 
+        intercalate " " [buildAddr addr1,"=",buildColAssignType typ, (color Blue Bold "fcall"),buildLabel label,",",show n] 
         
     Goto label -> 
-        "goto " ++ buildLabel label
+        (color Blue Bold "goto ") ++ buildLabel label
     
     IfBool addr1 label -> 
-        "if " ++ buildAddr addr1 ++ " goto " ++  buildLabel label
+        (color Blue Bold "if ") ++ buildAddr addr1 ++ (color Blue Bold " goto ") ++  buildLabel label
 
     IfRel op addr1 addr2 label -> 
-        "if " ++ buildAddr addr1 ++ " " ++ buildBinOpr op ++ " " ++ buildAddr addr2 ++ " goto " ++ buildLabel label
+        (color Blue Bold "if ") ++ buildAddr addr1 ++ " " ++ buildBinOpr op ++ " " ++ buildAddr addr2 ++ (color Blue Bold " goto ") ++ buildLabel label
 
     IfFalse addr1 label -> 
-        "ifFalse " ++ buildAddr addr1 ++ " goto " ++ buildLabel label
+        (color Blue Bold "ifFalse ") ++ buildAddr addr1 ++ (color Blue Bold " goto ") ++ buildLabel label
     
     ReturnVoid -> 
-        "return"
+        (color Blue Bold "return")
 
     ReturnAddr addr1 -> 
-        "return " ++ buildAddr addr1
+        (color Blue Bold "return ") ++ buildAddr addr1
 
     Param addr1 -> 
-        "param " ++ buildAddr addr1
+        (color Blue Bold "param ") ++ buildAddr addr1
 
     Call label n ->
         intercalate " " ["pcall",buildLabel label,",",show n]
@@ -120,8 +120,8 @@ buildUnOpr op = case op of
 
 buildAddr :: Addr -> String
 buildAddr addr = case addr of
-    Var ident (r,c)   -> id ident ++ "@(" ++ show r ++ "," ++ show c ++ ")"
-    VarCopy ident (r,c) -> id ident ++ "@copy@(" ++ show r ++ "," ++ show c ++ ")"
+    Var ident (r,c)   -> id (color Green Bold ident) ++ (color Green Italic ("@(" ++ show r ++ "," ++ show c ++ ")"))
+    VarCopy ident (r,c) -> id (color Green Bold ident) ++ (color Green Italic ("@copy@(" ++ show r ++ "," ++ show c ++ ")"))
     Temp n            -> id "t" ++ show n
     LitString n       -> n
     LitFloat n        -> show n
