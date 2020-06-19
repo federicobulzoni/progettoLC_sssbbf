@@ -30,15 +30,25 @@ isTypeVoid typ = typ == (TSimple SType_Void)
 
 ------------------------------------------------------------------------------------------------------------------------
 
--- PROPOSTA VELOCE PER RISOLVERE COMPATIBILITA' TIPI
+---- PROPOSTA VELOCE PER RISOLVERE COMPATIBILITA' TIPI
 
---compatible :: TypeSpec -> Exp -> Bool
---compatible (TSimple SType_Int) texp = elem (getType texp) [TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
---compatible (TSimple SType_Float) texp = elem (getType texp) [SType_Float, TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
---compatible (TSimple SType_Char) texp = elem (getType texp) [TSimple SType_Char, TSimple SType_Bool]
---compatible (TSimple SType_Bool) texp = elem (getType texp) [TSimple SType_Bool]
---compatible (TSimple SType_String) texp = elem (getType texp) [TSimple SType_String]
---compatible _ = False
+compatible :: TypeSpec -> TypeSpec -> Bool
+compatible typ_exp (TSimple SType_Int) = elem typ_exp [TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
+compatible typ_exp (TSimple SType_Float) = elem typ_exp [TSimple SType_Float, TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
+compatible typ_exp (TSimple SType_Char) = elem typ_exp [TSimple SType_Char]
+compatible typ_exp (TSimple SType_Bool) = elem typ_exp [TSimple SType_Bool]
+compatible typ_exp (TSimple SType_String) = elem typ_exp [TSimple SType_String]
+compatible typ_exp (TSimple _) = False
+
+compatible typ_exp (TPointer typ) = case typ_exp of
+  TPointer (TSimple SType_Void) -> True
+  (TPointer typ')               -> compatible typ' typ
+  _                             -> False
+
+compatible typ_exp (TArray typ2 (PInteger (_,dim2))) = case typ_exp of
+  (TArray typ1 (PInteger (_,dim1))) -> dim1 == dim2 && (compatible typ1 typ2)
+  _                                 -> False
+
 
 ------------------------------------------------------------------------------------------------------------------------
 
@@ -55,7 +65,7 @@ allCompatible :: [[Exp]] -> [[TypeSpec]] -> Bool
 allCompatible [] [] = True
 allCompatible [] _ = False
 allCompatible _ [] = False
-allCompatible (x:xs) (y:ys) = length x == length y && (all (==True) (zipWith (isCompatible) x y)) && (allCompatible xs ys)
+allCompatible (x:xs) (y:ys) = length x == length y && (all (==True) (zipWith (compatible) (map (getType) x) y)) && (allCompatible xs ys)
             
 -- startingEnv
 -- Definizione dell'environment iniziale di un programma. Contiene le informazioni a riguardo delle
@@ -149,7 +159,7 @@ inferDecl decl env = case decl of
         -- ... allora si verifica che la espressione che si sta cercando di assegnare
         -- è compatibile con il tipo della variabile. Se il tipo della espressione è un typeError
         -- non abbiamo bisogno di lanciare nuovi errori (questa è una costante lungo tutto il codice).
-        if isTypeError texp || isCompatible texp typ
+        if isTypeError texp || compatible (getType texp) typ
           then
             return $ (DefVar id typ texp, env')
           else do
@@ -190,7 +200,7 @@ inferDecl decl env = case decl of
         functionHandler e = do
           -- Creare nuovo scope avviato con i parametri e il nome della fun.
           newScope <- startFunScope e id params typ
-          (tstms, e') <- inferStms stms newScope
+          (tstms, e') <- inferStms stms newScope False
 
           -- Nel caso in cui stiam trattando una funzione, ma non è presente alcun
           -- return nel suo scope lo notifichiamo.
@@ -224,7 +234,7 @@ inferDecl decl env = case decl of
           case (exp, isTypeVoid typ) of
             -- PROCEDURA con assegnata FUNZIONE
             (EFunCall id' params', True) -> do
-              (stmt, e') <- inferStm (SProcCall id' params') e
+              (stmt, e') <- inferStm (SProcCall id' params') e False
               return (DefFun id params typ (DBlock [stmt]), e')
             -- PROCEDURA con assegnata EXP
             (_,True) -> do
@@ -239,7 +249,7 @@ inferDecl decl env = case decl of
             (_,False) -> do
               newScope <- startFunScope e id params typ
               texp <- inferExp exp newScope
-              if isTypeError texp || isCompatible texp typ 
+              if isTypeError texp || compatible (getType texp) typ 
                 then
                   return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
                 else do
@@ -258,27 +268,27 @@ inferBlock (DBlock stms) ftyp env = do
   return $ (DBlock tstms, env')
 -}
 
-inferStms :: [Stm] -> Env -> Logger ([Stm], Env)
-inferStms [] env = return ([], env)
-inferStms (stm:stms) env = do
-  (tstm, env') <- inferStm stm env
-  (tstms, env'') <- inferStms stms env'
+inferStms :: [Stm] -> Env -> Bool -> Logger ([Stm], Env)
+inferStms [] env _ = return ([], env)
+inferStms (stm:stms) env inLoop = do
+  (tstm, env') <- inferStm stm env inLoop
+  (tstms, env'') <- inferStms stms env' inLoop
   return $ (tstm:tstms, env'') 
 
 
-inferStm :: Stm  -> Env -> Logger (Stm, Env)
-inferStm stm env = case stm of
+inferStm :: Stm  -> Env -> Bool -> Logger (Stm, Env)
+inferStm stm env inLoop = case stm of
   SWhile exp stm' -> do
     -- texp è l'espressione annotata col tipo.
     texp <- inferExp exp env
     -- Se la condizione non ha tipo compatibile con Bool, allora si lancia un errore.
-    if not (isTypeError texp || isCompatible texp (TSimple SType_Bool))
+    if not (isTypeError texp || compatible (getType texp) (TSimple SType_Bool))
       then
         saveLog $ launchError (getLoc texp) (WrongWhileCondition exp (getType texp))
       else
         return ()
     -- viene inferito lo stm del while.
-    (tstm', env') <- inferStm stm' env
+    (tstm', env') <- inferStm stm' env True
     -- e nel caso in cui un return sia stato trovato all'interno del corpo del while
     -- si segnala che è stato trovato anche nello scope in cui il while è contenuto.
     if Env.hasReturn env' 
@@ -290,13 +300,13 @@ inferStm stm env = case stm of
   -------------------------------------------------------------------------------------------------------------------------------------------
   SIfElse exp stmif stmelse -> do
     texp <- inferExp exp env
-    if not (isTypeError texp || isCompatible texp (TSimple SType_Bool))
+    if not (isTypeError texp || compatible (getType texp) (TSimple SType_Bool))
       then 
         saveLog $ launchError (getLoc texp) (WrongIfCondition exp (getType texp))
       else return ()
 
-    (tstmif, envif) <- inferStm stmif env
-    (tstmelse, envelse) <- inferStm stmelse env
+    (tstmif, envif) <- inferStm stmif env inLoop
+    (tstmelse, envelse) <- inferStm stmelse env inLoop
     -- Solo nel caso in cui sia il corpo dell'if che quello dell'else contengono
     -- una istruzione return viene segnalata la presenza di un return nello scope in 
     -- cui la istruzione if...else è contenuta.
@@ -321,14 +331,14 @@ inferStm stm env = case stm of
     where
       inferBlock (DBlock []) _ env = return $ (DBlock [], env)
       inferBlock (DBlock stms) ftyp env = do
-        (tstms, env') <- inferStms stms (Env.addScope env ftyp) 
+        (tstms, env') <- inferStms stms (Env.addScope env ftyp) inLoop
         return $ (DBlock tstms, env')
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   SAssign lexp exp -> do
     tlexp <- inferLExp lexp env
     texp <- inferExp exp env
-    if not (isTypeError tlexp || isTypeError texp || isCompatible texp (getType tlexp))
+    if not (isTypeError tlexp || isTypeError texp || compatible (getType texp) (getType tlexp))
       then 
         saveLog $ launchError (getLoc texp) (WrongExpAssignType exp (getType texp) (getType tlexp) lexp)
       else
@@ -352,7 +362,7 @@ inferStm stm env = case stm of
             else 
               -- Nel caso in cui l'espressione ritornata sia compatibile con il tipo
               -- dello scope viene segnalato che un return adeguato nello scope è stato trovato.
-              if isCompatible texp ftyp
+              if compatible (getType texp) ftyp
                 then
                   return $ (SReturnExp preturn texp, Env.setReturnFound env)
                 else do
@@ -373,20 +383,20 @@ inferStm stm env = case stm of
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   -- DA GESTIRE - PROPOSTE SOTTO
-  SBreak pbreak@(PBreak (loc,ident)) -> return (SBreak pbreak, env)
-  SContinue pcontinue@(PContinue (loc,ident)) -> return (SContinue pcontinue, env)
-  --SBreak pbreak@(PBreak (loc,ident)) -> do
-  --  if inLoop
-  --    then return (SBreak pbreak, env)
-  --    else do
-  --      saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
-  --      return (SBreak pbreak, env)
-  --SContinue pcontinue@(PContinue (loc,ident)) -> do
-  --  if inLoop
-  --    then return (SContinue pcontinue, env)
-  --    else do
-  --      saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
-  --      return (SContinue pcontinue, env)
+  --SBreak pbreak@(PBreak (loc,ident)) -> return (SBreak pbreak, env)
+  --SContinue pcontinue@(PContinue (loc,ident)) -> return (SContinue pcontinue, env)
+  SBreak pbreak@(PBreak (loc,ident)) -> do
+    if inLoop
+      then return (SBreak pbreak, env)
+      else do
+        saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
+        return (SBreak pbreak, env)
+  SContinue pcontinue@(PContinue (loc,ident)) -> do
+    if inLoop
+      then return (SContinue pcontinue, env)
+      else do
+        saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
+        return (SContinue pcontinue, env)
 -------------------------------------------------------------------------------------------------------------------------------------------
                                     -- lista di liste ArgExp [Exp]
   SProcCall id@(PIdent (loc, ident)) params -> do
@@ -457,7 +467,7 @@ inferLExp lexp env = case lexp of
          -- Nel caso l'accesso venga effettuato su di una variabile che non ha tipo typ bisogna notificare l'errore.
          -- Un ulteriore vincolo è dato dal tipo dell'espressione contenente l'indice di accesso, che deve avere tipo
          -- compatibile con SType_Int.
-         case (tlexp , isCompatible texp (TSimple SType_Int)) of
+         case (tlexp , compatible (getType texp) (TSimple SType_Int)) of
            (LExpTyped _ (TArray typ _) loc, True) -> return $ LExpTyped (LArr tlexp texp) typ loc
            (LExpTyped _ (TArray typ _) loc, False) -> do
              saveLog $ launchError loc (ArraySubscriptNotInt exp (getType texp))
@@ -509,7 +519,7 @@ inferExp exp env = case exp of
           -- Prende una lista di espressioni tipate, un tipo, e ritorna una coppia con il primo elemento
           -- che dice se si è trovato almeno un elemento con tipo (TSimple SType_Error), ed il secondo elemento che dice
           -- se tutte le espressioni hanno tipo type o meno.
-          inferArrayAux texps = ( any (\x -> getType x == (TSimple SType_Error)) texps, all (\x -> isCompatible x (maximum (map getType texps))) texps)
+          inferArrayAux texps = ( any (\x -> getType x == (TSimple SType_Error)) texps, all (\x -> compatible (getType x) (maximum (map getType texps))) texps)
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------
@@ -554,7 +564,7 @@ inferExp exp env = case exp of
  -------------------------------------------------------------------------------------------------------------------------------------------
   ENot exp -> do
     texp <- inferExp exp env
-    if isTypeError texp || isCompatible texp (TSimple SType_Bool)
+    if isTypeError texp || compatible (getType texp) (TSimple SType_Bool)
       then return (ExpTyped (ENot texp) (getType texp) (getLoc texp))
       else do
         saveLog $ launchError (getLoc texp) (WrongNotApplication exp (getType texp))
@@ -563,7 +573,7 @@ inferExp exp env = case exp of
 -------------------------------------------------------------------------------------------------------------------------------------------
   ENeg exp -> do
     texp <- inferExp exp env
-    if isTypeError texp || isCompatible texp (TSimple SType_Float)
+    if isTypeError texp || compatible (getType texp) (TSimple SType_Float)
       then return $ ExpTyped (ENeg texp) (getType texp) (getLoc texp)
       else do
         saveLog $ launchError (getLoc texp) (WrongNegApplication exp (getType texp))
@@ -596,24 +606,18 @@ inferExp exp env = case exp of
     texp_cond <- inferExp exp_cond env
     texp_if <- inferExp exp_if env
     texp_else <- inferExp exp_else env
-    if not (isTypeError texp_cond || isCompatible texp_cond (TSimple SType_Bool))
+    if not (isTypeError texp_cond || compatible (getType texp_cond) (TSimple SType_Bool))
       then do
         saveLog $ launchError (getLoc texp_cond) (WrongIfCondition exp_cond (getType texp_cond))
         return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_cond)
-      else case (isTypeError texp_if, isTypeError texp_else) of
-        (True, False) -> do
-          saveLog $ launchError (getLoc texp_if) (WrongIfElseExp exp_if)
-          return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_if)
-        (False, True) -> do
-          saveLog $ launchError (getLoc texp_else) (WrongIfElseExp exp_else)
-          return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_else)
-        (True, True) -> do
-          saveLog $ launchError (getLoc texp_if) (WrongIfElseExp exp_if)
-          saveLog $ launchError (getLoc texp_else) (WrongIfElseExp exp_else)
-          return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_if)
-        (False, False) -> return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (max (getType texp_if) (getType texp_else)) (getCorrectLocation texp_if texp_else)
-  where
-    getCorrectLocation te1 te2 = if((getType te1) <= (getType te2)) then getLoc te2 else getLoc te1
+      else
+        let maxTyp = max (getType texp_if) (getType texp_else) in
+          case (isTypeError texp_if || isTypeError texp_else, (compatible (getType texp_if) maxTyp  && compatible (getType texp_else) maxTyp)) of
+            (True,_) -> return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_cond)
+            (False, True) -> return $ ExpTyped (EIfElse texp_cond texp_if texp_else) maxTyp (getLoc texp_cond)
+            (False, False) -> do
+              saveLog $ launchError (getLoc texp_cond) (WrongIfElseExp texp_if texp_else)
+              return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_cond)
 
 -- Prese due espressioni ed un operatore binario ritorna la corrispondente espressione tipizzata
 inferBinOp :: Exp -> Op -> Exp -> Env -> Logger Exp
