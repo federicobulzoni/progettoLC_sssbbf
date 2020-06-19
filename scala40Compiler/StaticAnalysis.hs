@@ -32,13 +32,13 @@ isTypeVoid typ = typ == (TSimple SType_Void)
 
 -- PROPOSTA VELOCE PER RISOLVERE COMPATIBILITA' TIPI
 
-compatible :: TypeSpec -> Exp -> Bool
-compatible (TSimple SType_Int) texp = elem (getType texp) [TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
-compatible (TSimple SType_Float) texp = elem (getType texp) [SType_Float, TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
-compatible (TSimple SType_Char) texp = elem (getType texp) [TSimple SType_Char, TSimple SType_Bool]
-compatible (TSimple SType_Bool) texp = elem (getType texp) [TSimple SType_Bool]
-compatible (TSimple SType_String) texp = elem (getType texp) [TSimple SType_String]
-compatible _ = False
+--compatible :: TypeSpec -> Exp -> Bool
+--compatible (TSimple SType_Int) texp = elem (getType texp) [TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
+--compatible (TSimple SType_Float) texp = elem (getType texp) [SType_Float, TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
+--compatible (TSimple SType_Char) texp = elem (getType texp) [TSimple SType_Char, TSimple SType_Bool]
+--compatible (TSimple SType_Bool) texp = elem (getType texp) [TSimple SType_Bool]
+--compatible (TSimple SType_String) texp = elem (getType texp) [TSimple SType_String]
+--compatible _ = False
 
 ------------------------------------------------------------------------------------------------------------------------
 

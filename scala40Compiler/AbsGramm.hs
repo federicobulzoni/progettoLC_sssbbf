@@ -99,15 +99,9 @@ data Stm
 data OpAssign = ProdEq | DivEq | ModEq | PlusEq | MinusEq | PowEq
   deriving (Eq, Ord, Show, Read)
 
-<<<<<<< HEAD
-data Params 
-  = ParExp [Exp]
-  | ParExpTyped [(Exp,TypeSpec)]
-=======
 data Args 
   = ArgExp [Exp]
   | ArgExpTyped [(Exp,TypeSpec)]
->>>>>>> 92611c6e3107eec98bd409827e78276175e8317e
   deriving (Eq, Ord, Show, Read)
 
 data Op

@@ -16,4 +16,6 @@ def main () = {
 
 
 	var ciao : Array[Float](3) = Array('c',1,True);
+	var oo : Int = if (4 == 3) 4 else 4;
+	break;
 }
