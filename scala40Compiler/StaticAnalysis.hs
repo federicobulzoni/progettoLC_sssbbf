@@ -437,15 +437,8 @@ inferStm stm env inLoop = case stm of
     texp_init <- inferExp exp_init env
     texp_end  <- inferExp exp_end env
     texp_step <- inferExp exp_step env
-    if not $ compatible (getType texp_init) (TSimple SType_Int)
-      then saveLog $ launchError loc (WrongExpType exp_init (getType texp_init) (TSimple SType_Int) )
-      else return ()
-    if not $ compatible (getType texp_end) (TSimple SType_Int)
-      then saveLog $ launchError loc (WrongExpType exp_end (getType texp_end) (TSimple SType_Int) )
-      else return ()
-    if not $ compatible (getType texp_step) (TSimple SType_Int)
-      then saveLog $ launchError loc (WrongExpType exp_step (getType texp_step) (TSimple SType_Int) )
-      else return ()
+    
+    mapM (checkCompatible loc) [texp_init, texp_end, texp_step]
 
     (tstm, env') <- inferStm (addIteratorDec stm) env False
 
@@ -460,6 +453,22 @@ inferStm stm env inLoop = case stm of
       addIteratorDec (SBlock (DBlock stms)) = SBlock $ DBlock $ (SDecl $ DecVar id (TSimple SType_Int)):stms
       addIteratorDec _                      = SBlock $ DBlock $ [(SDecl $ DecVar id (TSimple SType_Int)), stm]
 
+      checkCompatible loc' texp = do
+        if not $ compatible (getType texp) (TSimple SType_Int)
+          then saveLog $ launchError loc' (WrongExpType exp_init (getType texp) (TSimple SType_Int) )
+          else return ()
+
+  SDoWhile stm exp -> do
+    texp <- inferExp exp env
+    if not (isTypeError texp || compatible (getType texp) (TSimple SType_Bool))
+      then saveLog $ launchError (getLoc texp) (WrongWhileCondition exp (getType texp))
+      else return ()
+    (tstm, env') <- inferStm stm env True
+    if Env.hasReturn env'
+      then return $ (SDoWhile tstm texp, Env.setReturnFound env)
+      else return $ (SDoWhile tstm texp, env)
+      
+    
 inferLExp :: LExp -> Env -> Logger LExp
 inferLExp lexp env = case lexp of
   LRef lexp' -> do

@@ -321,21 +321,6 @@ genExp addr texp@(ExpTyped exp _ _) typ = case exp of
             getElementType (TArray typ' _) = typ'
             getElementType _ = error $ "Fatal error."
 
-            --SIfElse texp@(ExpTyped exp _ _) stm_if stm_else -> do
-            --    labelNext <- newLabel
-            --    labelElse <- if isBlockEmpty stm_else then return labelNext else newLabel
-            --    genCondition texp Fall labelElse
-            --    genStm stm_if
-            --    -- se si tratta di uno statement if senza else, evito di generare etichette inutili
-            --    if (not $ isBlockEmpty stm_else)
-            --        then do
-            --            out $ (Goto labelNext)
-            --            out $ (Lab labelElse)
-            --            genStm stm_else
-            --        else return ()
-            --    out $ Lab labelNext
-
-
     EIfElse texp_cond texp_if texp_else -> do
         addr_if <- genExpAddr texp_if (getType texp)
         addr_else <- genExpAddr texp_else (getType texp)
@@ -402,6 +387,7 @@ hasResult _ = False
 -- generazione indirizzo per le L-Expression
 genLexp :: LExp -> TacState Addr
 genLexp tlexp@(LExpTyped lexp typ _) = case lexp of
+
     LIdentMod (PIdent (dloc,ident)) mode -> case (needsDeref mode, hasResult mode) of
         (_,True) -> return $ buildVarCopyAddress ident dloc
         (False,_) -> return $ buildVarAddress ident dloc
@@ -499,10 +485,22 @@ genStm stm = case stm of
         genExp (buildVarAddress ident loc) texp_init (TSimple SType_Int)
         addrStep <- genExpAddr texp_step (TSimple SType_Int)
         out $ Lab labelFor
-        genCondition (ExpTyped (EOp (ExpTyped (ELExp (LExpTyped (LIdent id) (TSimple SType_Int) loc)) (TSimple SType_Int) loc) (AbsGramm.LessEq) texp_end) (TSimple SType_Bool) loc) Fall labelFalse
+        genCondition (ExpTyped (EOp (ExpTyped (ELExp (LExpTyped (LIdentMod id AbsGramm.NoParam) (TSimple SType_Int) loc)) (TSimple SType_Int) loc) (AbsGramm.LessEq) texp_end) (TSimple SType_Bool) loc) Fall labelFalse
         genStm tstm
         out $ AssignBinOp (buildVarAddress ident loc) (buildVarAddress ident loc) (AbsTAC.PlusInt) addrStep (TACInt)
         out $ Goto labelFor
+        out $ Lab labelFalse
+
+    SDoWhile tstm texp -> do
+        labelWhile <- newLabel
+        labelContinue <- newLabel
+        labelFalse <- newLabel
+        setBreak labelFalse
+        setContinue labelContinue
+        out $ Lab labelWhile
+        genStm tstm
+        out $ Lab labelContinue
+        genCondition texp labelWhile Fall
         out $ Lab labelFalse
 
 
