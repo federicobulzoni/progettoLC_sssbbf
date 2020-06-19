@@ -165,9 +165,8 @@ genDecl decl = case decl of
         case (lastIsReturn,typ) of
             (False, TSimple SType_Void) -> out $ (ReturnVoid)
             (False, _ ) -> do
-                addrDef <- newTemp
-                genExp addrDef (buildDefaultValue typ) typ
-                out $ (ReturnAddr addrDef)
+                addrExp <- genExpAddr (buildDefaultValue typ) typ
+                out $ (ReturnAddr addrExp)
             otherwise -> return ()
         case typ of
             TSimple SType_Void -> out $ Comment "End procedure"
@@ -430,16 +429,29 @@ genStm stm = case stm of
             (LIdent id@(PIdent (dloc,ident))) -> 
                 genExp (buildVarAddress ident dloc) texp typ
 
-    SWhile texp@(ExpTyped exp _ _) tstm -> do
+    SWhile texp tstm -> do
         labelWhile <- newLabel
         labelFalse <- newLabel
         setBreak labelFalse
         setContinue labelWhile
-        out $ (Lab labelWhile)
+        out $ Lab labelWhile
         genCondition texp Fall labelFalse
         genStm tstm
-        out $ (Goto labelWhile)
-        out $ (Lab labelFalse)
+        out $ Goto labelWhile
+        out $ Lab labelFalse
+
+    SFor id@(PIdent (loc,ident)) texp_init texp_end texp_step tstm -> do
+        labelFor <- newLabel
+        labelFalse <- newLabel
+        genExp (buildVarAddress ident loc) texp_init (TSimple SType_Int)
+        addrStep <- genExpAddr texp_step (TSimple SType_Int)
+        out $ Lab labelFor
+        genCondition (ExpTyped (EOp (ExpTyped (ELExp (LExpTyped (LIdent id) (TSimple SType_Int) loc)) (TSimple SType_Int) loc) (AbsGramm.LessEq) texp_end) (TSimple SType_Bool) loc) Fall labelFalse
+        genStm tstm
+        out $ AssignBinOp (buildVarAddress ident loc) (buildVarAddress ident loc) (AbsTAC.PlusInt) addrStep (TACInt)
+        out $ Goto labelFor
+        out $ Lab labelFalse
+
 
     SIfElse texp@(ExpTyped exp _ _) stm_if stm_else -> do
         labelNext <- newLabel

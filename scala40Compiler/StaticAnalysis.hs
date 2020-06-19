@@ -433,6 +433,32 @@ inferStm stm env inLoop = case stm of
               otherwise -> return ()
             return (SProcCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zip x y))) tparams typ_args) , env)
 
+  SFor id@(PIdent (loc, ident)) exp_init exp_end exp_step stm -> do
+    texp_init <- inferExp exp_init env
+    texp_end  <- inferExp exp_end env
+    texp_step <- inferExp exp_step env
+    if not $ compatible (getType texp_init) (TSimple SType_Int)
+      then saveLog $ launchError loc (WrongExpType exp_init (getType texp_init) (TSimple SType_Int) )
+      else return ()
+    if not $ compatible (getType texp_end) (TSimple SType_Int)
+      then saveLog $ launchError loc (WrongExpType exp_end (getType texp_end) (TSimple SType_Int) )
+      else return ()
+    if not $ compatible (getType texp_step) (TSimple SType_Int)
+      then saveLog $ launchError loc (WrongExpType exp_step (getType texp_step) (TSimple SType_Int) )
+      else return ()
+
+    (tstm, env') <- inferStm (addIteratorDec stm) env False
+
+    if Env.hasReturn env'
+      then return ( SFor id texp_init texp_end texp_step (getForStm stm tstm), Env.setReturnFound env)
+      else return ( SFor id texp_init texp_end texp_step (getForStm stm tstm), env)
+
+    where
+      getForStm (SBlock (DBlock stms)) (SBlock (DBlock (s:tstms))) = SBlock $ DBlock tstms
+      getForStm _ (SBlock (DBlock (s1:[s2]))) = s2
+
+      addIteratorDec (SBlock (DBlock stms)) = SBlock $ DBlock $ (SDecl $ DecVar id (TSimple SType_Int)):stms
+      addIteratorDec _                      = SBlock $ DBlock $ [(SDecl $ DecVar id (TSimple SType_Int)), stm]
 
 inferLExp :: LExp -> Env -> Logger LExp
 inferLExp lexp env = case lexp of
