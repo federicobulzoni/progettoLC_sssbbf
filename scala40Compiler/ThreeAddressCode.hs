@@ -490,6 +490,7 @@ genStm stm = case stm of
                 
 
     SWhile texp tstm -> do
+        out . Comment $ "Start: While@" ++ (printTree $ getLoc texp)
         oldBreak <- getBreak
         oldContinue <- getContinue
         labelWhile <- newLabel
@@ -503,8 +504,10 @@ genStm stm = case stm of
         out $ Lab labelFalse
         setBreak oldBreak
         setContinue oldContinue
+        out . Comment $ "End: While@" ++ (printTree $ getLoc texp)
 
     SFor id@(PIdent (loc,ident)) texp_init texp_end texp_step tstm -> do
+        out . Comment $ "Start: For@" ++ printTree loc
         oldBreak <- getBreak
         oldContinue <- getContinue
         labelFor <- newLabel
@@ -521,8 +524,10 @@ genStm stm = case stm of
         out $ Lab labelFalse
         setBreak oldBreak
         setContinue oldContinue
+        out . Comment $ "End: For@" ++ printTree loc
 
     SDoWhile tstm texp -> do
+        out . Comment $ "Start: Do-While@" ++ (printTree (getLoc texp))
         oldBreak <- getBreak
         oldContinue <- getContinue
         labelWhile <- newLabel
@@ -537,9 +542,11 @@ genStm stm = case stm of
         out $ Lab labelFalse
         setBreak oldBreak
         setContinue oldContinue
+        out . Comment $ "End: Do-While@" ++ (printTree $ getLoc texp)
 
 
-    SIfElse texp@(ExpTyped exp _ _) stm_if stm_else -> do
+    SIfElse texp@(ExpTyped exp _ loc) stm_if stm_else -> do
+        out . Comment $ "Start: If-Else@" ++ printTree loc
         labelNext <- newLabel
         labelElse <- if isBlockEmpty stm_else then return labelNext else newLabel
         genCondition texp Fall labelElse
@@ -552,6 +559,8 @@ genStm stm = case stm of
                 genStm stm_else
             else return ()
         out $ Lab labelNext
+        out . Comment $ "End: If-Else@" ++ printTree loc
+
   
     SProcCall (PIdent (loc, ident)) params -> do
         genParams params
