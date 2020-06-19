@@ -47,13 +47,13 @@ setContinue label = do
     (k, l, revcode, funs, found_continue, found_break, o) <- get
     put (k, l, revcode, funs, label, found_break, o)
 
-foundBreak :: TacState Label 
-foundBreak = do
+getBreak :: TacState Label 
+getBreak = do
     (k, l, revcode, funs, found_continue, found_break, o) <- get
     return found_break
 
-foundContinue :: TacState Label 
-foundContinue = do
+getContinue :: TacState Label 
+getContinue = do
     (k, l, revcode, funs, found_continue, found_break, o) <- get
     return found_continue
 
@@ -490,6 +490,8 @@ genStm stm = case stm of
                 
 
     SWhile texp tstm -> do
+        oldBreak <- getBreak
+        oldContinue <- getContinue
         labelWhile <- newLabel
         labelFalse <- newLabel
         setBreak labelFalse
@@ -499,6 +501,8 @@ genStm stm = case stm of
         genStm tstm
         out $ Goto labelWhile
         out $ Lab labelFalse
+        setBreak oldBreak
+        setContinue oldContinue
 
     SFor id@(PIdent (loc,ident)) texp_init texp_end texp_step tstm -> do
         labelFor <- newLabel
@@ -513,6 +517,8 @@ genStm stm = case stm of
         out $ Lab labelFalse
 
     SDoWhile tstm texp -> do
+        oldBreak <- getBreak
+        oldContinue <- getContinue
         labelWhile <- newLabel
         labelContinue <- newLabel
         labelFalse <- newLabel
@@ -523,6 +529,8 @@ genStm stm = case stm of
         out $ Lab labelContinue
         genCondition texp labelWhile Fall
         out $ Lab labelFalse
+        setBreak oldBreak
+        setContinue oldContinue
 
 
     SIfElse texp@(ExpTyped exp _ _) stm_if stm_else -> do
@@ -551,12 +559,12 @@ genStm stm = case stm of
         out $ ReturnAddr addrExp
     
     SBreak pbreak -> do
-        labelBreak <- foundBreak
+        labelBreak <- getBreak
         out $ Comment "Break Goto"
         out $ Goto labelBreak
 
     SContinue pcontinue -> do
-        labelContinue <- foundContinue
+        labelContinue <- getContinue
         out $ Comment "Continue Goto"
         out $ Goto labelContinue
     where 
