@@ -433,7 +433,42 @@ inferStm stm env inLoop = case stm of
           where typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
                 typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses
 
+  SFor id@(PIdent (loc, ident)) exp_init exp_end exp_step stm -> do
+    texp_init <- inferExp exp_init env
+    texp_end  <- inferExp exp_end env
+    texp_step <- inferExp exp_step env
+    
+    mapM (checkCompatible loc) [texp_init, texp_end, texp_step]
 
+    (tstm, env') <- inferStm (addIteratorDec stm) env False
+
+    if Env.hasReturn env'
+      then return ( SFor id texp_init texp_end texp_step (getForStm stm tstm), Env.setReturnFound env)
+      else return ( SFor id texp_init texp_end texp_step (getForStm stm tstm), env)
+
+    where
+      getForStm (SBlock (DBlock stms)) (SBlock (DBlock (s:tstms))) = SBlock $ DBlock tstms
+      getForStm _ (SBlock (DBlock (s1:[s2]))) = s2
+
+      addIteratorDec (SBlock (DBlock stms)) = SBlock $ DBlock $ (SDecl $ DecVar id (TSimple SType_Int)):stms
+      addIteratorDec _                      = SBlock $ DBlock $ [(SDecl $ DecVar id (TSimple SType_Int)), stm]
+
+      checkCompatible loc' texp = do
+        if not $ compatible (getType texp) (TSimple SType_Int)
+          then saveLog $ launchError loc' (WrongExpType exp_init (getType texp) (TSimple SType_Int) )
+          else return ()
+
+  SDoWhile stm exp -> do
+    texp <- inferExp exp env
+    if not (isTypeError texp || compatible (getType texp) (TSimple SType_Bool))
+      then saveLog $ launchError (getLoc texp) (WrongWhileCondition exp (getType texp))
+      else return ()
+    (tstm, env') <- inferStm stm env True
+    if Env.hasReturn env'
+      then return $ (SDoWhile tstm texp, Env.setReturnFound env)
+      else return $ (SDoWhile tstm texp, env)
+      
+    
 inferLExp :: LExp -> Env -> Logger LExp
 inferLExp lexp env = case lexp of
   LRef lexp' -> do
@@ -630,17 +665,6 @@ inferBinOp expl op expr env = do
   case ((getTypeOp op), (getType texpl), (getType texpr) ) of
     (_ , TSimple SType_Error, _ ) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
     (_ , _ , TSimple SType_Error) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
-    
-    (EqOp, typl, typr) ->
-      if typl == typr || (max typl typr) < (TSimple SType_String)
-      -- if isConsistent EqOp typl typr
-        then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
-        else returnBinOpError texpl op texpr
-    (RelOp, typl, typr) ->
-      if (max typl typr) < (TSimple SType_String)
-      -- if isConsistent RelOp typl typr
-        then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
-        else returnBinOpError texpl op texpr
     (BooleanOp, typl, typr) ->
       if typl == (TSimple SType_Bool) && typr == (TSimple SType_Bool)
         then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
@@ -650,6 +674,11 @@ inferBinOp expl op expr env = do
         (TSimple SType_String) -> returnBinOpError texpl op texpr
         (TSimple SType_Float) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Float) (getLoc texpl)
         _ -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Int) (getLoc texpl)
+    (_, typl, typr) ->
+      if compatible typr typl &&  compatible typl typr
+        then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
+        else returnBinOpError texpl op texpr
+    
   where
     returnBinOpError texpl op texpr = do
       saveLog $ launchError (getLoc texpl) (WrongOpApplication op (getType texpl) (getType texpr))

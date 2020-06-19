@@ -10,7 +10,7 @@ def main() = {
 	var x : Int = 1;
 	var y : Int = 2;
 	var w : Int = 5;
-	foo(w)(1)(x)(y);
+	foo(1)(1)(x)(y);
 	var z : **Int;
 	**z = 4;
 

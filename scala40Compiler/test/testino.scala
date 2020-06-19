@@ -1,7 +1,7 @@
 def prova(ref a : Int)(ref b : Float, ref c : *Char) : Float = a + b;
 def prova2(ref a : Int)(ref b : Float, ref c : *Char) = writeInt(3);
 //def arduo () : Float = if (4 == 3) True else if (3 > 1) False else 3;
-def main () = {
+def main ()  = {
 	var c : Int = 3;
 	var b : Array[*Int](3);
 	var a : Array[Array[*Int](3)](2);
@@ -25,4 +25,27 @@ def main () = {
 		}
 		continue;
 	}	
+
+	for (c <- 1 until True by 2) t = 3;
+	
+}
+
+def foo () : Int = {
+	def foo2 () = {
+
+	}
+	var t : Int = 4;
+	while ( "ciao" == "ciao") t = 3;
+	for (c <- 1 until True by True) {
+		t = 3;
+		return 3;
+	}
+
+	do{
+		t = 3;
+		continue;
+		t = 1;
+		break;
+	}while(3 == 3);
+	return True;
 }
