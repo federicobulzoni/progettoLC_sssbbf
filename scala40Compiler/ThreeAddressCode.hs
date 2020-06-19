@@ -12,13 +12,13 @@ import Printer
 import Typed
 import StateManager
 
-getTACCode :: (Int, Int, [TAC], [[TAC]], Label, Label, Label) -> [TAC]
-getTACCode (k, l, code, _, _, _, _) = code
+getTACCode :: (Int, Int, [TAC], [[TAC]], Label, Label, Label, TypeSpec) -> [TAC]
+getTACCode (k, l, code, _, _, _, _, _) = code
 
 -- Entry point. Genera il codice TAC del programma prog.
 -- hasMain = True, se nell'analisi di semantica statica è stato trovato un main
 genTAC :: Program -> Bool -> [TAC]
-genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [[]], (LabStm $ -1), (LabStm $ -1), (LabStm $ -1))
+genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [[]], (LabStm $ -1), (LabStm $ -1), (LabStm $ -1), (TSimple SType_Void))
 
 
 genProg :: Program -> Bool -> TacState ()
@@ -77,6 +77,8 @@ genDecl decl = case decl of
 
         out $ Comment "Preamble"
         genPreamble params
+        oldFunType <- getFunType
+        setFunType typ
         out $ Comment "Body"
         
         -- controllo della presenza di un return come ultima istruzione e generazione istruzioni interne.
@@ -96,6 +98,7 @@ genDecl decl = case decl of
             otherwise -> out $ Comment "End function"
         -- chiusura dello stream contenente le istruzioni della funzione
         pushCurrentStream
+        setFunType oldFunType
         isGlobal <- isGlobalScope
         -- controllo per vedere se siamo in presenza del main (nello scope globale)
         if ident == "main" && isGlobal
@@ -106,7 +109,7 @@ genDecl decl = case decl of
                 return ()
     where
         isGlobalScope = do
-            (k, l, revcode, funs, found_continue, found_break, o) <- get
+            (k, l, revcode, funs, found_continue, found_break, o, t) <- get
             return $ length funs == 1 
 
 genPreamble :: [ParamClause] -> TacState ()
@@ -471,7 +474,13 @@ genStm stm = case stm of
 
     SReturnExp  preturn texp -> do
         addrExp <- genExpAddr texp (getType texp)
-        out $ ReturnAddr addrExp
+        funType <- getFunType
+        if (funType /= getType texp && funType /= (TSimple SType_Void))
+            then do
+                castTmp <- newTemp
+                out $ AssignUnOp castTmp (Cast $ convertToTACType funType) addrExp (convertToTACType funType)
+                out $ ReturnAddr castTmp
+            else out $ ReturnAddr addrExp
     
     SBreak pbreak -> do
         labelBreak <- getBreak
