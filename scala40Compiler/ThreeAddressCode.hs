@@ -18,92 +18,107 @@ type TacState a = State (
     [TAC],    -- codice
     [[TAC]],   -- funzioni
     Label,     -- label continue
-    Label      -- label break
+    Label,      -- label break
+    Label      -- label per out of bounds error
     ) 
     a
 
+setOutOfBounds :: TacState ()
+setOutOfBounds = do
+  errLabel <- newLabel
+  pushMain $ Call (LabFun "errorOutOfBounds" (0,0)) 0
+  pushMain $ Lab errLabel
+  pushMain $ Comment "Out of bounds exception"
+  (k, l, revcode, funs, found_continue, found_break, _) <- get
+  put (k, l, revcode, funs, found_continue, found_break, errLabel)
+
+getOutOfBoundsLabel :: TacState Label
+getOutOfBoundsLabel = do
+  (k, l, revcode, funs, found_continue, found_break, o) <- get
+  return o
+
 setBreak :: Label -> TacState ()
 setBreak label = do
-    (k, l, revcode, funs, found_continue, found_break) <- get
-    put (k, l, revcode, funs, found_continue, label)
+    (k, l, revcode, funs, found_continue, found_break, o) <- get
+    put (k, l, revcode, funs, found_continue, label, o)
 
 setContinue :: Label -> TacState ()
 setContinue label = do
-    (k, l, revcode, funs, found_continue, found_break) <- get
-    put (k, l, revcode, funs, label, found_break)
+    (k, l, revcode, funs, found_continue, found_break, o) <- get
+    put (k, l, revcode, funs, label, found_break, o)
 
 foundBreak :: TacState Label 
 foundBreak = do
-    (k, l, revcode, funs, found_continue, found_break) <- get
+    (k, l, revcode, funs, found_continue, found_break, o) <- get
     return found_break
 
 foundContinue :: TacState Label 
 foundContinue = do
-    (k, l, revcode, funs, found_continue, found_break) <- get
+    (k, l, revcode, funs, found_continue, found_break, o) <- get
     return found_continue
 
 -- funzione per l'inserimento di un'istruzione TAC in testa
 -- alla lista di istruzioni della funzione in cui è utilizzata
 out :: TAC -> TacState ()
 out instr = do
-    (k, l, revcode, funs, found_continue, found_break) <- get
+    (k, l, revcode, funs, found_continue, found_break, o) <- get
     -- il codice globale rimane il medesimo, si aggiunge solo l'istruzione 
     -- in testa al suo "scope" di utilizzo
-    put (k, l, revcode, (instr : (head funs)) : (tail funs), found_continue, found_break)
+    put (k, l, revcode, (instr : (head funs)) : (tail funs), found_continue, found_break, o)
 
 -- inserimento delle istruzioni di una funzione all'interno del codice principale
 pushCurrentStream :: TacState ()
 pushCurrentStream = do
-    (k, l, revcode, funs, found_continue, found_break) <- get
+    (k, l, revcode, funs, found_continue, found_break, o) <- get
     if length funs == 1 
         then
             -- nel caso in cui fossimo nello scope globale le istruzioni
             -- vengono inserite in coda al codice per far sì che chiamando
             -- la funzione reverse in genTAC, esse compaiano sempre in testa
-            put (k, l, revcode ++ (head funs), tail funs, found_continue, found_break)
+            put (k, l, revcode ++ (head funs), tail funs, found_continue, found_break, o)
         else
-            put (k, l,  (head funs) ++ revcode, tail funs, found_continue, found_break)
+            put (k, l,  (head funs) ++ revcode, tail funs, found_continue, found_break, o)
 
 -- inserimento istruzione Call al main se presente
 pushMain :: TAC -> TacState ()
 pushMain instr = do
-    (k, l, revcode, funs, found_continue, found_break) <- get
-    put (k, l, revcode ++ [instr], funs, found_continue, found_break)
+    (k, l, revcode, funs, found_continue, found_break, o) <- get
+    put (k, l, revcode ++ [instr], funs, found_continue, found_break, o)
 
 -- inserimento dell'etichetta in coda al codice se manca una funzione main
 pushLastLabel :: Label -> TacState ()
 pushLastLabel label = do
-    (k,l,revcode,funs, found_continue, found_break) <- get
-    put (k, l, [Lab label] ++ revcode, funs, found_continue, found_break)
+    (k,l,revcode,funs, found_continue, found_break, o) <- get
+    put (k, l, [Lab label] ++ revcode, funs, found_continue, found_break, o)
 
 -- creazione di una nuova stream per quando si crea un blocco (funzione)
 -- utile per definire l'ordine delle funzioni innestate
 createStream :: TacState ()
 createStream = do
-    (k, l, revcode, funs, found_continue, found_break) <- get
-    put (k,l, revcode, [] : funs, found_continue, found_break)
+    (k, l, revcode, funs, found_continue, found_break, o) <- get
+    put (k,l, revcode, [] : funs, found_continue, found_break, o)
 
 
 newTemp :: TacState Addr
 newTemp = do
-    (k, l, revcode, funs, found_continue, found_break) <- get
-    put (k+1, l, revcode, funs, found_continue, found_break)
+    (k, l, revcode, funs, found_continue, found_break, o) <- get
+    put (k+1, l, revcode, funs, found_continue, found_break, o)
     return $ Temp k
 
 newLabel :: TacState Label
 newLabel = do
-    (k, l , revcode, funs, found_continue, found_break) <- get
-    put (k, l+1, revcode, funs, found_continue, found_break)
+    (k, l , revcode, funs, found_continue, found_break, o) <- get
+    put (k, l+1, revcode, funs, found_continue, found_break, o)
     return $ LabStm l
   
 
-getTACCode :: (Int, Int, [TAC], [[TAC]], Label, Label) -> [TAC]
-getTACCode (k, l, code, _, _, _) = code
+getTACCode :: (Int, Int, [TAC], [[TAC]], Label, Label, Label) -> [TAC]
+getTACCode (k, l, code, _, _, _, _) = code
 
 -- Entry point. Genera il codice TAC del programma prog.
 -- hasMain = True, se nell'analisi di semantica statica è stato trovato un main
 genTAC :: Program -> Bool -> [TAC]
-genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [[]], (LabStm $ -1), (LabStm $ -1))
+genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [[]], (LabStm $ -1), (LabStm $ -1), (LabStm $ -1))
 
 
 genProg :: Program -> Bool -> TacState ()
@@ -114,12 +129,14 @@ genProg (Prog decls) hasMain = do
             -- se non esiste si crea un'etichetta alla fine del programma con un relativo
             -- Goto dopo le dichiarazioni globali
             mainLabel <- newLabel
+            setOutOfBounds
             pushMain $ Goto mainLabel
             pushMain $ Comment "No main found"
             genDecls decls
             pushLastLabel mainLabel
             pushCurrentStream
         else do
+            setOutOfBounds
             genDecls decls
             pushCurrentStream
 
@@ -189,7 +206,7 @@ genDecl decl = case decl of
                 return ()
     where
         isGlobalScope = do
-            (k, l, revcode, funs, found_continue, found_break) <- get
+            (k, l, revcode, funs, found_continue, found_break, o) <- get
             return $ length funs == 1 
 
 genPreamble :: [ParamClause] -> TacState ()
@@ -547,13 +564,10 @@ genStm stm = case stm of
 
 genArrayBounds :: Addr -> TypeSpec -> TacState ()
 genArrayBounds addr (TArray _ (PInteger (_,ident))) = do
-  labOutOfBounds <- newLabel
+  labOutOfBounds <- getOutOfBoundsLabel
   labInBounds <- newLabel
   out $ IfRel AbsTAC.Less addr (LitInt 0) labOutOfBounds
-  out $ IfRel AbsTAC.Less addr (LitInt (read ident :: Int)) labInBounds
-  out $ Lab labOutOfBounds
-  out $ Call (LabFun "errorOutOfBounds" (0,0)) 0
-  out $ Lab labInBounds                    
+  out $ IfRel AbsTAC.GreaterEq addr (LitInt (read ident :: Int)) labOutOfBounds               
 
 -- FUNZIONI AUSILIARIE
 
