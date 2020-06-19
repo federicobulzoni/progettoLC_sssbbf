@@ -130,7 +130,7 @@ genDecl decl = case decl of
             otherwise -> out $ Comment "Begin function"
         
         -- creazione dei commenti che indicano gli argomenti richiesti dalla funzione
-        let args = concat $ map (\(PArg x) -> map (\(DArg (PIdent (loc,ident)) typ) -> (convertToTACType typ,buildVarAddress ident loc)) x) params
+        let args = concat $ map (\(PParam x) -> map (\(DParam passMod (PIdent (loc,ident)) typ) -> (convertToTACType typ,buildVarAddress ident loc)) x) params 
         if (length args > 0 ) 
             then 
                 out $ CommentArgs $ args
@@ -186,7 +186,7 @@ genExpAddr texp typ =
             return addrExp
 
 genExp :: Addr -> Exp -> TypeSpec -> TacState ()
-genExp addr texp@(ETyped exp _ _) typ = case exp of
+genExp addr texp@(ExpTyped exp _ _) typ = case exp of
     EOp texpl op texpr -> do
         addrExpl <- genExpAddr texpl (getType texp)
         addrExpr <- genExpAddr texpr (getType texp)
@@ -227,9 +227,9 @@ genExp addr texp@(ETyped exp _ _) typ = case exp of
         case areTypesDiff of
             True -> do
                 addrExp <- newTemp
-                out $ AssignFromFunction addrExp (buildFunLabel ident dloc) (sum (map (\(ParExpTyped x) -> length x) params)) (convertToTACType (getType texp))
+                out $ AssignFromFunction addrExp (buildFunLabel ident dloc) (sum (map (\(ArgExpTyped x) -> length x) params)) (convertToTACType (getType texp))
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrExp (convertToTACType typ)
-            False -> out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ParExpTyped x) -> length x) params)) (convertToTACType typ)
+            False -> out $ AssignFromFunction addr (buildFunLabel ident dloc) (sum (map (\(ArgExpTyped x) -> length x) params)) (convertToTACType typ)
 
     ELExp tlexp@(LExpTyped lexp _ _) -> do
         case areTypesDiff of
@@ -372,7 +372,7 @@ genStm stm = case stm of
             (LIdent id@(PIdent (dloc,ident))) -> 
                 genExp (buildVarAddress ident dloc) texp typ
 
-    SWhile texp@(ETyped exp _ _) tstm -> do
+    SWhile texp@(ExpTyped exp _ _) tstm -> do
         labelWhile <- newLabel
         labelFalse <- newLabel
         out $ (Lab labelWhile)
@@ -381,7 +381,7 @@ genStm stm = case stm of
         out $ (Goto labelWhile)
         out $ (Lab labelFalse)
 
-    SIfElse texp@(ETyped exp _ _) stm_if stm_else -> do
+    SIfElse texp@(ExpTyped exp _ _) stm_if stm_else -> do
         labelNext <- newLabel
         labelElse <- if isBlockEmpty stm_else then return labelNext else newLabel
         genCondition texp Fall labelElse
@@ -397,7 +397,7 @@ genStm stm = case stm of
   
     SProcCall (PIdent (loc, ident)) params -> do
         genParams params
-        out $ Call (buildFunLabel ident loc) (sum (map (\(ParExpTyped x) -> length x) params))
+        out $ Call (buildFunLabel ident loc) (sum (map (\(ArgExpTyped x) -> length x) params))
 
     SReturn preturn -> 
         out $ ReturnVoid
@@ -416,7 +416,7 @@ genStm stm = case stm of
 -- lo scopo è quello di evitare controlli superflui e far saltare il flusso di controllo nel punto giusto
 -- es. (a && b), se a = False non valutiamo b, il controllo passerà direttamente al caso else.
 genCondition :: Exp -> Label -> Label -> TacState ()
-genCondition texp@(ETyped exp _ _) lblTrue lblFalse = case exp of
+genCondition texp@(ExpTyped exp _ _) lblTrue lblFalse = case exp of
     ETrue _ -> checkLabel lblTrue
     EFalse _ -> checkLabel lblFalse
     (EOp e1 AbsGramm.And e2) -> do
@@ -478,10 +478,10 @@ genCondition texp@(ETyped exp _ _) lblTrue lblFalse = case exp of
             Fall -> return ()
             _ -> out $ Goto label
 
-        isTrue (ETyped (ETrue _) _ _) = True
+        isTrue (ExpTyped (ETrue _) _ _) = True
         isTrue _ = False
 
-        isFalse (ETyped (EFalse _) _ _) = True
+        isFalse (ExpTyped (EFalse _) _ _) = True
         isFalse _ = False
 
         -- conversione da operatore binario a operatore binario del TAC
@@ -504,22 +504,22 @@ genCondition texp@(ETyped exp _ _) lblTrue lblFalse = case exp of
 
 -- creazione delle istruzioni ( param x ) per il passaggio dei parametri
 -- in una chiamata di funzione
-genParams :: [Params] -> TacState ()
+genParams :: [Args] -> TacState ()
 genParams [] = return ()
 genParams (param:params) = do
     genParamAux param
     genParams params
     where
-        genParamAux (ParExpTyped []) = return ()
-        genParamAux (ParExpTyped ((texp, typ):xs)) = do
+        genParamAux (ArgExpTyped []) = return ()
+        genParamAux (ArgExpTyped ((texp, typ):xs)) = do
             addrExp <- genExpAddr texp typ
             out $ (Param addrExp)
-            genParamAux (ParExpTyped xs)
+            genParamAux (ArgExpTyped xs)
 
 
 -- Utilities 
 isLiteral :: Exp -> Bool
-isLiteral texp@(ETyped exp _ _) = 
+isLiteral texp@(ExpTyped exp _ _) = 
     case exp of
         ETrue _ -> True
         EFalse _ -> True
@@ -531,16 +531,16 @@ isLiteral texp@(ETyped exp _ _) =
         otherwise -> False
 
 isLExp :: Exp -> Bool
-isLExp texp@(ETyped exp _ _) = 
+isLExp texp@(ExpTyped exp _ _) = 
     case exp of
         ELExp _ -> True
         otherwise -> False
 
 innerLExp :: Exp -> LExp
-innerLExp (ETyped (ELExp tlexp) _ _) = tlexp
+innerLExp (ExpTyped (ELExp tlexp) _ _) = tlexp
 
 genLiteral :: Exp  -> TacState Addr
-genLiteral texp@(ETyped exp _ _) = 
+genLiteral texp@(ExpTyped exp _ _) = 
     case exp of
         ETrue _ -> return $ LitBool True
         EFalse _ -> return $ LitBool False
@@ -570,15 +570,15 @@ buildFunLabel ident dloc = LabFun ident dloc
 -- dato un intero viene restituita un'espressione tipata che ha valore di default rispetto al tipo richiesto
 buildDefaultValue :: TypeSpec -> Exp
 buildDefaultValue etyp@(TSimple typ) = case typ of
-    SType_Float     -> (ETyped (EFloat (PFloat ((0,0), "0.0")))     etyp (0,0))
-    SType_Int       -> (ETyped (EInt (PInteger ((0,0), "0")))       etyp (0,0))
-    SType_Char      -> (ETyped (EChar (PChar ((0,0), "'\\0'")))     etyp (0,0))
-    SType_String    -> (ETyped (EString (PString ((0,0), "\"\"")))  etyp (0,0))
-    SType_Bool      -> (ETyped (EFalse (PFalse ((0,0), "False")))   etyp (0,0))
+    SType_Float     -> (ExpTyped (EFloat (PFloat ((0,0), "0.0")))     etyp (0,0))
+    SType_Int       -> (ExpTyped (EInt (PInteger ((0,0), "0")))       etyp (0,0))
+    SType_Char      -> (ExpTyped (EChar (PChar ((0,0), "'\\0'")))     etyp (0,0))
+    SType_String    -> (ExpTyped (EString (PString ((0,0), "\"\"")))  etyp (0,0))
+    SType_Bool      -> (ExpTyped (EFalse (PFalse ((0,0), "False")))   etyp (0,0))
     _               -> error $ "Internal error: called buildDefaultValue on " ++ show etyp
 
-buildDefaultValue etyp@(TPointer typ) = (ETyped (ENull (PNull ((0,0),"Null"))) etyp (0,0))
-buildDefaultValue etyp@(TArray typ (PInteger (_,n))) = (ETyped (EArray ( replicate (read n :: Int) (buildDefaultValue typ))) etyp (0,0))
+buildDefaultValue etyp@(TPointer typ) = (ExpTyped (ENull (PNull ((0,0),"Null"))) etyp (0,0))
+buildDefaultValue etyp@(TArray typ (PInteger (_,n))) = (ExpTyped (EArray ( replicate (read n :: Int) (buildDefaultValue typ))) etyp (0,0))
 
 
 -- preso un tipo ritorna lo spazio occupato da quel tipo

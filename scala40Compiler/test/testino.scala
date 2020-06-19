@@ -1,5 +1,5 @@
 def main () = {
-	def proc (x : Int)(y : Float, z : *Char) = {
+	def proc (ref x : Int)( ref y : Float, ref z : *Char) = {
 		y = x;
 	}
 	var a : Char = True;
@@ -19,8 +19,11 @@ def main () = {
 	// TEST PUNTATORI: PERFETTO.
 	var point : * * Char;
 	var c1 : Char = 'a';
-	
+	break;
 	**point = c1;
 	*point = &c1;
+	return;
+
+	var e : Int = if (3==3) True+"ciao" else 'c';
 
 }
