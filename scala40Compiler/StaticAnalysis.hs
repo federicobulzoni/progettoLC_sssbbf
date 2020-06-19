@@ -28,6 +28,20 @@ saveLog logelem = do
 isTypeVoid :: TypeSpec -> Bool
 isTypeVoid typ = typ == (TSimple SType_Void)
 
+------------------------------------------------------------------------------------------------------------------------
+
+-- PROPOSTA VELOCE PER RISOLVERE COMPATIBILITA' TIPI
+
+compatible :: TypeSpec -> Exp -> Bool
+compatible (TSimple SType_Int) texp = elem (getType texp) [TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
+compatible (TSimple SType_Float) texp = elem (getType texp) [SType_Float, TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
+compatible (TSimple SType_Char) texp = elem (getType texp) [TSimple SType_Char, TSimple SType_Bool]
+compatible (TSimple SType_Bool) texp = elem (getType texp) [TSimple SType_Bool]
+compatible (TSimple SType_String) texp = elem (getType texp) [TSimple SType_String]
+compatible _ = False
+
+------------------------------------------------------------------------------------------------------------------------
+
 
 -- isCompatible
 -- Presa una espressione tipata texp, ed un tipo richiesto typ, ritorna True se la espressione tipata
@@ -42,7 +56,7 @@ allCompatible [] [] = True
 allCompatible [] _ = False
 allCompatible _ [] = False
 allCompatible (x:xs) (y:ys) = length x == length y && (all (==True) (zipWith (isCompatible) x y)) && (allCompatible xs ys)
-
+            
 -- startingEnv
 -- Definizione dell'environment iniziale di un programma. Contiene le informazioni a riguardo delle
 -- funzioni native presenti nel linguaggio.
@@ -53,15 +67,15 @@ startingEnv =
     env
   where
     initialFuns = [
-      ("writeInt",    FunInfo (0,0) (TSimple SType_Void) [PArg [DArg (PIdent ((0,0),"i")) (TSimple SType_Int) ]]),
-      ("writeFloat",  FunInfo (0,0) (TSimple SType_Void) [PArg [DArg (PIdent ((0,0),"f")) (TSimple SType_Float) ]]),
-      ("writeChar",   FunInfo (0,0) (TSimple SType_Void) [PArg [DArg (PIdent ((0,0),"c")) (TSimple SType_Char) ]]),
-      ("writeString", FunInfo (0,0) (TSimple SType_Void) [PArg [DArg (PIdent ((0,0),"s")) (TSimple SType_String) ]]),
+      ("writeInt",    FunInfo (0,0) (TSimple SType_Void) [PParam [DParam (ParamPassMod_val) (PIdent ((0,0),"i")) (TSimple SType_Int) ]]),
+      ("writeFloat",  FunInfo (0,0) (TSimple SType_Void) [PParam [DParam (ParamPassMod_val) (PIdent ((0,0),"f")) (TSimple SType_Float) ]]),
+      ("writeChar",   FunInfo (0,0) (TSimple SType_Void) [PParam [DParam (ParamPassMod_val) (PIdent ((0,0),"c")) (TSimple SType_Char) ]]),
+      ("writeString", FunInfo (0,0) (TSimple SType_Void) [PParam [DParam (ParamPassMod_val) (PIdent ((0,0),"s")) (TSimple SType_String) ]]),
 
-      ("readInt",     FunInfo (0,0) (TSimple SType_Int)    [PArg []]),
-      ("readFloat",   FunInfo (0,0) (TSimple SType_Float)  [PArg []]),
-      ("readChar",    FunInfo (0,0) (TSimple SType_Char)   [PArg []]),
-      ("readString",  FunInfo (0,0) (TSimple SType_String) [PArg []]) ]
+      ("readInt",     FunInfo (0,0) (TSimple SType_Int)    [PParam []]),
+      ("readFloat",   FunInfo (0,0) (TSimple SType_Float)  [PParam []]),
+      ("readChar",    FunInfo (0,0) (TSimple SType_Char)   [PParam []]),
+      ("readString",  FunInfo (0,0) (TSimple SType_String) [PParam []]) ]
 
 -- startFunScope
 -- Si occupa di inizializzare l'environment prima dell'inferenza degli statement contenuti nel suo body.
@@ -73,7 +87,7 @@ startFunScope env id@(PIdent (loc, ident)) params typ = do
       saveLog $ launchError loc except
       return env
   where
-    argsInfo = map (\(DArg argId@(PIdent (argLoc, argIdent)) argTyp) -> (argIdent, VarInfo argLoc argTyp)) (concat ( map (\(PArg args) -> args) params ))
+    argsInfo = map (\(DParam passMod argId@(PIdent (argLoc, argIdent)) argTyp) -> (argIdent, VarInfo argLoc argTyp)) (concat ( map (\(PParam args) -> args) params ))
     funInfo = (ident, FunInfo loc typ params):argsInfo
 
 -- Definizione dei tipi di operazione.
@@ -187,7 +201,7 @@ inferDecl decl env = case decl of
               saveLog $ launchWarning loc (MissingReturn ident)
               return $ (DefFun id params typ (DBlock tstms), e)
 
-        notEmptyParams [PArg []] = False
+        notEmptyParams [PParam []] = False
         notEmptyParams par = True
 -------------------------------------------------------------------------------------------------------------------------------------------
   DefFunInLine id@(PIdent (loc, ident)) params typ exp -> 
@@ -232,7 +246,7 @@ inferDecl decl env = case decl of
                   saveLog $ launchError loc (WrongExpType exp (getType texp) typ)
                   return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
 
-        notEmptyParams [PArg []] = False
+        notEmptyParams [PParam []] = False
         notEmptyParams par = True
 
   
@@ -358,7 +372,23 @@ inferStm stm env = case stm of
         return $ (SReturn preturn, env)
 
 -------------------------------------------------------------------------------------------------------------------------------------------
-  -- lista di liste ParExp [Exp]
+  -- DA GESTIRE - PROPOSTE SOTTO
+  SBreak pbreak@(PBreak (loc,ident)) -> return (SBreak pbreak, env)
+  SContinue pcontinue@(PContinue (loc,ident)) -> return (SContinue pcontinue, env)
+  --SBreak pbreak@(PBreak (loc,ident)) -> do
+  --  if inLoop
+  --    then return (SBreak pbreak, env)
+  --    else do
+  --      saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
+  --      return (SBreak pbreak, env)
+  --SContinue pcontinue@(PContinue (loc,ident)) -> do
+  --  if inLoop
+  --    then return (SContinue pcontinue, env)
+  --    else do
+  --      saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
+  --      return (SContinue pcontinue, env)
+-------------------------------------------------------------------------------------------------------------------------------------------
+                                    -- lista di liste ArgExp [Exp]
   SProcCall id@(PIdent (loc, ident)) params -> do
     -- Tre possibili errori:
       -- 1. Il numero di clausole nella chiamata non corrisponde con il numero di clausole nella definizione,
@@ -366,7 +396,7 @@ inferStm stm env = case stm of
       -- 3. Le dimensioni combaciano, ma almeno un'espressione passata come argomento ha tipo diverso da quello del corrispondente parametro.
 
     -- [[TypeSpec]]
-    tparams <- mapM (\(ParExp x) -> (mapM (\y -> (inferExp y env)) x)) params
+    tparams <- mapM (\(ArgExp x) -> (mapM (\y -> (inferExp y env)) x)) params
     -- typ_params è una lista di liste di TypeSpec contenente il tipo di ogni parametro.
     case Env.lookup env id of
       -- Caso in cui l'identificatore usato nella chiamata di procedura sia assegnato ad una variabile.
@@ -375,15 +405,15 @@ inferStm stm env = case stm of
         -- Notare come l'identificatore che viene ritornato non sia lo stesso che ci arriva in input,
         -- bensì la locazione dell'identificatore viene sostituita diventando quella di dichiarazione
         -- dell'identificatore.
-        return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams) , env)
+        return (SProcCall (PIdent (dloc, ident)) (map (\x -> (ArgExp x)) tparams) , env)
       Failure except -> do
         saveLog $ launchError loc except
-        return (SProcCall (PIdent ((0,0), ident)) (map (\x -> (ParExp x)) tparams) , env)
+        return (SProcCall (PIdent ((0,0), ident)) (map (\x -> (ArgExp x)) tparams) , env)
       
       Success (FunInfo dloc typ paramclauses) ->
         -- typ_args è il corrispettivo di typ_params, i due devono combaciare per poter affermare
         -- che la chiamata di procedura è valida.
-        let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
+        let typ_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> typ) x)) paramclauses in
           do
             case (any (isTypeError) (concat tparams), not $ allCompatible tparams typ_args, not (isTypeVoid typ)) of
               (True,_,_) -> return ()
@@ -391,8 +421,8 @@ inferStm stm env = case stm of
               (_,True,True) -> saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
               (_,False,True) -> saveLog $ launchWarning loc (UnusedReturnValue ident)
               otherwise -> return ()
-            return (SProcCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args) , env)
-                                  
+            return (SProcCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zip x y))) tparams typ_args) , env)
+
 
 inferLExp :: LExp -> Env -> Logger LExp
 inferLExp lexp env = case lexp of
@@ -463,18 +493,18 @@ inferExp exp env = case exp of
     -- Se non è presente alcuna espressione viene ritornato un array vuoto a cui si assegna tipo SType_Void.
     if length texps == 0 
       then
-        return $ ETyped (exp) (TArray (TSimple SType_Void) (PInteger ( (0,0), show (0)  ) )) (0,0) 
+        return $ ExpTyped (exp) (TArray (TSimple SType_Void) (PInteger ( (0,0), show (0)  ) )) (0,0) 
       else 
         -- Altrimenti se nessuna espressione ha errori al proprio interno,
         -- e se tutte le espressioni hanno tipo compatibile tra loro, allora l'espressione Array(exp1, ..., expn)
         -- ha il tipo delle sotto-espressioni exp1, ..., expn e dimensione <lunghezza exps>.
         let (anyError, allCompatible) = inferArrayAux texps in
           case (anyError, allCompatible) of
-            (True, _) -> return $ ETyped (EArray texps) (TArray (TSimple SType_Error) (PInteger ( (getLoc (head texps)) , show (length texps)  ) )) (getLoc (head texps)) 
-            (_, True) -> return $ ETyped (EArray texps) (TArray (maximum (map getType texps))  (PInteger ( (getLoc (head texps)), show (length texps)  ))) (getLoc (head texps))
+            (True, _) -> return $ ExpTyped (EArray texps) (TArray (TSimple SType_Error) (PInteger ( (getLoc (head texps)) , show (length texps)  ) )) (getLoc (head texps)) 
+            (_, True) -> return $ ExpTyped (EArray texps) (TArray (maximum (map getType texps))  (PInteger ( (getLoc (head texps)), show (length texps)  ))) (getLoc (head texps))
             (_ , _) -> do
               saveLog $ launchError (getLoc (head texps)) ArrayInconsistency
-              return $ ETyped (EArray texps) (TSimple SType_Error) (getLoc (head texps))
+              return $ ExpTyped (EArray texps) (TSimple SType_Error) (getLoc (head texps))
         where
           -- Prende una lista di espressioni tipate, un tipo, e ritorna una coppia con il primo elemento
           -- che dice se si è trovato almeno un elemento con tipo (TSimple SType_Error), ed il secondo elemento che dice
@@ -483,7 +513,7 @@ inferExp exp env = case exp of
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------
-                                    -- lista di liste ParExp [Exp]
+                                    -- lista di liste ArgExp [Exp]
   -- Molto simile a SProcCall, per dubbi riferirsi ai commenti di quest'ultima.
   EFunCall id@(PIdent (loc, ident)) params -> do
     -- Tre possibili errori:
@@ -492,89 +522,97 @@ inferExp exp env = case exp of
       -- 3. Le dimensioni combaciano, ma almeno un'espressione passata come argomento ha tipo diverso da quello del corrispondente parametro.
 
     -- [[TypeSpec]]
-    tparams <- mapM (\(ParExp x) -> (mapM (\y -> (inferExp y env)) x)) params
+    -- Parametri che passiamo alla funzione.
+    tparams <- mapM (\(ArgExp x) -> (mapM (\y -> (inferExp y env)) x)) params
     case Env.lookup env id of
       Success (VarInfo dloc _) -> do
         saveLog $ launchError loc (VariableUsedAsFunction ident dloc)
-        return $ ETyped (EFunCall (PIdent (dloc, ident)) (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
+        return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (map (\x -> (ArgExp x)) tparams)) (TSimple SType_Error) loc
       Failure except -> do
         saveLog $ launchError loc except
-        return $ ETyped (EFunCall (PIdent ((0,0), ident)) (map (\x -> (ParExp x)) tparams)) (TSimple SType_Error) loc
+        return $ ExpTyped (EFunCall (PIdent ((0,0), ident)) (map (\x -> (ArgExp x)) tparams)) (TSimple SType_Error) loc
       Success (FunInfo dloc typ paramclauses) ->
-        let typ_args = map (\(PArg x) -> (map (\(DArg ident typ) -> typ) x)) paramclauses in
-          do
-            case (any (isTypeError) (concat tparams), allCompatible tparams typ_args, isTypeVoid typ) of
-              (False, True, False) -> return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) typ loc
-              (False, True, True)  -> do
-                saveLog $ launchError loc (UnexpectedProc ident)
-                return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
-
-              (False, False, _)    -> do
-                saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-                return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
-
-              _ ->  return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                            
-          --if any (isTypeError) (concat tparams)
-          --  then 
-          --    return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
-          --  else
-          --    if allCompatible tparams typ_args
-          --      then 
-          --        if isTypeVoid typ
-          --          then do
-          --            saveLog $ launchError loc (UnexpectedProc ident)
-          --            return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
-          --          else
-          --            return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) typ loc                    
-          --      else do
-          --        saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-          --        return $ ETyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ParExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
-        --where 
-        --  aux :: [[TypeSpec]] -> [[TypeSpec]] -> Bool
-        --  aux [] [] = True
-        --  aux [] _ = False
-        --  aux _ [] = False
-        --  aux (typ1:typs1) (typ2:typs2) = (length typ1) == (length typ2) && (all (==True) (zipWith (<=) typ1 typ2)) && (aux typs1 typs2)
-
--------------------------------------------------------------------------------------------------------------------------------------------
+        -- Argomenti di quando lo dichiati
+        -- Lista di liste di tipi degli argomenti.
+        let typ_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> typ) x)) paramclauses in
+          if any (isTypeError) (concat tparams)
+            then 
+                return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
+            else 
+              if allCompatible tparams typ_args
+                then 
+                  if isTypeVoid typ
+                    then do
+                      saveLog $ launchError loc (UnexpectedProc ident)
+                      return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
+                    else 
+                      return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zip x y))) tparams typ_args)) typ loc                    
+                else do
+                  saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+                  return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
+ -------------------------------------------------------------------------------------------------------------------------------------------
   ENot exp -> do
     texp <- inferExp exp env
     if isTypeError texp || isCompatible texp (TSimple SType_Bool)
-      then return (ETyped (ENot texp) (getType texp) (getLoc texp))
+      then return (ExpTyped (ENot texp) (getType texp) (getLoc texp))
       else do
         saveLog $ launchError (getLoc texp) (WrongNotApplication exp (getType texp))
-        return $ ETyped (ENot texp) (TSimple SType_Error) (getLoc texp)
+        return $ ExpTyped (ENot texp) (TSimple SType_Error) (getLoc texp)
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   ENeg exp -> do
     texp <- inferExp exp env
     if isTypeError texp || isCompatible texp (TSimple SType_Float)
-      then return $ ETyped (ENeg texp) (getType texp) (getLoc texp)
+      then return $ ExpTyped (ENeg texp) (getType texp) (getLoc texp)
       else do
         saveLog $ launchError (getLoc texp) (WrongNegApplication exp (getType texp))
-        return $ (ETyped (ENeg texp) (TSimple SType_Error) (getLoc texp))
+        return $ (ExpTyped (ENeg texp) (TSimple SType_Error) (getLoc texp))
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   ELExp lexp -> do
     tlexp <- inferLExp lexp env
-    return $ ETyped (ELExp tlexp) (getType tlexp) (getLoc tlexp)
+    return $ ExpTyped (ELExp tlexp) (getType tlexp) (getLoc tlexp)
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   EDeref lexp -> do
     tlexp <- inferLExp lexp env
     if isTypeError tlexp
-      then return $ ETyped (EDeref tlexp) (TSimple SType_Error) (getLoc tlexp)
-      else return $ ETyped (EDeref tlexp) (TPointer (getType tlexp)) (getLoc tlexp)
+      then return $ ExpTyped (EDeref tlexp) (TSimple SType_Error) (getLoc tlexp)
+      else return $ ExpTyped (EDeref tlexp) (TPointer (getType tlexp)) (getLoc tlexp)
 
 -------------------------------------------------------------------------------------------------------------------------------------------
-  EInt    const@(PInteger (loc, _)) -> return $ ETyped (EInt const) (TSimple SType_Int) (loc) 
-  EFloat  const@(PFloat (loc, _))   -> return $ ETyped (EFloat const) (TSimple SType_Float) (loc) 
-  EChar   const@(PChar (loc, _))    -> return $ ETyped (EChar const) (TSimple SType_Char) (loc) 
-  EString const@(PString (loc, _))  -> return $ ETyped (EString const) (TSimple SType_String) (loc)
-  ETrue   const@(PTrue (loc, _))    -> return $ ETyped (ETrue const) (TSimple SType_Bool) (loc)
-  EFalse  const@(PFalse (loc, _))   -> return $ ETyped (EFalse const) (TSimple SType_Bool) (loc)
-  ENull   const@(PNull (loc, _))    -> return $ ETyped (ENull const) (TPointer (TSimple SType_Void)) loc 
+  EInt    const@(PInteger (loc, _)) -> return $ ExpTyped (EInt const) (TSimple SType_Int) (loc) 
+  EFloat  const@(PFloat (loc, _))   -> return $ ExpTyped (EFloat const) (TSimple SType_Float) (loc) 
+  EChar   const@(PChar (loc, _))    -> return $ ExpTyped (EChar const) (TSimple SType_Char) (loc) 
+  EString const@(PString (loc, _))  -> return $ ExpTyped (EString const) (TSimple SType_String) (loc)
+  ETrue   const@(PTrue (loc, _))    -> return $ ExpTyped (ETrue const) (TSimple SType_Bool) (loc)
+  EFalse  const@(PFalse (loc, _))   -> return $ ExpTyped (EFalse const) (TSimple SType_Bool) (loc)
+  ENull   const@(PNull (loc, _))    -> return $ ExpTyped (ENull const) (TPointer (TSimple SType_Void)) loc 
   EOp expl op expr -> inferBinOp expl op expr env
+-------------------------------------------------------------------------------------------------------------------------------------------
+
+  EIfElse exp_cond exp_if exp_else -> do
+    texp_cond <- inferExp exp_cond env
+    texp_if <- inferExp exp_if env
+    texp_else <- inferExp exp_else env
+    if not (isTypeError texp_cond || isCompatible texp_cond (TSimple SType_Bool))
+      then do
+        saveLog $ launchError (getLoc texp_cond) (WrongIfCondition exp_cond (getType texp_cond))
+        return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_cond)
+      else case (isTypeError texp_if, isTypeError texp_else) of
+        (True, False) -> do
+          saveLog $ launchError (getLoc texp_if) (WrongIfElseExp exp_if)
+          return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_if)
+        (False, True) -> do
+          saveLog $ launchError (getLoc texp_else) (WrongIfElseExp exp_else)
+          return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_else)
+        (True, True) -> do
+          saveLog $ launchError (getLoc texp_if) (WrongIfElseExp exp_if)
+          saveLog $ launchError (getLoc texp_else) (WrongIfElseExp exp_else)
+          return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (TSimple SType_Error) (getLoc texp_if)
+        (False, False) -> return $ ExpTyped (EIfElse texp_cond texp_if texp_else) (max (getType texp_if) (getType texp_else)) (getCorrectLocation texp_if texp_else)
+  where
+    getCorrectLocation te1 te2 = if((getType te1) <= (getType te2)) then getLoc te2 else getLoc te1
 
 -- Prese due espressioni ed un operatore binario ritorna la corrispondente espressione tipizzata
 inferBinOp :: Exp -> Op -> Exp -> Env -> Logger Exp
@@ -585,29 +623,29 @@ inferBinOp expl op expr env = do
   -- Viene recuperato il tipo dell'operazione (es. Numerica, Relazionale, etc.) e i tipi delle due sotto-espressioni
   -- coinvolte, poi si verifica che i tipi di tali espressioni siano consistenti con il tipo dell'operazione.
   case ((getTypeOp op), (getType texpl), (getType texpr) ) of
-    (_ , TSimple SType_Error, _ ) -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
-    (_ , _ , TSimple SType_Error) -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
+    (_ , TSimple SType_Error, _ ) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
+    (_ , _ , TSimple SType_Error) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
     
     (EqOp, typl, typr) ->
       if typl == typr || (max typl typr) < (TSimple SType_String)
       -- if isConsistent EqOp typl typr
-        then return $ ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
+        then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
         else returnBinOpError texpl op texpr
     (RelOp, typl, typr) ->
       if (max typl typr) < (TSimple SType_String)
       -- if isConsistent RelOp typl typr
-        then return $ ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
+        then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
         else returnBinOpError texpl op texpr
     (BooleanOp, typl, typr) ->
       if typl == (TSimple SType_Bool) && typr == (TSimple SType_Bool)
-        then return $ ETyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
+        then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
         else returnBinOpError texpl op texpr
     (NumericOp, typl, typr) ->
       case (max typl typr) of
         (TSimple SType_String) -> returnBinOpError texpl op texpr
-        (TSimple SType_Float) -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Float) (getLoc texpl)
-        _ -> return $ ETyped (EOp texpl op texpr) (TSimple SType_Int) (getLoc texpl)
+        (TSimple SType_Float) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Float) (getLoc texpl)
+        _ -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Int) (getLoc texpl)
   where
     returnBinOpError texpl op texpr = do
       saveLog $ launchError (getLoc texpl) (WrongOpApplication op (getType texpl) (getType texpr))
-      return $ ETyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
+      return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 

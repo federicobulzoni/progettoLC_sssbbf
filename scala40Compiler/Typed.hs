@@ -8,8 +8,8 @@ class Typed a where
     isTypeError :: a -> Bool
   
 instance Typed Exp where
-    getType (ETyped _ typ _ ) = typ
-    getLoc (ETyped _ _ loc) = loc
+    getType (ExpTyped _ typ _ ) = typ
+    getLoc (ExpTyped _ _ loc) = loc
     isTypeError texp = getType texp == (TSimple SType_Error)
 
 instance Typed LExp where

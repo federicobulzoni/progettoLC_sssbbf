@@ -56,6 +56,7 @@ data TCException
     | InternalError
     | ExpAssignedToProcedure Ident Exp TypeSpec
     | WrongMainSignature
+    | WrongIfElseExp Exp
     deriving(Show,Eq)
   
 
@@ -184,3 +185,4 @@ getExceptionMsg except = case except of
 
     WrongMainSignature -> "Wrong main function signature. The function should have signature " ++ color Default Italic ("void main()") 
 
+    WrongIfElseExp exp -> "Wrong expression " ++ color Default Italic (printTree exp) ++ " in if-else expression."

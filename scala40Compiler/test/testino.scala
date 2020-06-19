@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 def prova(a : Int)(b : Float, c : *Char) : Float = a + b;
 def prova2(a : Int)(b : Float, c : *Char) = writeInt(3);
 

@@ -1,7 +1,9 @@
 position token PTrue	'T' 'r' 'u' 'e' ;						
 position token PFalse	'F' 'a' 'l' 's' 'e' ;						
 position token PReturn	'r' 'e' 't' 'u' 'r' 'n' ;	
-position token PNull	'N' 'u' 'l' 'l';			
+position token PNull	'N' 'u' 'l' 'l';
+position token PBreak       'b' 'r' 'e' 'a' 'k' ;
+position token PContinue    'c' 'o' 'n' 't' 'i' 'n' 'u' 'e';
 position token PIdent ( ('_' letter | letter) (letter | digit | '_' )* );
 position token PFloat ( (digit+ '.' digit+) | (digit+ '.') | ('.' digit+));
 position token PInteger ( digit+ );
@@ -31,11 +33,14 @@ dproc. Declaration ::= "def" PIdent [ParamClause] "=" Block;
 dprocinline. Declaration ::= "def" PIdent [ParamClause] "=" Exp ";";
 separator nonempty ParamClause "";
 
-PArg. ParamClause ::= "(" [Arg] ")";
-separator Arg ",";
+PParam. ParamClause ::= "(" [Param] ")";
+separator Param ",";
+DParam. Param ::= ParamPassMod PIdent ":" TypeSpec;
 
-DArg. Arg ::= PIdent ":" TypeSpec;
 DBlock. Block ::= "{" [Stm] "}";
+
+--value, result, value-result e reference,
+rules ParamPassMod ::= "val" | "ref" | "res" | "valres" ;
 
 separator Stm "";
 
@@ -45,22 +50,25 @@ SAssign.    Stm ::= LExp "=" Exp ";";
 SWhile.     Stm ::= "while" "(" Exp ")" Stm;
 SIfElse. 	Stm ::= "if" "(" Exp ")" Stm "else" Stm ;
 sif.        Stm ::= "if" "(" Exp ")" Stm;
-sdo. 		Stm ::= "do" Stm "while" "(" Exp ")" ";";
+SDoWhile. 	Stm ::= "do" Stm "while" "(" Exp ")" ";";
+SFor.       Stm ::= "for" "(" PIdent "<-" Exp "until" Exp "by" Exp ")" Stm;
 SReturn. 	Stm ::= PReturn ";";
 SReturnExp. Stm ::= PReturn Exp ";" ;
-SProcCall.  Stm ::= PIdent [Params] ";";
+SProcCall.  Stm ::= PIdent [Args] ";";
+SContinue.  Stm ::= PContinue ";";
+SBreak.     Stm ::= PBreak ";";
 
 sugarAssign. Stm ::=  LExp OpAssign Exp ";" ;
 
-ProdEq. OpAssign ::= "*=" ;
-DivEq. OpAssign ::= "/=" ;
-ModEq. OpAssign ::= "%=" ;
-PlusEq. OpAssign ::= "+=" ;
-MinusEq. OpAssign ::= "-=" ;
-PowEq.   OpAssign ::= "^=";
+ProdEq.     OpAssign ::= "*=" ;
+DivEq.      OpAssign ::= "/=" ;
+ModEq.      OpAssign ::= "%=" ;
+PlusEq.     OpAssign ::= "+=" ;
+MinusEq.    OpAssign ::= "-=" ;
+PowEq.      OpAssign ::= "^=";
 
-ParExp. Params ::= "(" [Exp] ")";
-separator nonempty Params "";
+ArgExp. Args ::= "(" [Exp] ")";
+separator nonempty Args "";
 separator Exp ",";
 
 -- Left associative.
@@ -105,9 +113,10 @@ ETrue. 		Exp7 ::= PTrue;
 EFalse. 	Exp7 ::= PFalse;
 ENull. 		Exp7 ::= PNull;
 EArray.     Exp7 ::= "Array" "("[Exp]")";
-EFunCall. 	Exp7 ::= PIdent [Params];
+EFunCall. 	Exp7 ::= PIdent [Args];
+EIfElse. 	Exp7 ::= "if" "(" Exp ")" Exp "else" Exp ;
 
-internal ETyped. Exp ::= "[" Exp ":" TypeSpec ":" "(" Integer "," Integer ")" "]";
+internal ExpTyped. Exp ::= "[" Exp ":" TypeSpec ":" "(" Integer "," Integer ")" "]";
 internal EOp. Exp ::= Exp7 Op Exp7;
 coercions Exp 7 ; 
 
@@ -119,12 +128,12 @@ LIdent. LExp1 ::= PIdent;
 coercions LExp 1; 
 
 -- [ LExp : inferred type of LExp : location of LExp : if LExp is an ident, declaration location of ident ]
-internal LExpTyped. LExp ::= "[" LExp ":" TypeSpec ":" "(" Integer "," Integer ")" ":" "(" Integer ":" Integer ")" "]";
+internal LExpTyped. LExp ::= "[" LExp ":" TypeSpec ":" "(" Integer "," Integer ")" "]";
 
 define op e1 o e2 = EOp e1 o e2;
 define dproc id params block = DefFun id params (TSimple SType_Void) (block);
 define dprocinline id params exp = DefFunInLine id params (TSimple SType_Void) exp;
-define sdo st ex = SBlock (DBlock [st, (SWhile ex st)]);
+-- define sdo st ex = SBlock (DBlock [st, (SWhile ex st)]);
 define sif exp stm = SIfElse exp stm (SBlock (DBlock []));
 
 define sugarAssign lexp ProdEq exp  = SAssign lexp (op (ELExp lexp) Prod exp );
