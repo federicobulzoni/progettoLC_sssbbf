@@ -58,6 +58,7 @@ data TCException
     | WrongMainSignature
     | WrongIfElseExp Exp Exp
     | WrongFlowCrontrolStatement Ident
+    | WrongParamMethod Ident
     deriving(Show,Eq)
   
 
@@ -191,3 +192,6 @@ getExceptionMsg except = case except of
 
     WrongFlowCrontrolStatement ident ->
         ident ++ " statement not in loop statement."
+
+    WrongParamMethod ident ->
+        "Wrong argument user in function " ++ color Default Italic (printTree ident)

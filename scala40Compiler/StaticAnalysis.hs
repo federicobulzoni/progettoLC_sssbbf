@@ -53,6 +53,18 @@ compatible typ_exp (TArray typ2 (PInteger (_,dim2))) = case typ_exp of
 ------------------------------------------------------------------------------------------------------------------------
 
 
+checkExpsMod :: [Exp] -> [(TypeSpec, ParamPassMod)] -> Bool
+checkExpsMod [] [] = True
+checkExpsMod (e:params') ((t,m):args') = (checkExpMod e m) && checkExpsMod params' args'
+
+checkExpMod :: Exp -> ParamPassMod -> Bool
+checkExpMod (ExpTyped (ELExp _) _ _) _ = True
+checkExpMod _ (ParamPassMod_ref) = False
+checkExpMod _ (ParamPassMod_res) = False
+checkExpMod _ (ParamPassMod_valres) = False
+checkExpMod _ _ = True
+
+
 -- isCompatible
 -- Presa una espressione tipata texp, ed un tipo richiesto typ, ritorna True se la espressione tipata
 -- è compatibile con il tipo richiesto; altrimenti ritorna False.
@@ -429,9 +441,16 @@ inferStm stm env inLoop = case stm of
             (_,True,True) -> saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
             (_,False,True) -> saveLog $ launchWarning loc (UnusedReturnValue ident)
             otherwise -> return ()
-          return (SProcCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args) , env)
-          where typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
-                typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses
+          if checkExpsMod (concat tparams) (concat typ_mod_args)
+            then return (SProcCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args) , env)
+            else do
+              saveLog $ launchError loc (WrongParamMethod ident)
+              return (SProcCall id params,env)
+        where 
+          typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
+          typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses
+        
+-------------------------------------------------------------------------------------------------------------------------------------------
 
   SFor id@(PIdent (loc, ident)) exp_init exp_end exp_step stm -> do
     texp_init <- inferExp exp_init env
@@ -457,6 +476,8 @@ inferStm stm env inLoop = case stm of
         if not $ compatible (getType texp) (TSimple SType_Int)
           then saveLog $ launchError loc' (WrongExpType exp_init (getType texp) (TSimple SType_Int) )
           else return ()
+
+-------------------------------------------------------------------------------------------------------------------------------------------
 
   SDoWhile stm exp -> do
     texp <- inferExp exp env
@@ -582,20 +603,26 @@ inferExp exp env = case exp of
         if any (isTypeError) (concat tparams)
           then 
               return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) (TSimple SType_Error) loc                    
-          else 
-            if allCompatible tparams typ_args
-              then 
-                if isTypeVoid typ
-                  then do
-                    saveLog $ launchError loc (UnexpectedProc ident)
-                    return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) (TSimple SType_Error) loc                    
-                  else 
-                    return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) typ loc                    
+          else
+            if checkExpsMod (concat tparams) (concat typ_mod_args)
+              then
+                if allCompatible tparams typ_args
+                  then 
+                    if isTypeVoid typ
+                      then do
+                        saveLog $ launchError loc (UnexpectedProc ident)
+                        return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) (TSimple SType_Error) loc                    
+                      else 
+                        return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) typ loc                    
+                  else do
+                    saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+                    return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) (TSimple SType_Error) loc
               else do
-                saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-                return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) (TSimple SType_Error) loc
-          where typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
-                typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses                    
+                saveLog $ launchError loc (WrongParamMethod ident)
+                return $ ExpTyped (EFunCall (PIdent (dloc, ident)) params) (TSimple SType_Error) loc
+        where 
+          typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
+          typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses                    
  -------------------------------------------------------------------------------------------------------------------------------------------
   ENot exp -> do
     texp <- inferExp exp env
