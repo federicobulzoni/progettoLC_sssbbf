@@ -24,6 +24,7 @@ def main () = {
 	*point = &c1;
 	return;
 
-	var e : Int = if (3==3) True+"ciao" else 'c';
+	var e : Int = if (3==3) True else 'c';
+	var s : String = 'c';
 
 }
