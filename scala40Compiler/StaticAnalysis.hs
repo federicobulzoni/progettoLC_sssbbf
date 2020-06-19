@@ -87,7 +87,7 @@ startFunScope env id@(PIdent (loc, ident)) params typ = do
       saveLog $ launchError loc except
       return env
   where
-    argsInfo = map (\(DParam passMod argId@(PIdent (argLoc, argIdent)) argTyp) -> (argIdent, VarInfo argLoc argTyp)) (concat ( map (\(PParam args) -> args) params ))
+    argsInfo = map (\(DParam passMod argId@(PIdent (argLoc, argIdent)) argTyp) -> (argIdent, VarInfo argLoc argTyp passMod)) (concat ( map (\(PParam args) -> args) params ))
     funInfo = (ident, FunInfo loc typ params):argsInfo
 
 -- Definizione dei tipi di operazione.
@@ -142,7 +142,7 @@ inferDecl :: Declaration -> Env -> Logger (Declaration, Env)
 inferDecl decl env = case decl of
   DefVar id@(PIdent (loc, ident)) typ exp -> 
     -- Si prova ad inserire i dati della variabile nell'environment ...
-    case (Env.update env ident (VarInfo loc typ)) of
+    case (Env.update env ident (VarInfo loc typ NoParam)) of
       Success env' -> do
         -- ... se è stato possibile, ...
         texp <- inferExp exp env
@@ -162,7 +162,7 @@ inferDecl decl env = case decl of
         return $ (DefVar id typ texp, env)
 -------------------------------------------------------------------------------------------------------------------------------------------
   DecVar id@(PIdent (loc, ident)) typ -> 
-    case Env.update env ident (VarInfo loc typ) of
+    case Env.update env ident (VarInfo loc typ NoParam) of
       Success env' -> return $ (DecVar id typ, env')
       Failure except -> do
         saveLog $ launchError loc except
@@ -395,12 +395,11 @@ inferStm stm env = case stm of
       -- 2. Il numero di argomenti all'interno di una clausola non corrisponde con il numero di parametri della clausola,
       -- 3. Le dimensioni combaciano, ma almeno un'espressione passata come argomento ha tipo diverso da quello del corrispondente parametro.
 
-    -- [[TypeSpec]]
+    -- [[ExpTyped]]
     tparams <- mapM (\(ArgExp x) -> (mapM (\y -> (inferExp y env)) x)) params
-    -- typ_params è una lista di liste di TypeSpec contenente il tipo di ogni parametro.
     case Env.lookup env id of
       -- Caso in cui l'identificatore usato nella chiamata di procedura sia assegnato ad una variabile.
-      Success (VarInfo dloc _) -> do
+      Success (VarInfo dloc _ _) -> do
         saveLog $ launchError loc (VariableUsedAsProcedure ident dloc)
         -- Notare come l'identificatore che viene ritornato non sia lo stesso che ci arriva in input,
         -- bensì la locazione dell'identificatore viene sostituita diventando quella di dichiarazione
@@ -413,15 +412,16 @@ inferStm stm env = case stm of
       Success (FunInfo dloc typ paramclauses) ->
         -- typ_args è il corrispettivo di typ_params, i due devono combaciare per poter affermare
         -- che la chiamata di procedura è valida.
-        let typ_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> typ) x)) paramclauses in
-          do
-            case (any (isTypeError) (concat tparams), not $ allCompatible tparams typ_args, not (isTypeVoid typ)) of
-              (True,_,_) -> return ()
-              (_,True,False) -> saveLog $ launchError loc (WrongProcParams ident typ_args (map (map getType) tparams))
-              (_,True,True) -> saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-              (_,False,True) -> saveLog $ launchWarning loc (UnusedReturnValue ident)
-              otherwise -> return ()
-            return (SProcCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zip x y))) tparams typ_args) , env)
+        do
+          case (any (isTypeError) (concat tparams), not $ allCompatible tparams typ_args, not (isTypeVoid typ)) of
+            (True,_,_) -> return ()
+            (_,True,False) -> saveLog $ launchError loc (WrongProcParams ident typ_args (map (map getType) tparams))
+            (_,True,True) -> saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+            (_,False,True) -> saveLog $ launchWarning loc (UnusedReturnValue ident)
+            otherwise -> return ()
+          return (SProcCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args) , env)
+          where typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
+                typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses
 
 
 inferLExp :: LExp -> Env -> Logger LExp
@@ -476,14 +476,14 @@ inferLExp lexp env = case lexp of
     case res of
       Failure except -> do
         saveLog $ launchError loc except
-        return $ LExpTyped (LIdent (PIdent ((0,0), ident))) (TSimple SType_Error) loc
+        return $ LExpTyped (LIdentMod (PIdent ((0,0), ident)) NoParam) (TSimple SType_Error) loc
       -- Si noti che nella LExpTyped, la locazione dell'identificatore, che quando arriva dal parser
       -- corrisponde a quella relativa all'utilizzo corrente dell'identificatore nella LExp considerata,
       -- viene sostituito con la locazione in cui tale identificatore è stato dichiarato.
-      Success (VarInfo dloc typ) -> return $ LExpTyped (LIdent (PIdent (dloc, ident))) typ loc
+      Success (VarInfo dloc typ mode) -> return $ LExpTyped (LIdentMod (PIdent (dloc, ident)) mode) typ loc
       Success (FunInfo dloc _ _) -> do
         saveLog $ launchError loc (FunctionUsedAsVariable ident dloc)
-        return $ LExpTyped (LIdent (PIdent (dloc, ident))) (TSimple SType_Error) loc
+        return $ LExpTyped (LIdentMod (PIdent (dloc, ident)) NoParam) (TSimple SType_Error) loc
 
 inferExp :: Exp -> Env -> Logger Exp
 inferExp exp env = case exp of                                                                       
@@ -525,7 +525,7 @@ inferExp exp env = case exp of
     -- Parametri che passiamo alla funzione.
     tparams <- mapM (\(ArgExp x) -> (mapM (\y -> (inferExp y env)) x)) params
     case Env.lookup env id of
-      Success (VarInfo dloc _) -> do
+      Success (VarInfo dloc _ _) -> do
         saveLog $ launchError loc (VariableUsedAsFunction ident dloc)
         return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (map (\x -> (ArgExp x)) tparams)) (TSimple SType_Error) loc
       Failure except -> do
@@ -534,22 +534,23 @@ inferExp exp env = case exp of
       Success (FunInfo dloc typ paramclauses) ->
         -- Argomenti di quando lo dichiati
         -- Lista di liste di tipi degli argomenti.
-        let typ_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> typ) x)) paramclauses in
-          if any (isTypeError) (concat tparams)
-            then 
-                return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
-            else 
-              if allCompatible tparams typ_args
-                then 
-                  if isTypeVoid typ
-                    then do
-                      saveLog $ launchError loc (UnexpectedProc ident)
-                      return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
-                    else 
-                      return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zip x y))) tparams typ_args)) typ loc                    
-                else do
-                  saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-                  return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zip x y))) tparams typ_args)) (TSimple SType_Error) loc                    
+        if any (isTypeError) (concat tparams)
+          then 
+              return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) (TSimple SType_Error) loc                    
+          else 
+            if allCompatible tparams typ_args
+              then 
+                if isTypeVoid typ
+                  then do
+                    saveLog $ launchError loc (UnexpectedProc ident)
+                    return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) (TSimple SType_Error) loc                    
+                  else 
+                    return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) typ loc                    
+              else do
+                saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+                return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) (TSimple SType_Error) loc
+          where typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
+                typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses                    
  -------------------------------------------------------------------------------------------------------------------------------------------
   ENot exp -> do
     texp <- inferExp exp env

@@ -27,7 +27,7 @@ type LookupTable = Map.Map Ident Info
 type Scope = (LookupTable, TypeSpec, Bool)
 
 data Info = 
-    VarInfo Loc TypeSpec
+    VarInfo Loc TypeSpec ParamPassMod
     | FunInfo Loc TypeSpec [ParamClause]
     deriving (Show)
 
@@ -55,7 +55,7 @@ lookupIdent (lookTable, _, _) ident = Map.lookup ident lookTable
 updateScope :: Scope -> Ident -> Info -> ErrEnv Scope
 updateScope (lookTable, ftyp, hasReturn) ident info = case Map.lookup ident lookTable of
     Nothing -> return $ (Map.insert ident info lookTable, ftyp, hasReturn)
-    Just (VarInfo dloc _) -> Failure $ EnvDuplicateIdent ident dloc True
+    Just (VarInfo dloc _ _) -> Failure $ EnvDuplicateIdent ident dloc True
     Just (FunInfo dloc _ _) -> Failure $ EnvDuplicateIdent ident dloc False
 
 --------------------------------------------------------------------------------------------------------

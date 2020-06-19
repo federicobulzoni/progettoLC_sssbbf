@@ -245,7 +245,7 @@ instance Print AbsGramm.OpAssign where
 instance Print AbsGramm.Args where
   prt i e = case e of
     AbsGramm.ArgExp exps -> prPrec i 0 (concatD [doc (showString "("), prt 0 exps, doc (showString ")")])
-    AbsGramm.ArgExpTyped exps -> prPrec i 0 (concatD [doc (showString "("), prt 0 exps, doc (showString ")")])
+    AbsGramm.ArgExpTyped exps -> prPrec i 0 (concatD [doc (showString "("), prt 0 (map (\(x,y,z) -> (x,y)) exps), doc (showString ")")])
 
   prtList _ [x] = concatD [prt 0 x]
   prtList _ (x:xs) = concatD [prt 0 x, prt 0 xs]
@@ -306,6 +306,7 @@ instance Print AbsGramm.LExp where
     AbsGramm.LRef lexp -> prPrec i 0 (concatD [doc (showString "*"), prt 1 lexp])
     AbsGramm.LArr lexp exp -> prPrec i 1 (concatD [prt 1 lexp, doc (showString "["), prt 0 exp, doc (showString "]")])
     AbsGramm.LIdent pident -> prPrec i 1 (concatD [prt 0 pident])
+    AbsGramm.LIdentMod pident _ -> prPrec i 1 (concatD [prt 0 pident])
     AbsGramm.LExpTyped lexp typespec loc -> prPrec i 0 (concatD [prt 0 lexp, doc (showString $ t ":"), prt2 0 typespec])
 
 t :: String -> String

@@ -128,7 +128,6 @@ genDecl decl = case decl of
         case typ of
             TSimple SType_Void -> out $ Comment "Begin procedure"
             otherwise -> out $ Comment "Begin function"
-        
         -- creazione dei commenti che indicano gli argomenti richiesti dalla funzione
         let args = concat $ map (\(PParam x) -> map (\(DParam passMod (PIdent (loc,ident)) typ) -> (convertToTACType typ,buildVarAddress ident loc)) x) params 
         if (length args > 0 ) 
@@ -136,6 +135,11 @@ genDecl decl = case decl of
                 out $ CommentArgs $ args
             else
                 return ()
+
+        out $ Comment "Preamble"
+        genPreamble params
+        out $ Comment "Body"
+        
         -- controllo della presenza di un return come ultima istruzione e generazione istruzioni interne.
         -- se si è in una funzione e l'ultima istruzione non è già un return, si aggiunge un return che
         -- restituisce un valore di default
@@ -147,6 +151,8 @@ genDecl decl = case decl of
                 genExp addrDef (buildDefaultValue typ) typ
                 out $ (ReturnAddr addrDef)
             otherwise -> return ()
+        out $ Comment "Postamble"
+        genPostamble params
         case typ of
             TSimple SType_Void -> out $ Comment "End procedure"
             otherwise -> out $ Comment "End function"
@@ -164,6 +170,32 @@ genDecl decl = case decl of
         isGlobalScope = do
             (k, l, revcode, funs) <- get
             return $ length funs == 1 
+
+genPreamble :: [ParamClause] -> TacState ()
+genPreamble [] = return ()
+genPreamble (param:params) = do
+    genPreambleAux param
+    genPreamble params
+    where
+        genPreambleAux (PParam []) = return ()
+        genPreambleAux (PParam ((DParam mode id@(PIdent (dloc,ident)) typ):xs)) = do
+            case mode of
+                ParamPassMod_valres -> out $ AssignFromPointer (buildVarCopyAddress ident dloc) (buildVarAddress ident dloc) (convertToTACType typ)
+                _ -> return ()
+            genPreambleAux (PParam xs)
+
+genPostamble :: [ParamClause] -> TacState ()
+genPostamble [] = return ()
+genPostamble (param:params) = do
+    genPostambleAux param
+    genPostamble params
+    where
+        genPostambleAux (PParam []) = return ()
+        genPostambleAux (PParam ((DParam mode id@(PIdent (dloc,ident)) typ):xs)) = do
+            case (hasResult mode) of
+                True -> out $ AssignToPointer (buildVarAddress ident dloc) (buildVarCopyAddress ident dloc) (convertToTACType typ)
+                False -> return ()
+            genPostambleAux (PParam xs)
 
 genExpAddr :: Exp -> TypeSpec -> TacState Addr
 genExpAddr texp typ =
@@ -250,8 +282,10 @@ genExp addr texp@(ExpTyped exp _ _) typ = case exp of
                         out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
                         out $ AssignFromArray addr addrLexp' addrOffset (convertToTACType typ)
 
-                    (LIdent id@(PIdent (dloc,ident))) -> 
-                        out $ Assign addr (buildVarAddress ident dloc) (convertToTACType typ)
+                    (LIdentMod id@(PIdent (dloc,ident)) mode ) -> case (needsDeref mode, hasResult mode) of
+                        (_,True) -> out $ Assign addr (buildVarCopyAddress ident dloc) (convertToTACType typ)
+                        (False,_) -> out $ Assign addr (buildVarAddress ident dloc) (convertToTACType typ)
+                        (True,_) -> out $ AssignFromPointer addr (buildVarAddress ident dloc) (convertToTACType typ)
 
     EArray texps -> do
         zipWithM (\e i -> assignElem addr i e (getElementType typ) ) [0 .. ( (length texps) - 1)] texps
@@ -298,11 +332,26 @@ genExp addr texp@(ExpTyped exp _ _) typ = case exp of
             (AbsGramm.Greater  , _)         -> AbsTAC.Greater
             (AbsGramm.GreaterEq, _)         -> AbsTAC.GreaterEq
 
+needsDeref :: ParamPassMod -> Bool
+needsDeref NoParam = False
+needsDeref ParamPassMod_val = False
+needsDeref _ = True
+
+hasResult :: ParamPassMod -> Bool
+hasResult ParamPassMod_valres = True
+hasResult ParamPassMod_res = True
+hasResult _ = False
 
 -- generazione indirizzo per le L-Expression
 genLexp :: LExp -> TacState Addr
-genLexp tlexp@(LExpTyped lexp _ _) = case lexp of
-    LIdent (PIdent (dloc,ident)) -> return $ buildVarAddress ident dloc
+genLexp tlexp@(LExpTyped lexp typ _) = case lexp of
+    LIdentMod (PIdent (dloc,ident)) mode -> case (needsDeref mode, hasResult mode) of
+        (_,True) -> return $ buildVarCopyAddress ident dloc
+        (False,_) -> return $ buildVarAddress ident dloc
+        (True,_) -> do
+            addrTemp <- newTemp
+            out $ AssignFromPointer addrTemp (buildVarAddress ident dloc) (convertToTACType typ)
+            return addrTemp
     LRef tlexp' -> do
         addrRes <- newTemp
         addrLexp' <- genLexp tlexp'
@@ -369,8 +418,12 @@ genStm stm = case stm of
                 addrExp <- genExpAddr texp typ
                 out $ AssignToArray addrLexp' addrOffset addrExp (convertToTACType typ)
 
-            (LIdent id@(PIdent (dloc,ident))) -> 
-                genExp (buildVarAddress ident dloc) texp typ
+            (LIdentMod id@(PIdent (dloc,ident)) mode ) -> case (needsDeref mode, hasResult mode) of
+                (_,True) -> genExp (buildVarCopyAddress ident dloc) texp typ
+                (False,_) -> genExp (buildVarAddress ident dloc) texp typ
+                (True,_) -> do
+                    addrExp <- genExpAddr texp typ
+                    out $ AssignToPointer (buildVarAddress ident dloc) addrExp (convertToTACType typ)
 
     SWhile texp@(ExpTyped exp _ _) tstm -> do
         labelWhile <- newLabel
@@ -511,9 +564,14 @@ genParams (param:params) = do
     genParams params
     where
         genParamAux (ArgExpTyped []) = return ()
-        genParamAux (ArgExpTyped ((texp, typ):xs)) = do
+        genParamAux (ArgExpTyped ((texp, typ, mode):xs)) = do
             addrExp <- genExpAddr texp typ
-            out $ (Param addrExp)
+            case (needsDeref mode) of 
+                False -> out $ Param addrExp
+                True -> do
+                    addrTemp <- newTemp
+                    out $ AssignFromRef addrTemp addrExp TACAddr
+                    out $ Param addrTemp
             genParamAux (ArgExpTyped xs)
 
 
@@ -562,6 +620,9 @@ assignLiteral addr addrLit typ typLit = do
 -- Costruzione indirizzi variabili basandosi su: identificatore, locazione --> ident@loc
 buildVarAddress :: Ident -> Loc -> Addr
 buildVarAddress ident dloc = Var ident dloc
+
+buildVarCopyAddress :: Ident -> Loc -> Addr
+buildVarCopyAddress ident dloc = VarCopy ident dloc
 
 -- Costruzione indirizzi funzioni
 buildFunLabel :: Ident -> Loc -> Label

@@ -4,6 +4,7 @@ import AbsGramm
 
 data Addr
     = Var Ident Loc
+    | VarCopy Ident Loc
     | Temp Int
     | LitString String
     | LitFloat Float
