@@ -112,28 +112,6 @@ startFunScope env id@(PIdent (loc, ident)) params typ = do
     argsInfo = map (\(DParam passMod argId@(PIdent (argLoc, argIdent)) argTyp) -> (argIdent, VarInfo argLoc argTyp passMod)) (concat ( map (\(PParam args) -> args) params ))
     funInfo = (ident, FunInfo loc typ params):argsInfo
 
--- Definizione dei tipi di operazione.
-data TypeOp = NumericOp | BooleanOp | EqOp | RelOp
-
--- getTypeOp
--- preso un operatore binario ritorna il suo tipo.
-getTypeOp :: Op -> TypeOp
-getTypeOp op = case op of
-  Plus      -> NumericOp
-  Minus     -> NumericOp
-  Prod      -> NumericOp
-  Div       -> NumericOp
-  Mod       -> NumericOp
-  Pow       -> NumericOp
-  Or        -> BooleanOp
-  And       -> BooleanOp
-  Less      -> RelOp
-  Greater   -> RelOp
-  LessEq    -> RelOp
-  GreaterEq -> RelOp
-  Equal     -> EqOp
-  NotEq     -> EqOp
-
 ------------------------------------------------------------------------------------------------------------------------
 
 genAnnotatedTree :: Program -> (Program, [LogElement])
@@ -196,19 +174,27 @@ inferDecl decl env = case decl of
         -- Se la dichiarazione che abbiamo appena inserito nello scope è la funzione main
         -- e se lo scope corrente è quello globale, allora abbiamo trovato il main del programma,
         -- lo notifichiamo grazie alla funzione Env.setReturnFound.
-        if ident == "main" && Env.isGlobalScope env' then
-          if (not (isTypeVoid typ)) || (notEmptyParams params)
-            then do
-              saveLog $ launchError loc WrongMainSignature
-              functionHandler (Env.setReturnFound env)
-            else
-              functionHandler (Env.setReturnFound env')
-        else
-          functionHandler env'
+        checkMain env'
+        --if ident == "main" && Env.isGlobalScope env' then
+        --  if (not (isTypeVoid typ)) || (notEmptyParams params)
+        --    then do
+        --      saveLog $ launchError loc WrongMainSignature
+        --      functionHandler (Env.setReturnFound env)
+        --    else
+        --      functionHandler (Env.setReturnFound env')
+        --else
+        --  functionHandler env'
       Failure except -> do
         saveLog $ launchError loc except
         functionHandler env
       where 
+        checkMain env'' = if ident == "main" && Env.isGlobalScope env'' then checkMainSignature env'' else functionHandler env''
+        checkMainSignature env''= if (not (isTypeVoid typ)) || (notEmptyParams params) 
+          then do
+            saveLog $ launchError loc WrongMainSignature
+            functionHandler (Env.setReturnFound env)
+          else functionHandler (Env.setReturnFound env'')
+        
         functionHandler e = do
           -- Creare nuovo scope avviato con i parametri e il nome della fun.
           newScope <- startFunScope e id params typ
@@ -333,18 +319,19 @@ inferStm stm env inLoop = case stm of
     return $ (SDecl tdecl, env')
 
 -------------------------------------------------------------------------------------------------------------------------------------------
-  SBlock block -> let ftyp = Env.getScopeType env in do
-    (tblock, env') <- inferBlock block ftyp env
-    if Env.hasReturn env'
-      then
-        return $ (SBlock tblock, Env.setReturnFound env)
-      else
-        return $ (SBlock tblock, env)
-    where
-      inferBlock (DBlock []) _ env = return $ (DBlock [], env)
-      inferBlock (DBlock stms) ftyp env = do
-        (tstms, env') <- inferStms stms (Env.addScope env ftyp) inLoop
-        return $ (DBlock tstms, env')
+  SBlock block -> --let ftyp = Env.getScopeType env in do
+    do
+      (tblock, env') <- inferBlock block (Env.getScopeType env) env
+      if Env.hasReturn env'
+        then
+          return $ (SBlock tblock, Env.setReturnFound env)
+        else
+          return $ (SBlock tblock, env)
+      where
+        inferBlock (DBlock []) _ env = return $ (DBlock [], env)
+        inferBlock (DBlock stms) ftyp env = do
+          (tstms, env') <- inferStms stms (Env.addScope env ftyp) inLoop
+          return $ (DBlock tstms, env')
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   SAssign lexp exp -> do
@@ -358,22 +345,23 @@ inferStm stm env inLoop = case stm of
     return $ (SAssign tlexp texp, env)
 
 -------------------------------------------------------------------------------------------------------------------------------------------
-  SReturnExp preturn@(PReturn (loc, id)) exp -> let ftyp = Env.getScopeType env in
+  SReturnExp preturn@(PReturn (loc, id)) exp -> --let ftyp = Env.getScopeType env in
     do
       texp <- inferExp exp env
-      case (isTypeError texp, isTypeVoid ftyp, compatible (getType texp) ftyp) of
-        (False, False, True) -> return $ (SReturnExp preturn texp, Env.setReturnFound env)
-        (False, False, False) -> do
-          -- se il tipo dello scope non è void, ma è incompatibile con quello dell'espressione
-          -- allora si lancia un'errore.
-          saveLog $ launchError loc (WrongExpType exp (getType texp) ftyp)
-          return $ (SReturnExp preturn texp, env)
-        (False, True, _) -> do
-          -- Se il tipo dello scope è Void, allora ci troviamo all'interno di una procedura
-          -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
-          saveLog $ launchError loc (UnexpectedReturn exp)
-          return $ (SReturnExp preturn texp, env)
-        (True, _, _) -> return $ (SReturnExp preturn texp, env)
+      checkError texp
+      --case (isTypeError texp, isTypeVoid ftyp, compatible (getType texp) ftyp) of
+      --  (False, False, True) -> return $ (SReturnExp preturn texp, Env.setReturnFound env)
+      --  (False, False, False) -> do
+      --    -- se il tipo dello scope non è void, ma è incompatibile con quello dell'espressione
+      --    -- allora si lancia un'errore.
+      --    saveLog $ launchError loc (WrongExpType exp (getType texp) ftyp)
+      --    return $ (SReturnExp preturn texp, env)
+      --  (False, True, _) -> do
+      --    -- Se il tipo dello scope è Void, allora ci troviamo all'interno di una procedura
+      --    -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
+      --    saveLog $ launchError loc (UnexpectedReturn exp)
+      --    return $ (SReturnExp preturn texp, env)
+      --  (True, _, _) -> return $ (SReturnExp preturn texp, env)
       --if isTypeError texp
       --  then
       --    return $ (SReturnExp preturn texp, env)
@@ -396,6 +384,27 @@ inferStm stm env inLoop = case stm of
       --            saveLog $ launchError loc (WrongExpType exp (getType texp) ftyp)
       --            return $ (SReturnExp preturn texp, env)
 
+      where
+        checkError texp = case isTypeError texp of
+          True -> return $ (SReturnExp preturn texp, Env.setReturnFound env)
+          False -> checkTypeVoid texp (Env.getScopeType env)
+        
+        checkTypeVoid texp ftyp = case isTypeVoid ftyp of
+          True ->  do
+            -- Se il tipo dello scope è Void, allora ci troviamo all'interno di una procedura
+            -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
+            saveLog $ launchError loc (UnexpectedReturn exp)
+            return $ (SReturnExp preturn texp, env)
+          False -> checkCompatible texp ftyp
+        
+        checkCompatible texp ftyp = case compatible (getType texp) ftyp of
+          True -> return $ (SReturnExp preturn texp, Env.setReturnFound env)
+          False -> do
+            -- Se il tipo dello scope è Void, allora ci troviamo all'interno di una procedura
+            -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
+            saveLog $ launchError loc (UnexpectedReturn exp)
+            return $ (SReturnExp preturn texp, env)
+
 -------------------------------------------------------------------------------------------------------------------------------------------
   SReturn preturn@(PReturn (loc, _))-> let ftyp = Env.getScopeType env in
     if not (isTypeVoid ftyp)
@@ -416,6 +425,7 @@ inferStm stm env inLoop = case stm of
       else do
         saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
         return (SBreak pbreak, env)
+
   SContinue pcontinue@(PContinue (loc,ident)) -> do
     if inLoop
       then return (SContinue pcontinue, env)
@@ -650,16 +660,25 @@ inferExp exp env = case exp of
           typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
           typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses
           
-          returnProcWithType typ' = return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) typ' loc 
+          returnProcWithType typ' = return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) typ' loc
  -------------------------------------------------------------------------------------------------------------------------------------------
+  --ENot exp -> do
+  -- texp <- inferExp exp env
+  -- if isTypeError texp || compatible (getType texp) (TSimple SType_Bool)
+  --   then return (ExpTyped (ENot texp) (getType texp) (getLoc texp))
+  --   else do
+  --     saveLog $ launchError (getLoc texp) (WrongNotApplication exp (getType texp))
+  --     return $ ExpTyped (ENot texp) (TSimple SType_Error) (getLoc texp)
+
   ENot exp -> do
     texp <- inferExp exp env
-    if isTypeError texp || compatible (getType texp) (TSimple SType_Bool)
-      then return (ExpTyped (ENot texp) (getType texp) (getLoc texp))
-      else do
-        saveLog $ launchError (getLoc texp) (WrongNotApplication exp (getType texp))
-        return $ ExpTyped (ENot texp) (TSimple SType_Error) (getLoc texp)
-
+    checkCorrectness texp
+    where
+      checkCorrectness texp = case isTypeError texp || compatible (getType texp) (TSimple SType_Bool) of
+        True -> return (ExpTyped (ENot texp) (getType texp) (getLoc texp))
+        False -> do
+          saveLog $ launchError (getLoc texp) (WrongNotApplication exp (getType texp))
+          return $ ExpTyped (ENot texp) (TSimple SType_Error) (getLoc texp)
 -------------------------------------------------------------------------------------------------------------------------------------------
   ENeg exp -> do
     texp <- inferExp exp env
@@ -738,3 +757,26 @@ inferBinOp expl op expr env = do
     returnBinOpError texpl op texpr = do
       saveLog $ launchError (getLoc texpl) (WrongOpApplication op (getType texpl) (getType texpr))
       return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
+
+    -- getTypeOp
+    -- preso un operatore binario ritorna il suo tipo.
+    getTypeOp :: Op -> TypeOp
+    getTypeOp op = case op of
+      Plus      -> NumericOp
+      Minus     -> NumericOp
+      Prod      -> NumericOp
+      Div       -> NumericOp
+      Mod       -> NumericOp
+      Pow       -> NumericOp
+      Or        -> BooleanOp
+      And       -> BooleanOp
+      Less      -> RelOp
+      Greater   -> RelOp
+      LessEq    -> RelOp
+      GreaterEq -> RelOp
+      Equal     -> EqOp
+      NotEq     -> EqOp
+
+
+-- Definizione dei tipi di operazione.
+data TypeOp = NumericOp | BooleanOp | EqOp | RelOp
