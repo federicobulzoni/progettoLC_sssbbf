@@ -299,8 +299,9 @@ genExp addr texp@(ExpTyped exp _ _) typ = case exp of
 
                     (LArr lexp' texp') -> do
                         addrLexp' <- genLexp lexp'
-                        addrOffset <- newTemp
                         addrExp' <- genExpAddr texp' (TSimple SType_Int)
+                        genArrayBounds addrExp' (getType lexp')
+                        addrOffset <- newTemp
                         out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
                         out $ AssignFromArray addr addrLexp' addrOffset (convertToTACType typ)
 
@@ -417,8 +418,9 @@ genLexp tlexp@(LExpTyped lexp typ _) = case lexp of
         return addrRes
     LArr tlexp' texp -> do
         addrLexp' <- genLexp tlexp'
-        addrOffset <- newTemp
         addrExp <- genExpAddr texp (TSimple SType_Int)
+        genArrayBounds addrExp (getType tlexp')
+        addrOffset <- newTemp
         addrRes <- newTemp
         out $ AssignBinOp addrOffset addrExp AbsTAC.ProdInt (LitInt $ sizeOf (getElementType tlexp')) (convertToTACType (TSimple SType_Int))
         out $ AssignFromArray addrRes addrLexp' addrOffset (convertToTACType (getElementType tlexp'))
@@ -461,27 +463,29 @@ genStm stm = case stm of
     SAssign tlexp@(LExpTyped lexp typ _) texp -> do
         -- Se lexp è del tipo array o puntatore, si vogliono utilizzare le istruzioni del tac x[y]=z e
         -- *x=y per evitare la creazione di un temporaneo inutile per la left expression.
-        case lexp of
-            (LRef lexp') -> do
-                -- generazione del codice della left expression prima di quello della right expression
-                addrLexp' <- genLexp lexp'
-                addrExp <- genExpAddr texp typ
-                out $ AssignToPointer addrLexp' addrExp (convertToTACType typ)
+      case lexp of
+        (LRef lexp') -> do
+            -- generazione del codice della left expression prima di quello della right expression
+            addrLexp' <- genLexp lexp'
+            addrExp <- genExpAddr texp typ
+            out $ AssignToPointer addrLexp' addrExp (convertToTACType typ)
 
-            (LArr lexp' texp') -> do
-                addrLexp' <- genLexp lexp'
-                addrExp' <- genExpAddr texp' (TSimple SType_Int)
-                addrOffset <- newTemp
-                out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
+        (LArr lexp' texp') -> do
+            addrLexp' <- genLexp lexp'
+            addrExp' <- genExpAddr texp' (TSimple SType_Int)
+            genArrayBounds addrExp' (getType lexp')
+            addrOffset <- newTemp
+            out $ AssignBinOp addrOffset addrExp' AbsTAC.ProdInt (LitInt $ sizeOf typ) (convertToTACType (TSimple SType_Int))
+            addrExp <- genExpAddr texp typ
+            out $ AssignToArray addrLexp' addrOffset addrExp (convertToTACType typ)
+              
+        (LIdentMod id@(PIdent (dloc,ident)) mode ) -> case (needsDeref mode, hasResult mode) of
+            (_,True) -> genExp (buildVarCopyAddress ident dloc) texp typ
+            (False,_) -> genExp (buildVarAddress ident dloc) texp typ
+            (True,_) -> do
                 addrExp <- genExpAddr texp typ
-                out $ AssignToArray addrLexp' addrOffset addrExp (convertToTACType typ)
-
-            (LIdentMod id@(PIdent (dloc,ident)) mode ) -> case (needsDeref mode, hasResult mode) of
-                (_,True) -> genExp (buildVarCopyAddress ident dloc) texp typ
-                (False,_) -> genExp (buildVarAddress ident dloc) texp typ
-                (True,_) -> do
-                    addrExp <- genExpAddr texp typ
-                    out $ AssignToPointer (buildVarAddress ident dloc) addrExp (convertToTACType typ)
+                out $ AssignToPointer (buildVarAddress ident dloc) addrExp (convertToTACType typ)
+                
 
     SWhile texp@(ExpTyped exp _ _) tstm -> do
         labelWhile <- newLabel
@@ -531,6 +535,15 @@ genStm stm = case stm of
     where 
         isBlockEmpty bl = if (SBlock (DBlock []) == bl ) then True else False
 
+genArrayBounds :: Addr -> TypeSpec -> TacState ()
+genArrayBounds addr (TArray _ (PInteger (_,ident))) = do
+  labOutOfBounds <- newLabel
+  labInBounds <- newLabel
+  out $ IfRel AbsTAC.Less addr (LitInt 0) labOutOfBounds
+  out $ IfRel AbsTAC.Less addr (LitInt (read ident :: Int)) labInBounds
+  out $ Lab labOutOfBounds
+  out $ Call (LabFun "errorOutOfBounds" (0,0)) 0
+  out $ Lab labInBounds                    
 
 -- FUNZIONI AUSILIARIE
 
