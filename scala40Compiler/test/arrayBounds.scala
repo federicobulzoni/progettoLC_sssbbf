@@ -1,4 +1,4 @@
-def main() = {
+def foo() = {
 	var a : Array[Int](2);
 	var x : Int;
 	a[x] = 1;
