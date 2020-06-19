@@ -459,7 +459,7 @@ inferStm stm env inLoop = case stm of
     
     mapM (checkCompatible loc) [texp_init, texp_end, texp_step]
 
-    (tstm, env') <- inferStm (addIteratorDec stm) env False
+    (tstm, env') <- inferStm (addIteratorDec stm) env True
 
     if Env.hasReturn env'
       then return ( SFor id texp_init texp_end texp_step (getForStm stm tstm), Env.setReturnFound env)

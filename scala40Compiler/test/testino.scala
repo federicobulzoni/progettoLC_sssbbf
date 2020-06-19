@@ -1,5 +1,5 @@
-def prova(ref a : Int)(ref b : Float, ref c : *Char) : Float = a + b;
-def prova2(ref a : Int)(ref b : Float, ref c : *Char) = writeInt(3);
+def prova(val a : Int)(val b : Float, val c : *Char) : Float = a + b;
+def prova2(val a : Int)(val b : Float, val c : *Char) = writeInt(3);
 //def arduo () : Float = if (4 == 3) True else if (3 > 1) False else 3;
 def main ()  = {
 	var c : Int = 3;
@@ -20,7 +20,7 @@ def main ()  = {
 	while (9 < 3)
 		break;
 	while (9 < 2){
-		def fun (ref a : Int) = {
+		def fun (val a : Int) = {
 			while(3 < 4) break;
 		}
 		continue;
@@ -37,7 +37,10 @@ def foo () : Int = {
 	var t : Int = 4;
 	while ( 5 == True) t = 3;
 	for (c <- 1 until True by True) {
-		t = 3;
+		break;
+		for(c <- 1 until True by True) {
+			continue;
+		}
 		return 3;
 	}
 

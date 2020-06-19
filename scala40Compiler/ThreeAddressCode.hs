@@ -505,8 +505,12 @@ genStm stm = case stm of
         setContinue oldContinue
 
     SFor id@(PIdent (loc,ident)) texp_init texp_end texp_step tstm -> do
+        oldBreak <- getBreak
+        oldContinue <- getContinue
         labelFor <- newLabel
         labelFalse <- newLabel
+        setBreak labelFalse
+        setContinue labelFor
         genExp (buildVarAddress ident loc) texp_init (TSimple SType_Int)
         addrStep <- genExpAddr texp_step (TSimple SType_Int)
         out $ Lab labelFor
@@ -515,6 +519,8 @@ genStm stm = case stm of
         out $ AssignBinOp (buildVarAddress ident loc) (buildVarAddress ident loc) (AbsTAC.PlusInt) addrStep (TACInt)
         out $ Goto labelFor
         out $ Lab labelFalse
+        setBreak oldBreak
+        setContinue oldContinue
 
     SDoWhile tstm texp -> do
         oldBreak <- getBreak
