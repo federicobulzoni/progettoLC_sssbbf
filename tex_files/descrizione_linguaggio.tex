@@ -137,36 +137,77 @@ I token possono essere separati dai caratteri di spaziatura standard o commenti.
 
 \section{Vincoli di semantica statica di \SBF}
 \subsection*{Scoping}
-Il linguaggio ha scoping statico con visibilità dal punto di dichiarazione in poi. Le regole per la visibilità di dichiarazioni locali sono le usuali.
-
+Il linguaggio ha scoping statico con visibilità dal punto di dichiarazione in poi. Una variabile/funzione dichiarata all'interno di un blocco è visibile all'interno dell'intero blocco e nei sotto-blocchi in esso contenuti, nel caso in cui una stessa variabile/funzione sia stata dichiarata più volte all'interno di blocchi annidati, viene considerata la dichiarazione nel blocco più vicino al punto di utilizzo.
 Gli identificatori di variabili e funzioni/procedure devono essere unici all'interno di uno stesso scope. Lo spazio dei nomi è unico, ossia non è permesso dichiarare una variabile e una funzione/procedura con lo stesso nome. 
 
 \subsection*{Vincoli riguardanti i tipi}
-Il linguaggio ha 5 tipi base e 2 costruttori di tipo come indicato nella definizione di $\token{TypeSpec}$. Non sono previste compatibilità fra tipi diversi. Il valore $\texttt{Null}$ può essere assegnato solo a left-expression il cui tipo ha un puntatore al top-level.
+Il linguaggio ha 5 tipi base: \texttt{Bool}, \texttt{Char}, \texttt{Int}, \texttt{Float} e \texttt{String}; le compatibilità tra i tipi di base sono riportate in tabella \ref{tab:compatibilitaTipiBase}. \\
 
-I tipi degli operatori binari sono descritti in tabella \ref{tab:binari}, i tipi degli operatori unari sono descritti in tabella \ref{tab:unari}.
-
-\begin{table}[h]
-	\centering
-	\begin{tabular}{l|l}
-		$\texttt{+},\ \texttt{-},\ \texttt{*},\ \texttt{/},\ \texttt{\^{}},\ \texttt{\%} $ & $\texttt{Int} \times \texttt{Int} \to \texttt{Int}$ o $\texttt{Float} \times \texttt{Float} \to \texttt{Float}$\\ \hline
-		$\texttt{||},\ \texttt{\&\&} $ & $\texttt{Bool} \times \texttt{Bool} \to \texttt{Bool}$ \\ \hline
-		$\texttt{<},\ \texttt{<=},\ \texttt{>},\ \texttt{>=} $ & $\texttt{Int} \times \texttt{Int} \to \texttt{Bool}$ o $\texttt{Float} \times \texttt{Float} \to \texttt{Bool}$\\ \hline
-		$\texttt{==},\ \texttt{!=}$  & $\tau \times \tau \to \texttt{Bool}$ dove $\tau$ è un qualsiasi tipo
-	\end{tabular}
-	\caption{Tabella con i tipi degli operatori binari.}
-	\label{tab:binari}
+\begin{table}[]
+\begin{tabular}{llllll}
+    & Bool & Char & Int & Float & String \\
+Bool   & T    & F    & T   & T     & F      \\
+Char   & F    & T    & T   & T     & F      \\
+Int    & F    & F    & T   & T     & F      \\
+Float  & F    & F    & F   & T     & F      \\
+String & F    & F    & F   & F     & T     
+\end{tabular}
+\caption{Tabella compatibilità tra tipi di base: una entry $(t_i, t_j)$ ha valore $T$ se il tipo $t_i$ può essere convertito al tipo $t_j$, ha valore $F$ altrimenti.}
+\label{tab:compatibilitaTipiBase}
 \end{table}
 
-\begin{table}[h]
-	\centering
-	\begin{tabular}{l|l}
-		$\texttt{!}$ & $\texttt{Bool} \to \texttt{Bool}$\\ \hline
-		$\texttt{-}$ & $\texttt{Int} \to \texttt{Int}$ o $\texttt{Float} \to \texttt{Float}$
-	\end{tabular}
-	\caption{Tabella con i tipi degli operatori unari.}
-	\label{tab:unari}
+Oltre ai tipi di base  sono presenti due tipi composti: \texttt{*typ}, puntatore a \texttt{typ} e \texttt{Array[typ](dim)}, array di dimensione \texttt{dim} di elementi di tipo \texttt{typ}, dove \texttt{typ} è un tipo base o un tipo composto e \texttt{dim} è un intero; il tipo speciale \texttt{*Void} è utilizzato internamente per codificare il valore \texttt{Null}. È possibile assegnare il valore \texttt{Null} a qualsiasi elemento di tipo puntatore a \texttt{typ} qualunque sia il tipo \texttt{typ} puntato.
+I tipi composti seguono le seguenti regole di compatibilità:
+\begin{itemize}
+\item un elemento di tipo \texttt{*typ1} è compatibile unicamente con elementi di tipo \texttt{*typ2}, un elemento di tipo \texttt{*typ1} è compatibile con un elemento di tipo \texttt{*typ2} se e solo se \texttt{typ1} è compatibile con \texttt{typ2} o se \texttt{typ1} = \texttt{Void};
+\item un elemento di tipo \texttt{Array[typ1](dim1)} è compatibile unicamente con elementi di tipo \texttt{Array[typ2](dim2)}, un elemento di tipo \texttt{Array[typ1](dim1)} è compatibile con un elemento di tipo \texttt{Array[typ2](dim2)} se e solo \texttt{typ1} è compatibile con \texttt{typ2} e \texttt{dim1} = \texttt{dim2}.
+\end{itemize}
+
+Le regole di compatibilità tra tipi sono codificate all'interno della funzione \texttt{compatible} nel modulo \texttt{StaticAnalysis.hs}.
+Sia \texttt{compatible typ1 typ2} equivalente a $typ_1 \leq typ_2$ nella notazione utilizzata in seguito, sia inoltre $\tau(exp)$ il tipo della espressione $exp$.
+Le regole di derivazione per gli operatori unari sono riportare in tabella \ref{tab:unari}.
+
+
+\begin{table}[]
+\begin{tabular}{l|l|l}
+Operatore & Vincoli            & Tipo \\ \hline
+$!exp$      & $\tau(exp) = Bool$ & $Bool$          \\
+$-exp$      & $\tau(exp) \leq Float$   & \texttt{if} $\tau(exp) = Float$ \texttt{then} $Float$ \texttt{else} $Int$ \\
+\end{tabular}
+\caption{Regole di derivazione per gli operatori unari.}
+\label{tab:unari}
 \end{table}
+
+
+Gli operatori binari sono classificati in \texttt{numerici}, \texttt{booleani}, \texttt{relazionali} come riportato in tabella \ref{tab:tipoOpBinari}. Le regole di derivazione per gli operatori binari sono definite in base alle possibili classi, tali regole sono riportate in tabella \ref{tab:binari}.
+
+\begin{table}[]
+\begin{tabular}{l|l}
+Classe & Membri \\ \hline
+Numerici & $\texttt{+},\ \texttt{-},\ \texttt{*},\ \texttt{/},\ \texttt{\^{}},\ \texttt{\%}$\\
+Booleani & $\texttt{||},\ \texttt{\&\&}$ \\
+Relazionali &$\texttt{<},\ \texttt{<=},\ \texttt{>},\ \texttt{>=} , \texttt{<},\ \texttt{<=},\ \texttt{>},\ \texttt{>=} $ \\
+\end{tabular}
+\caption{Classificazione operatori binari.}
+\label{tab:tipoOpBinari}
+\end{table}
+
+\begin{table}[]
+\begin{tabular}{l|l|l}
+Operatore         &         Vincoli            & Tipo \\ \hline
+$e_1\ op\ e_2$ t.c. $op \in Numerici$  &  $max(\tau(e_1), \tau(e_2)) \leq Float$ &  \texttt{if} $\tau(max(\tau(e_1), \tau(e_2))) = Float$ \texttt{then} $Float$ \texttt{else} $Int$ \\
+$e_1\ op\ e_2$ t.c $op \in Booleani$ & $\tau(e_1) \leq Bool \wedge \tau(e_2) \leq Bool$ & $Bool$ \\
+$e_1\ op\ e_2$ t.c. $op \in Relazionali$ & $\tau(e_1) \leq \tau(e_2) \wedge \tau(e_2) \leq \tau(e_1)$ & $Bool$\\
+\end{tabular}
+\caption{Tabella con i tipi degli operatori binari.}
+\label{tab:binari}
+\end{table}
+
+Negli statement condizionali è richiesto che la condizione sia una espressione compatibile con il tipo $Bool$, se così non è viene lanciato un errore.
+Riguardo al passaggio dei parametri attuali nelle chiamate di funzioni/procedure si richiede che il parametro attuale sia una $L$-espressione nel caso in cui il corrispondente parametro formale sia dichiarato con modalità per \textit{riferimento}, per \texttt{risultato} o per \texttt{valore-risultato}. Nel caso in cui il parametro formale sia dichiarato con modalità per \textit{valore} non ci sono vincoli sul corrispondente parametro attuale.
+
+
+
 
 Le guardie di istruzioni $\texttt{if}$, $\texttt{do-while}$ e $\texttt{while}$ devono avere tipo $\texttt{Bool}$.
 

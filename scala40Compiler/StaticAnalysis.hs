@@ -29,9 +29,6 @@ isTypeVoid :: TypeSpec -> Bool
 isTypeVoid typ = typ == (TSimple SType_Void)
 
 ------------------------------------------------------------------------------------------------------------------------
-
----- PROPOSTA VELOCE PER RISOLVERE COMPATIBILITA' TIPI
-
 compatible :: TypeSpec -> TypeSpec -> Bool
 compatible typ_exp (TSimple SType_Int) = elem typ_exp [TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
 compatible typ_exp (TSimple SType_Float) = elem typ_exp [TSimple SType_Float, TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
@@ -682,11 +679,20 @@ inferExp exp env = case exp of
 -------------------------------------------------------------------------------------------------------------------------------------------
   ENeg exp -> do
     texp <- inferExp exp env
-    if isTypeError texp || compatible (getType texp) (TSimple SType_Float)
-      then return $ ExpTyped (ENeg texp) (getType texp) (getLoc texp)
-      else do
-        saveLog $ launchError (getLoc texp) (WrongNegApplication exp (getType texp))
-        return $ (ExpTyped (ENeg texp) (TSimple SType_Error) (getLoc texp))
+    if isTypeError texp
+      then
+        return $ ExpTyped (ENeg texp) (TSimple SType_Error) (getLoc texp)
+      else
+        if compatible (getType texp) (TSimple SType_Float)
+          then
+            if getType texp == (TSimple SType_Float)
+              then
+                return $ ExpTyped (ENeg texp) (TSimple SType_Float) (getLoc texp)
+              else
+                return $ ExpTyped (ENeg texp) (TSimple SType_Int) (getLoc texp)
+          else do
+            saveLog $ launchError (getLoc texp) (WrongNegApplication exp (getType texp))
+            return $ (ExpTyped (ENeg texp) (TSimple SType_Error) (getLoc texp))
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   ELExp lexp -> do
@@ -748,7 +754,7 @@ inferBinOp expl op expr env = do
         (TSimple SType_String) -> returnBinOpError texpl op texpr
         (TSimple SType_Float) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Float) (getLoc texpl)
         _ -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Int) (getLoc texpl)
-    (_, typl, typr) ->
+    (RelOp, typl, typr) ->
       if compatible (min typl typr) (max typl typr)
         then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
         else returnBinOpError texpl op texpr
@@ -774,9 +780,9 @@ inferBinOp expl op expr env = do
       Greater   -> RelOp
       LessEq    -> RelOp
       GreaterEq -> RelOp
-      Equal     -> EqOp
-      NotEq     -> EqOp
+      Equal     -> RelOp
+      NotEq     -> RelOp
 
 
 -- Definizione dei tipi di operazione.
-data TypeOp = NumericOp | BooleanOp | EqOp | RelOp
+data TypeOp = NumericOp | BooleanOp | RelOp
