@@ -2,7 +2,7 @@
 var a : Array[Int](10);
 var N : Int = 10;
 
-def bubbleSort (ref a : Array[Int](10), val dim : Int) : Array[Int](10) = {
+def bubbleSort (val a : Array[Int](10), val dim : Int) : Array[Int](10) = {
 	var swapped : Bool = True;
 	var temp : Int;
 
