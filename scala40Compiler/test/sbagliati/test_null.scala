@@ -1,5 +1,6 @@
 var a : Int = Null;
 var arr : Array[Int](3);
+def foo (val a : Int, val v : Int)(val e : Float) = Null;
 def main() = {
     var b : Int = 3;
     var x : *Int = Null;
@@ -12,6 +13,5 @@ def main() = {
     if(Null){
         writeInt(arr[Null]);
     }
+    foo(3);
 }
-
-def foo () = Null;

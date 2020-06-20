@@ -511,9 +511,9 @@ inferStm stm env inLoop = case stm of
       addIteratorDec (SBlock (DBlock stms)) = SBlock $ DBlock $ (SDecl $ DecVar id (TSimple SType_Int)):stms
       addIteratorDec _                      = SBlock $ DBlock $ [(SDecl $ DecVar id (TSimple SType_Int)), stm]
 
-      checkCompatible loc' texp = do
+      checkCompatible loc' texp@(ExpTyped exp _ _) = do
         if not $ compatible (getType texp) (TSimple SType_Int)
-          then saveLog $ launchError loc' (WrongExpType exp_init (getType texp) (TSimple SType_Int) )
+          then saveLog $ launchError loc' (WrongExpType exp (getType texp) (TSimple SType_Int) )
           else return ()
 
 -------------------------------------------------------------------------------------------------------------------------------------------
