@@ -70,7 +70,7 @@ Quest'ultima prende in esame tutti i possibili statement:
     \item If: banalmente vengono create le istruzioni relative agli statement relativi all'{\tt if} e all'{\tt else}. Se il corpo dell'{\tt else} è vuoto, allora l'etichetta {\tt labelElse} dopo le istruzioni del caso {\tt if} non viene generata.
 \end{itemize}
 
-Sia per quanto riguarda gli {\ff If} e i cicli ({\tt For, Do-While} e {\tt While}) la gestione delle etichette avviene tramite la funzione {\tt genCondition}, che, presa l'espressione della condizione e le due etichette che indicano dove spostarsi in caso essa sia vera o meno, gestitisce la creazione dei {\tt Goto} ed esegue il controllo del flusso. La funzione {\tt genCondition} viene utilizzata in particolar modo per evitare controlli superflui (es. nella condizione {\tt a \&\& b} se {\tt a} è falsa, non serve valutare anche {\tt b} e il controllo può passare all'etichetta relativa al caso {\tt False} della condizione).
+Sia per quanto riguarda gli {\tt If} e i cicli ({\tt For, Do-While} e {\tt While}) la gestione delle etichette avviene tramite la funzione {\tt genCondition}, che, presa l'espressione della condizione e le due etichette che indicano dove spostarsi in caso essa sia vera o meno, gestitisce la creazione dei {\tt Goto} ed esegue il controllo del flusso. La funzione {\tt genCondition} viene utilizzata in particolar modo per evitare controlli superflui (es. nella condizione {\tt a \&\& b} se {\tt a} è falsa, non serve valutare anche {\tt b} e il controllo può passare all'etichetta relativa al caso {\tt False} della condizione).
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% genExp
 

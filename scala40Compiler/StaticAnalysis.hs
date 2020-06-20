@@ -30,12 +30,12 @@ isTypeVoid typ = typ == (TSimple SType_Void)
 
 ------------------------------------------------------------------------------------------------------------------------
 compatible :: TypeSpec -> TypeSpec -> Bool
-compatible typ_exp (TSimple SType_Int) = elem typ_exp [TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
-compatible typ_exp (TSimple SType_Float) = elem typ_exp [TSimple SType_Float, TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
-compatible typ_exp (TSimple SType_Char) = elem typ_exp [TSimple SType_Char]
-compatible typ_exp (TSimple SType_Bool) = elem typ_exp [TSimple SType_Bool]
+compatible typ_exp (TSimple SType_Int)    = elem typ_exp [TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
+compatible typ_exp (TSimple SType_Float)  = elem typ_exp [TSimple SType_Float, TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
+compatible typ_exp (TSimple SType_Char)   = elem typ_exp [TSimple SType_Char, TSimple SType_Bool]
+compatible typ_exp (TSimple SType_Bool)   = elem typ_exp [TSimple SType_Bool]
 compatible typ_exp (TSimple SType_String) = elem typ_exp [TSimple SType_String]
-compatible typ_exp (TSimple _) = False
+compatible typ_exp (TSimple _)            = False
 
 compatible typ_exp (TPointer typ) = case typ_exp of
   TPointer (TSimple SType_Void) -> True
@@ -177,12 +177,11 @@ inferDecl decl env = case decl of
         -- Se la dichiarazione che abbiamo appena inserito nello scope è la funzione main
         -- e se lo scope corrente è quello globale, allora abbiamo trovato il main del programma,
         -- lo notifichiamo grazie alla funzione Env.setReturnFound.
-        --checkMain ident (Env.isGlobalScope env') env'
         if ident == "main" && Env.isGlobalScope env' then
           if (not (isTypeVoid typ)) || (notEmptyParams params)
             then do
               saveLog $ launchError loc WrongMainSignature
-              functionHandler (Env.setReturnFound env)
+              functionHandler env'
             else
               functionHandler (Env.setReturnFound env')
         else
@@ -191,13 +190,6 @@ inferDecl decl env = case decl of
         saveLog $ launchError loc except
         functionHandler env
       where 
-        --checkMain env'' = if ident == "main" && Env.isGlobalScope env'' then checkMainSignature env'' else functionHandler env''
-        --checkMainSignature env''= if (not (isTypeVoid typ)) || (notEmptyParams params) 
-        --  then do
-        --    saveLog $ launchError loc WrongMainSignature
-        --    functionHandler (Env.setReturnFound env)
-        --  else functionHandler (Env.setReturnFound env'')
-        
         functionHandler e = do
           -- Creare nuovo scope avviato con i parametri e il nome della fun.
           newScope <- startFunScope e id params typ
@@ -221,12 +213,11 @@ inferDecl decl env = case decl of
           if (not (isTypeVoid typ)) || (notEmptyParams params)
             then do
               saveLog $ launchError loc WrongMainSignature
-              functionHandler (Env.setReturnFound env)
+              functionHandler env'
             else
               functionHandler (Env.setReturnFound env')
         else
           functionHandler env'
-        --checkMain ident (Env.isGlobalScope env') env'
 
       Failure except -> do
         saveLog $ launchError loc except
@@ -240,17 +231,14 @@ inferDecl decl env = case decl of
               return (DefFun id params typ (DBlock [stmt]), e')
             -- PROCEDURA con assegnata EXP
             (_,True) -> do
-              newScope <-  startFunScope e id params typ
-              texp <- inferExp exp newScope
-              if isTypeError texp then
-                return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
-              else do
-                saveLog $ launchError loc (ExpAssignedToProcedure ident exp (getType texp))
-                return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
+              e' <-  startFunScope e id params typ
+              texp <- inferExp exp e'
+              saveLog $ launchError loc (ExpAssignedToProcedure ident exp (getType texp))
+              return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
             -- FUNZIONE
             (_,False) -> do
-              newScope <- startFunScope e id params typ
-              texp <- inferExp exp newScope
+              e' <- startFunScope e id params typ
+              texp <- inferExp exp e'
               if isTypeError texp || compatible (getType texp) typ 
                 then
                   return (DefFun id params typ (DBlock [SReturnExp (PReturn (loc , "return")) texp]), e)
@@ -260,27 +248,6 @@ inferDecl decl env = case decl of
 
         notEmptyParams [PParam []] = False
         notEmptyParams par = True
-
-  --where
-  --  checkMain "main" True env'' decl = checkMainSignature env'' decl 
-  --  checkMain _ _ env'' _ = functionHandler env''
-  --  checkMainSignature env'' (DefFun (PIdent (loc', _)) params' typ' _) = checkMainSignatureAux env'' typ' loc' params' 
-  --  checkMainSignature env'' (DefFunInLine (PIdent (loc', _)) params' typ' _) = checkMainSignatureAux env'' typ' loc' params'
-  --  checkMainSignatureAux env'' typ' loc' params' = do
-  --    if (not (isTypeVoid typ')) || (notEmptyParams params') 
-  --      then do
-  --        saveLog $ launchError loc' WrongMainSignature
-  --        functionHandler (Env.setReturnFound env)
-  --      else functionHandler (Env.setReturnFound env'')
-
-    
-{-
-inferBlock :: Block -> TypeSpec -> Env -> Logger (Block, Env)
-inferBlock (DBlock []) _ env = return $ (DBlock [], env)
-inferBlock (DBlock stms) ftyp env = do
-  (tstms, env') <- inferStms stms (Env.addScope env ftyp) 
-  return $ (DBlock tstms, env')
--}
 
 inferStms :: [Stm] -> Env -> Bool -> Logger ([Stm], Env)
 inferStms [] env _ = return ([], env)
@@ -335,19 +302,18 @@ inferStm stm env inLoop = case stm of
     return $ (SDecl tdecl, env')
 
 -------------------------------------------------------------------------------------------------------------------------------------------
-  SBlock block -> --let ftyp = Env.getScopeType env in do
-    do
-      (tblock, env') <- inferBlock block (Env.getScopeType env) env
-      if Env.hasReturn env'
-        then
-          return $ (SBlock tblock, Env.setReturnFound env)
-        else
-          return $ (SBlock tblock, env)
-      where
-        inferBlock (DBlock []) _ env = return $ (DBlock [], env)
-        inferBlock (DBlock stms) ftyp env = do
-          (tstms, env') <- inferStms stms (Env.addScope env ftyp) inLoop
-          return $ (DBlock tstms, env')
+  SBlock block -> do
+    (tblock, env') <- inferBlock block (Env.getScopeType env) env
+    if Env.hasReturn env'
+      then
+        return $ (SBlock tblock, Env.setReturnFound env)
+      else
+        return $ (SBlock tblock, env)
+    where
+      inferBlock (DBlock []) _ env = return $ (DBlock [], env)
+      inferBlock (DBlock stms) ftyp env = do
+        (tstms, env') <- inferStms stms (Env.addScope env ftyp) inLoop
+        return $ (DBlock tstms, env')
 
 -------------------------------------------------------------------------------------------------------------------------------------------
   SAssign lexp exp -> do
@@ -364,43 +330,22 @@ inferStm stm env inLoop = case stm of
   SReturnExp preturn@(PReturn (loc, id)) exp -> --let ftyp = Env.getScopeType env in
     do
       texp <- inferExp exp env
-      checkError texp
-      --if isTypeError texp
-      --  then
-      --    return $ (SReturnExp preturn texp, env)
-      --  else
-      --    if isTypeVoid ftyp
-      --      then do
-      --        -- Se il tipo dello scope è Void, allora ci troviamo all'interno di una procedura
-      --        -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
-      --        saveLog $ launchError loc (UnexpectedReturn exp)
-      --        return $ (SReturnExp preturn texp, env)
-      --      else 
-      --        -- Nel caso in cui l'espressione ritornata sia compatibile con il tipo
-      --        -- dello scope viene segnalato che un return adeguato nello scope è stato trovato.
-      --        if compatible (getType texp) ftyp
-      --          then
-      --            return $ (SReturnExp preturn texp, Env.setReturnFound env)
-      --          else do
-      --            -- se il tipo dello scope non è void, ma è incompatibile con quello dell'espressione
-      --            -- allora si lancia un'errore.
-      --            saveLog $ launchError loc (WrongExpType exp (getType texp) ftyp)
-      --            return $ (SReturnExp preturn texp, env)
+      checkError texp env
 
       where
-        checkError texp = case isTypeError texp of
+        checkError texp env = case isTypeError texp of
           True -> return $ (SReturnExp preturn texp, env)
-          False -> checkTypeVoid texp (Env.getScopeType env)
+          False -> checkTypeVoid texp (Env.getScopeType env) env
         
-        checkTypeVoid texp ftyp = case isTypeVoid ftyp of
+        checkTypeVoid texp ftyp env = case isTypeVoid ftyp of
           True ->  do
             -- Se il tipo dello scope è Void, allora ci troviamo all'interno di una procedura
             -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
             saveLog $ launchError loc (UnexpectedReturn exp)
             return $ (SReturnExp preturn texp, env)
-          False -> checkCompatible texp ftyp
+          False -> checkCompatible texp ftyp env
         
-        checkCompatible texp ftyp = case compatible (getType texp) ftyp of
+        checkCompatible texp ftyp env = case compatible (getType texp) ftyp of
           True -> return $ (SReturnExp preturn texp, Env.setReturnFound env)
           False -> do
             -- se il tipo dello scope non è void, ma è incompatibile con quello dell'espressione
@@ -419,9 +364,6 @@ inferStm stm env inLoop = case stm of
         return $ (SReturn preturn, env)
 
 -------------------------------------------------------------------------------------------------------------------------------------------
-  -- DA GESTIRE - PROPOSTE SOTTO
-  --SBreak pbreak@(PBreak (loc,ident)) -> return (SBreak pbreak, env)
-  --SContinue pcontinue@(PContinue (loc,ident)) -> return (SContinue pcontinue, env)
   SBreak pbreak@(PBreak (loc,ident)) -> do
     if inLoop
       then return (SBreak pbreak, env)
@@ -436,14 +378,12 @@ inferStm stm env inLoop = case stm of
         saveLog $ launchError loc (WrongFlowCrontrolStatement ident)
         return (SContinue pcontinue, env)
 -------------------------------------------------------------------------------------------------------------------------------------------
-                                    -- lista di liste ArgExp [Exp]
   SProcCall id@(PIdent (loc, ident)) params -> do
     -- Tre possibili errori:
       -- 1. Il numero di clausole nella chiamata non corrisponde con il numero di clausole nella definizione,
       -- 2. Il numero di argomenti all'interno di una clausola non corrisponde con il numero di parametri della clausola,
       -- 3. Le dimensioni combaciano, ma almeno un'espressione passata come argomento ha tipo diverso da quello del corrispondente parametro.
 
-    -- [[ExpTyped]]
     tparams <- mapM (\(ArgExp x) -> (mapM (\y -> (inferExp y env)) x)) params
     case Env.lookup env id of
       -- Caso in cui l'identificatore usato nella chiamata di procedura sia assegnato ad una variabile.
@@ -460,39 +400,30 @@ inferStm stm env inLoop = case stm of
       Success (FunInfo dloc typ paramclauses) ->
         -- typ_args è il corrispettivo di typ_params, i due devono combaciare per poter affermare
         -- che la chiamata di procedura è valida.
-        do
-          checkError tparams
-          --case (any (isTypeError) (concat tparams), not $ allCompatible tparams typ_args, not (isTypeVoid typ)) of
-          --  (True,_,_) -> return ()
-          --  (_,True,False) -> saveLog $ launchError loc (WrongProcParams ident typ_args (map (map getType) tparams))
-          --  (_,True,True) -> saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-          --  (_,False,True) -> saveLog $ launchWarning loc (UnusedReturnValue ident)
-          --  otherwise -> return ()
+        let 
+            typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses
+            typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
+        in do
+          case (any (isTypeError) (concat tparams), not $ allCompatible tparams typ_args, not (isTypeVoid typ)) of
+            (True,_,_) -> return ()
+            (_,True,False) -> saveLog $ launchError loc (WrongProcParams ident typ_args (map (map getType) tparams))
+            (_,True,True) -> saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+            (_,False,True) -> saveLog $ launchWarning loc (UnusedReturnValue ident)
+            otherwise -> return ()
+
           checkModPassCorrect <- checkExpsMod (concat tparams) (concat typ_mod_args)
           if checkModPassCorrect
             then return (SProcCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args) , env)
             else return (SProcCall id params,env)
-        where 
-          typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
-          typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses
 
-          checkError params' = case any (isTypeError) (concat tparams) of
-            True -> return ()
-            False -> checkAllCompatible params'
-          checkAllCompatible params' = case (not $ allCompatible tparams typ_args, not (isTypeVoid typ)) of
-            (True,False) -> saveLog $ launchError loc (WrongProcParams ident typ_args (map (map getType) tparams))
-            (True,True) -> saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-            (False,True) -> saveLog $ launchWarning loc (UnusedReturnValue ident)
-            otherwise -> return ()
 -------------------------------------------------------------------------------------------------------------------------------------------
 
   SFor id@(PIdent (loc, ident)) exp_init exp_end exp_step stm -> do
     texp_init <- inferExp exp_init env
     texp_end  <- inferExp exp_end env
     texp_step <- inferExp exp_step env
-    
-    mapM (checkCompatible loc) [texp_init, texp_end, texp_step]
-
+    -- Da mettere a posto.
+    mapM (checkCompatible) [texp_init, texp_end, texp_step]
     (tstm, env') <- inferStm (addIteratorDec stm) env False
 
     if Env.hasReturn env'
@@ -506,9 +437,9 @@ inferStm stm env inLoop = case stm of
       addIteratorDec (SBlock (DBlock stms)) = SBlock $ DBlock $ (SDecl $ DecVar id (TSimple SType_Int)):stms
       addIteratorDec _                      = SBlock $ DBlock $ [(SDecl $ DecVar id (TSimple SType_Int)), stm]
 
-      checkCompatible loc' texp = do
+      checkCompatible texp@(ExpTyped exp _ _) = do
         if not $ compatible (getType texp) (TSimple SType_Int)
-          then saveLog $ launchError loc' (WrongExpType exp_init (getType texp) (TSimple SType_Int) )
+          then saveLog $ launchError loc (WrongExpType exp (getType texp) (TSimple SType_Int) )
           else return ()
 
 -------------------------------------------------------------------------------------------------------------------------------------------
@@ -632,65 +563,33 @@ inferExp exp env = case exp of
         saveLog $ launchError loc except
         return $ ExpTyped (EFunCall (PIdent ((0,0), ident)) (map (\x -> (ArgExp x)) tparams)) (TSimple SType_Error) loc
       Success (FunInfo dloc typ paramclauses) -> 
-        do
-          -- Argomenti di quando lo dichiati
-          -- Lista di liste di tipi degli argomenti.
-          checkModPassCorrect <- checkExpsMod (concat tparams) (concat typ_mod_args)
-          --case ((any (isTypeError) (concat tparams)), checkModPassCorrect, (allCompatible tparams typ_args), isTypeVoid typ) of
-          case (checkErrors tparams, checkModPassCorrect, checkCompatibility tparams, isTypeVoid typ) of
-            (False, True, True, False) -> returnProcWithType typ
-            (False, True, True, True) -> do
-              saveLog $ launchError loc (UnexpectedProc ident)
-              returnProcWithType (TSimple SType_Error) 
-            (False, True, False, _)   -> do
-              saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-              returnProcWithType (TSimple SType_Error) 
-            (False, False, _, _)      -> returnProcWithType (TSimple SType_Error) 
-            otherwise                         -> returnProcWithType (TSimple SType_Error)
-          --if any (isTypeError) (concat tparams)
-          --  then returnProcWithType (TSimple SType_Error)                 
-          --  else
-          --    if checkModPassCorrect
-          --      then
-          --        if allCompatible tparams typ_args
-          --          then 
-          --            if isTypeVoid typ
-          --              then do
-          --                saveLog $ launchError loc (UnexpectedProc ident)
-          --                returnProcWithType (TSimple SType_Error)                   
-          --              else 
-          --                returnProcWithType typ              
-          --          else do
-          --            saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-          --            returnProcWithType (TSimple SType_Error)
-          --      else returnProcWithType (TSimple SType_Error)
-      
-        where 
-          typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
+        let
           typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses
-          
-          returnProcWithType typ' = return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) typ' loc
-
-          checkErrors params' = any (isTypeError) (concat params')
-          checkCompatibility params' = allCompatible params' typ_args
+          typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
+        in do
+          checkModPassCorrect <- checkExpsMod (concat tparams) (concat typ_mod_args)
+          case (errorFound tparams, checkModPassCorrect, allCompatible tparams typ_args, isTypeVoid typ) of
+            (False, True, True, False) -> returnProcWithType typ typ_mod_args
+            (False, True, True, True)  -> do
+              saveLog $ launchError loc (UnexpectedProc ident)
+              returnProcWithType (TSimple SType_Error)  typ_mod_args
+            (False, True, False, _)    -> do
+              saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+              returnProcWithType (TSimple SType_Error) typ_mod_args
+            (False, False, _, _)       -> returnProcWithType (TSimple SType_Error) typ_mod_args
+            otherwise                  -> returnProcWithType (TSimple SType_Error) typ_mod_args
+        where 
+          returnProcWithType typ' typ_mod_args = return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) typ' loc
+          errorFound params' = any (isTypeError) (concat params')
  -------------------------------------------------------------------------------------------------------------------------------------------
-  --ENot exp -> do
-  -- texp <- inferExp exp env
-  -- if isTypeError texp || compatible (getType texp) (TSimple SType_Bool)
-  --   then return (ExpTyped (ENot texp) (getType texp) (getLoc texp))
-  --   else do
-  --     saveLog $ launchError (getLoc texp) (WrongNotApplication exp (getType texp))
-  --     return $ ExpTyped (ENot texp) (TSimple SType_Error) (getLoc texp)
-
   ENot exp -> do
-    texp <- inferExp exp env
-    checkCorrectness texp
-    where
-      checkCorrectness texp = case isTypeError texp || compatible (getType texp) (TSimple SType_Bool) of
-        True -> return (ExpTyped (ENot texp) (getType texp) (getLoc texp))
-        False -> do
-          saveLog $ launchError (getLoc texp) (WrongNotApplication exp (getType texp))
-          return $ ExpTyped (ENot texp) (TSimple SType_Error) (getLoc texp)
+   texp <- inferExp exp env
+   if isTypeError texp || compatible (getType texp) (TSimple SType_Bool)
+     then return (ExpTyped (ENot texp) (getType texp) (getLoc texp))
+     else do
+       saveLog $ launchError (getLoc texp) (WrongNotApplication exp (getType texp))
+       return $ ExpTyped (ENot texp) (TSimple SType_Error) (getLoc texp)
+
 -------------------------------------------------------------------------------------------------------------------------------------------
   ENeg exp -> do
     texp <- inferExp exp env
@@ -770,7 +669,7 @@ inferBinOp expl op expr env = do
         (TSimple SType_Float) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Float) (getLoc texpl)
         _ -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Int) (getLoc texpl)
     (RelOp, typl, typr) ->
-      if compatible (min typl typr) (max typl typr)
+      if compatible (min typl typr) (max typl typr) 
         then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
         else returnBinOpError texpl op texpr
     
