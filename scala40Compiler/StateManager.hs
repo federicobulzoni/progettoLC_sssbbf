@@ -12,24 +12,36 @@ type TacState a = State (
     [[TAC]],   -- funzioni
     Label,     -- label continue
     Label,      -- label break
-    Label,      -- label per out of bounds error
+    (Label, Label),  -- label out of bounds error, label end of non void error
     TypeSpec   -- return type
     ) 
     a
 
-setOutOfBounds :: TacState ()
-setOutOfBounds = do
-    errLabel <- newLabel
+setOutOfBounds :: Label -> TacState ()
+setOutOfBounds label = do
     pushMain $ Call (LabFun "errorOutOfBounds" (0,0)) 0
-    pushMain $ Lab errLabel
+    pushMain $ Lab label
     pushMain $ Comment "Out of bounds exception"
-    (k, l, revcode, funs, found_continue, found_break, _, t) <- get
-    put (k, l, revcode, funs, found_continue, found_break, errLabel, t)
+    (k, l, revcode, funs, found_continue, found_break, (_,n), t) <- get
+    put (k, l, revcode, funs, found_continue, found_break, (label,n), t)
 
 getOutOfBoundsLabel :: TacState Label
 getOutOfBoundsLabel = do
-    (k, l, revcode, funs, found_continue, found_break, o, _) <- get
+    (_, _, _, _, _, _, (o,_), _) <- get
     return o
+
+setEndOfNonVoid :: Label -> TacState ()
+setEndOfNonVoid label = do
+    pushMain $ Call (LabFun "errorEndOfNonVoidFunction" (0,0)) 0
+    pushMain $ Lab label
+    pushMain $ Comment "Control reached end of non-void function"
+    (k, l, revcode, funs, found_continue, found_break, (e,_), t) <- get
+    put (k, l, revcode, funs, found_continue, found_break, (e,label), t)
+
+getEndOfNonVoidLabel :: TacState Label
+getEndOfNonVoidLabel = do
+    (_, _, _, _, _, _, (_,n), _) <- get
+    return n
 
 setFunType :: TypeSpec -> TacState ()
 setFunType typ = do

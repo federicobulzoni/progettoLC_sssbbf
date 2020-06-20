@@ -3,8 +3,8 @@
 \subsection*{Parole riservate}
 Le parole riservate in \SBF\ sono le seguenti:
 \begin{gather*}
-\If,\ \Else,\ \Do,\ \While,\ \Def,\ \Return,\ \Var,\ \texttt{Array},\ \False,\ \True,\\
-\texttt{Null},\ \texttt{Char},\ \texttt{String},\ \texttt{Int},\ \texttt{Float},\ \texttt{Bool}.
+\If,\ \Else,\ \Do,\ \While,\ \Def,\ \Return,\ \Var,\ \texttt{Array},\ \False,\ \True,\ \texttt{until},\ \texttt{by},\\
+\texttt{Null},\ \texttt{Char},\ \texttt{String},\ \texttt{Int},\ \texttt{Float},\ \texttt{Bool},\ \texttt{val},\ \texttt{ref},\ \texttt{res},\ \texttt{valres}.
 \end{gather*}
 
 \subsection*{Identificatori}
@@ -63,16 +63,20 @@ I token possono essere separati dai caratteri di spaziatura standard o commenti.
 	\end{align*}
 	mentre l'elemento $\token{ParamClauses}$ è una sequenza, non vuota, di $\token{ParamClause}$, e ciascun $\token{ParamClause}$ ha la forma
 	\begin{equation*}
-	\token{ParamClause} ::=\ \texttt{(}\ \token{Args}\ \texttt{)}
+	\token{ParamClause} ::=\ \texttt{(}\ \token{Params}\ \texttt{)}
 	\end{equation*}
-	$\token{Args}$ è una sequenza, che può essere vuota, di elementi separati da virgola della forma
+	$\token{Params}$ è una sequenza, che può essere vuota, di elementi separati da virgola della forma
 	\begin{equation*}
-	\token{Arg} ::=\ \token{Ident}\ \texttt{:}\ \token{TypeSpec}
+	\token{Param} ::=\ \token{Mode}\ \token{Ident}\ \texttt{:}\ \token{TypeSpec}
+	\end{equation*}
+	dove $\token{Mode}$ indica la modalità di passaggio del parametro
+	\begin{equation*}
+	\token{Mode} ::=\ \texttt{val}\ |\ \texttt{ref}\ |\ \texttt{res}\ |\ \texttt{valres}
 	\end{equation*}
 	
 	Ad esempio, una specifica di tipo valida è $\texttt{Array[*Int](2)}$, che indica un array di puntatori ad interi di dimensione $2$. Ad esempio, una definizione di funzione valida è
 	\begin{verbatim}
-	def foo(a: Array[*Int](2),p: *Int)(x: Int): Int = 
+	def foo(val a: Array[*Int](2), val p: *Int)(val x: Int): Int = 
 		*a[1] + *a[2] + *p + x;
 	\end{verbatim}
 	Essa prende come parametri un array di puntatori ad interi, un puntatore ad un intero e un intero e restituisce un intero.
@@ -89,15 +93,18 @@ I token possono essere separati dai caratteri di spaziatura standard o commenti.
 	|\ &\token{LExpr}\ \token{OpAssign}\ \token{Expr}\ \texttt{;}\\
 	|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
 	|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\ \texttt{else}\ \token{Stmt}\\
+	|\ &\texttt{for}\ \texttt{(}\ \token{Ident}\ \texttt{<-}\ \token{Expr}\ \texttt{until}\ \token{Expr}\ \texttt{by}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
 	|\ &\texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
 	|\ &\texttt{do}\ \token{Stmt}\ \texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \texttt{;}\\
+	|\ &\texttt{break}\ \texttt{;}\\
+	|\ &\texttt{continue}\ \texttt{;}\\
 	|\ &\texttt{return}\ \texttt{;}\\
 	|\ &\texttt{return}\ \token{Expr}\ \texttt{;}\\
-	|\ &\token{Ident}\ \token{ParamsList}\ \texttt{;}
+	|\ &\token{Ident}\ \token{Args}\ \texttt{;}
 	\end{align*}
-	dove, nell'ultima istruzione, che corrisponde alla chiamata di procedura o funzione, $\token{ParamsList}$ è una sequenza, non vuota, di $\token{Params}$ della forma
+	dove, nell'ultima istruzione, che corrisponde alla chiamata di procedura o funzione, $\token{Args}$ è una sequenza, non vuota, di $\token{Arg}$ della forma
 	\begin{equation*}
-	\token{Params} ::=\ \texttt{(}\ \token{ExprList}\ \texttt{)}
+	\token{Arg} ::=\ \texttt{(}\ \token{ExprList}\ \texttt{)}
 	\end{equation*}
 	e $\token{ExprList}$ è una sequenza, che può essere vuota, di $\token{Expr}$ separate da virgola.
 	
@@ -121,9 +128,10 @@ I token possono essere separati dai caratteri di spaziatura standard o commenti.
 	|\ &\token{LExpr}\\
 	|\ &\texttt{\&}\ \token{LExpr}\\
 	|\ &\texttt{Array}\ \texttt{(}\ \token{ExprList}\ \texttt{)}\\
-	|\ &\token{Ident}\ \token{ParamsList}\\
+	|\ &\token{Ident}\ \token{Args}\\
 	|\ &\token{Expr}\ \token{BinOp}\ \token{Expr}\\
 	|\ &\token{UnOp}\ \token{Expr}\\
+	|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Expr}\ \texttt{else}\ \token{Expr}\\
 	|\ &\texttt{(}\ \token{Expr}\ \texttt{)}
 	\end{align*}
 	\begin{align*}
