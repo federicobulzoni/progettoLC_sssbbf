@@ -1,10 +1,11 @@
 \subsection{Descrizione soluzione - Three Address Code}
 
-Il Three Address Code (TAC) viene costruito a partire dall'albero annotato risultante dall'analisi di semantica statica.Per la costruzione viene fatto largo uso della monade State, descritta nella sezione precedente.
-Nel TAC gli indirizzi utilizzati nelle istruzioni sono:
+Il Three Address Code (TAC) viene costruito a partire dall'albero annotato risultante dall'analisi di semantica statica. Per la costruzione viene fatto largo uso della monade State, descritta nella sezione precedente.
+
+Gli indirizzi utilizzati per le istruzioni del TAC sono dei seguenti tipi:
 \begin{itemize}
     \item Letterali: per valori costanti di tipo base.
-    \item Indirizzi di variabile e di funzioni: hanno la seguente forma,
+    \item Indirizzi di variabile e di funzioni: hanno la seguente forma:
     \begin{center}
         {\tt ident@loc}
     \end{center}
@@ -24,7 +25,9 @@ La funzione {\tt genDecls} prende in input una lista di dichiarazioni e le scorr
 \begin{itemize}
     \item Dichiarazione di variabile con assegnamento: viene creato un nuovo indirizzo a partire dall'identificatore della variabile e dalla sua locazione di dichiarazione. Gli viene assegnato un valore tramite la funzione {\tt genExpAddr} che permette di evitare la creazione di temporanei inutili quando ci troviamo nel caso di un'espressione semplice (es. $x = 3$, $*y= x$, $x = y + z$ ecc.) ed esegue i necessari cast.
     \item Dichiarazione di variabile: come nel caso precente costruiamo un indirizzo a partire da identificatore e locazione, e gli assegnamo un valore di default (\label{table:valori_default}) tramite la funzione {\tt buildDefaultValue}.
-    \item Dichiarazione di funzione/procedura: in questo caso viene creata una nuova etichetta per la funzione. Viene chiamata la funzione {\tt genBlock} che (tramite {\tt genStms}) controlla la presenta dell'istruzione {\tt return} (nel caso delle procedure verrà aggiunto un'istruzione di return vuoto) e costruisce tutte le istruzioni TAC relative al corpo della funzione. Al termine di questo processo le istruzioni TAC che sono state create vengono estratte tramite operazione di pop dalla lista di liste di istruzioni dello stato e inserite in testa al codice globale del TAC. Questo viene fatto per far sì che una funzione dichiarata nel corpo di un'altra venga, inserita sopra quest'ultima a livello di Three Address Code, e non al suo interno. Inoltre, viene controllato che se la funzione che sta venendo dichiarata è la funzione {\tt main} nello scope globale, allora essa deve avere una firma specifica: {\tt def main()}; quindi deve essere una procedura che non richiede alcun parametro.
+    \item Dichiarazione di funzione/procedura: in questo caso viene creata una nuova etichetta per la funzione. Viene chiamata la funzione {\tt genBlock} che (tramite {\tt genStms}) controlla la presenta dell'istruzione {\tt return} (nel caso delle procedure verrà aggiunto un'istruzione di return vuoto) e costruisce tutte le istruzioni TAC relative al corpo della funzione. Al termine di questo processo le istruzioni TAC che sono state create vengono estratte tramite operazione di pop dalla lista di liste di istruzioni dello stato e inserite in testa al codice globale del TAC. Questo viene fatto per far sì che una funzione dichiarata nel corpo di un'altra venga, inserita sopra quest'ultima a livello di Three Address Code, e non al suo interno. 
+    
+    Inoltre, se la dichiarazione si trova nello scope globale e l'identificatore utilizzato è $\texttt{main}$, viene controllato che la funzione abbia una firma specifica: {\tt def main()}.
 \end{itemize}
 
 \begin{table}
