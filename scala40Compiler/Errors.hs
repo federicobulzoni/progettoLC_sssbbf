@@ -59,6 +59,7 @@ data TCException
     | WrongIfElseExp Exp Exp
     | WrongFlowCrontrolStatement Ident
     | WrongParamMethod Ident
+    | WrongParameterPassMod Exp ParamPassMod
     deriving(Show,Eq)
   
 
@@ -193,5 +194,5 @@ getExceptionMsg except = case except of
     WrongFlowCrontrolStatement ident ->
         ident ++ " statement not in While or Do-While loop statement."
 
-    WrongParamMethod ident ->
-        "Wrong argument user in function " ++ color Default Italic (printTree ident)
+    WrongParameterPassMod e m ->
+        "Expected l-expression as parameter with passing method " ++ color Default Italic (printTree m) ++ ", but found expression " ++ color Default Italic (printTree e) ++ "."

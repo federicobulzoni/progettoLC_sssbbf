@@ -36,13 +36,13 @@ def foo () : Int = {
 	}
 	var t : Int = 4;
 	while ( 5 == True) t = 3;
-	for (c <- 1 until True by True) {
-		break;
-		for(c <- 1 until True by True) {
-			continue;
-		}
-		return 3;
-	}
+	//for (c <- 1 until True by True) {
+	//	break;
+	//	for(c <- 1 until True by True) {
+	//		continue;
+	//	}
+	//	return 3;
+	//}
 
 	do{
 		t = 3;
