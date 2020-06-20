@@ -87,6 +87,10 @@ isNotNull :: Exp -> Bool
 isNotNull (ENull _) = False
 isNotNull _ = True
 
+isNotNullType :: TypeSpec -> Bool
+isNotNullType (TPointer (TSimple SType_Void)) = False
+isNotNullType _ = True
+
 getExceptionMsg :: TCException -> String
 getExceptionMsg except = case except of
     MissingReturn ident -> 
@@ -99,21 +103,23 @@ getExceptionMsg except = case except of
         "Expected expression of type " ++ printTree typ ++ ", but found " ++ printTree exp 
         ++ if (isNotNull exp) then " which has type " ++ printTree texpTyp ++ "." else "."
 
-    WrongExpAssignType exp texpTyp tlexpTyp lexp ->
-        "Incompatible types when assigning from type " ++ printTree texpTyp
-        ++ " to type " ++ printTree tlexpTyp ++ ":" 
-        ++ "\n\t" ++ printTree (SAssign lexp exp) 
+    WrongExpAssignType exp texpTyp tlexpTyp lexp -> if (isNotNull exp)
+        then "Incompatible types when assigning from type " ++ printTree texpTyp ++ " to type " ++ printTree tlexpTyp ++ ":" ++ "\n\t" ++ printTree (SAssign lexp exp) 
+        else color Default Italic "Null" ++ " cannot be assigned to espression of type " ++ printTree tlexpTyp ++ ":" ++ "\n\t" ++ printTree (SAssign lexp exp)
 
     WrongWhileCondition exp typ ->
-        "Expected boolean expression, but found " ++ printTree exp ++ " of type " ++ printTree typ ++ ":"
+        "Expected boolean expression, but found " ++ printTree exp
+        ++ (if isNotNull exp then " of type " ++ printTree typ ++ ":" else "") ++ ":"
         ++ "\n\t" ++ "while ( " ++ printTree exp ++ " )"
     
     WrongIfCondition exp typ ->
-        "Expected boolean expression, but found " ++ printTree exp ++ " of type " ++ printTree typ ++ ":"
+        "Expected boolean expression, but found " ++ printTree exp
+        ++ (if isNotNull exp then " of type " ++ printTree typ ++ ":" else "") ++ ":"
         ++ "\n\t" ++ "if ( " ++ printTree exp ++ " )"
     
     WrongReturnValue typ -> 
-        "Unexpected return with no value in function returning " ++ printTree typ ++ ":"
+        "Unexpected return with no value in function returning " 
+        ++ if isNotNullType typ then printTree typ else (color Default Italic "Null") ++ ":"
         ++ "\n\t" ++ "return ;"
 
     UnexpectedReturn exp -> 
@@ -121,7 +127,7 @@ getExceptionMsg except = case except of
         ++ "\n\t" ++ "return " ++ printTree exp ++ " ;"
     
     ExpAssignedToProcedure ident exp typ ->
-        "Expression " ++ printTree exp ++ " of type " ++ printTree typ ++ " cannot be assigned to procedure "
+        (if isNotNull exp then "Expression "++ printTree exp ++ " of type " ++ printTree typ else (color Default Italic "Null")) ++ " cannot be assigned to procedure "
         ++ color Default Italic (printTree ident) ++ ". Expected procedure call or block."
 
     UnexpectedProc ident -> 
@@ -156,7 +162,9 @@ getExceptionMsg except = case except of
         ++ "\n\t * ( " ++ printTree lexp ++ " )"
 
     ArraySubscriptNotInt exp typ -> 
-        "Array subscript must be an integer, but found " ++ printTree exp ++ " which has type " ++ printTree typ ++ "."
+        "Array subscript must be an integer, but found " 
+        ++ (if isNotNull exp then printTree exp ++ " which has type " ++ printTree typ ++ "." else (color Default Italic "Null"))
+        ++ "."
 
     
     WrongArrayAccess lexp typ ->
@@ -174,8 +182,9 @@ getExceptionMsg except = case except of
         ++ "\n\t- ( " ++ printTree exp ++ " )"
 
     WrongOpApplication op typ1 typ2 -> 
-        "Operator " ++ printTree op ++ " cannot be applied to type " ++ printTree typ1 
-        ++ " and type " ++ printTree typ2 ++ "." 
+        "Operator " ++ printTree op ++ " cannot be applied " 
+        ++ (if isNotNullType typ1 then "to type " ++ printTree typ1 else "to " ++ (color Default Italic "Null"))
+        ++ (if isNotNullType typ2 then " and type " ++ printTree typ2 else " and" ++  (color Default Italic " Null")) ++ "."
 
     EnvDuplicateIdent ident dloc isVar -> 
         "Duplicate declaration of " ++ color Default Italic (printTree ident) 

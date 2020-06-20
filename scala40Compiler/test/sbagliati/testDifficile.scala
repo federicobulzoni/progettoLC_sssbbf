@@ -17,14 +17,14 @@ def proc1 () = {
         var j : Int = 12^4;
         j *= i;
         j /= i;
-        def proc2 (i : Int) = proc1 ();
+        def proc2 (ref i : Int) = proc1 ();
     }
     // Entrambi gli identificatori qua non sono visibili.
     proc2 (j);
 }
 
 def main1() = {
-    def main (a : Int) : Int = {
+    def main (val a : Int) : Int = {
         // Nessun valore di ritorno.
         return;
     }
