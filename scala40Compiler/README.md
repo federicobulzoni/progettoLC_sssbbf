@@ -11,6 +11,7 @@ I file principali che compongono il compilatore sono:
 * **```StaticAnalysis.hs```**: file che implementa la fase di analisi statica e la conseguente generazione dell'albero tipato.
 * **```Environment.hs```**: insieme di funzioni per la creazione e gestione degli scope e dello stak di environment.
 * **```ThreeAddressCode.hs```**: file per la generazione del codice intermedio.
+* **```StateManager.hs```**: funzione per la gestione dello State.
 * **```PrintTAC.hs```**: file per la gestione della stampa del TAC. Presa la lista di istruzioni TAC, si occupa di stamparle, migliorandone la lettura.
 * **```AbsTAC.hs```**: definizione delle istruzioni TAC, dei tipi indirizzo ed etichetta utili durante la generazione di codice intermedio.
 * ```Scala40Compiler.hs```: file principale per le chiamate dei file sopracitati. In ordine esegue: lexer, parser, analisi statica e generazione del codice intermedio. Prima del codice intermedio si occupa di stampare gli errori.
