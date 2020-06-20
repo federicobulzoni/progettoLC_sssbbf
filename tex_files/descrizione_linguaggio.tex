@@ -227,6 +227,7 @@ Riguardo alle $L$-espressioni, ogni identificatore all'interno di un programma \
 \begin{tabular}{l|l|l}
 Operatore         &         Vincoli            & Tipo \\ \hline
 $*lexp$ & $\tau(lexp) = *typ$ dove $typ$ è un tipo qualsiasi & $typ$ \\
+$\&lexp$ &                                                                                    & $*\tau(lexp)$\\
 $lexp[e_a]$ & $\tau(e_a) \leq Bool \wedge \tau(lexp) = Array[typ](dim)$  con $typ$ e $dim$ qualsiasi & $typ$\\
 \end{tabular}
 }
