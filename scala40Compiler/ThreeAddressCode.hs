@@ -120,6 +120,8 @@ genDecl decl = case decl of
             (k, l, revcode, funs, found_continue, found_break, o, t) <- get
             return $ length funs == 1 
 
+-- generazione del preambolo e delle copie necessarie per la gestione del
+-- metodo di passaggio dei parametri
 genPreamble :: [ParamClause] -> TacState ()
 genPreamble [] = return ()
 genPreamble (param:params) = do
@@ -133,6 +135,8 @@ genPreamble (param:params) = do
                 _ -> return ()
             genPreambleAux (PParam xs)
 
+-- generazione del postambolo e dei relativi assegnamenti dovuti
+-- ai metodi di passaggio dei parametri
 genPostamble :: [ParamClause] -> TacState ()
 genPostamble [] = return ()
 genPostamble (param:params) = do
@@ -172,8 +176,10 @@ genExp addr texp@(ExpTyped exp _ _) typ = case exp of
         addrExpl <- genExpAddr texpl (getType texp)
         addrExpr <- genExpAddr texpr (getType texp)
        
+        -- viene controllato se il tipo di texp e typ sono diversi
         case areTypesDiff of
             True -> do
+                -- genero un nuovo temporaneo su cui eseguire il casting
                 addrExp <- newTemp
                 out $ AssignBinOp addrExp addrExpl (convertOperation op typ) addrExpr (convertToTACType (getType texp))
                 out $ AssignUnOp addr (Cast $ convertToTACType typ) addrExp (convertToTACType typ)
@@ -250,17 +256,17 @@ genExp addr texp@(ExpTyped exp _ _) typ = case exp of
             getElementType (TArray typ' _) = typ'
             getElementType _ = error $ "Fatal error."
 
+    -- if in linea
     EIfElse texp_cond texp_if texp_else -> do
         addr_if <- genExpAddr texp_if (getType texp)
         addr_else <- genExpAddr texp_else (getType texp)
+        -- generazione label per controllo del flusso se la condizione è vera o falsa
         labelNext <- newLabel
         labelElse <- newLabel
         genCondition texp_cond Fall labelElse
         if areTypesDiff 
-            then
-                out $ AssignUnOp addr (Cast $ convertToTACType typ) addr_if (convertToTACType typ)
-            else 
-                out $ Assign addr addr_if (convertToTACType $ getType texp)
+            then out $ AssignUnOp addr (Cast $ convertToTACType typ) addr_if (convertToTACType typ)
+            else out $ Assign addr addr_if (convertToTACType $ getType texp)
         out $ Goto labelNext
         out $ Lab labelElse
         if areTypesDiff 
@@ -303,6 +309,7 @@ genExp addr texp@(ExpTyped exp _ _) typ = case exp of
             (AbsGramm.Greater  , _)         -> AbsTAC.Greater
             (AbsGramm.GreaterEq, _)         -> AbsTAC.GreaterEq
 
+-- funzione per controllare se un argomento necessita della dereferenziazione
 needsDeref :: ParamPassMod -> Bool
 needsDeref NoParam = False
 needsDeref ParamPassMod_val = False
@@ -402,10 +409,14 @@ genStm stm = case stm of
 
     SWhile texp tstm -> do
         out . Comment $ "Start: While@" ++ (printTree $ getLoc texp)
+        -- salvataggio delle attuali etichette break e return per poterle riassegnare allo stato
+        -- alla terminazione del ciclo
         oldBreak <- getBreak
         oldContinue <- getContinue
+        -- creazione delle etichette per il controllo del flusso e della condizione
         labelWhile <- newLabel
         labelFalse <- newLabel
+        -- cambio dello etichette nello stato riferite al break e continue
         setBreak labelFalse
         setContinue labelWhile
         out $ Lab labelWhile
@@ -413,6 +424,7 @@ genStm stm = case stm of
         genStm tstm
         out $ Goto labelWhile
         out $ Lab labelFalse
+        -- vengolo reimpostate le vecchie etichette di break e continue (per cicli annidati)
         setBreak oldBreak
         setContinue oldContinue
         out . Comment $ "End: While@" ++ (printTree $ getLoc texp)
@@ -426,8 +438,10 @@ genStm stm = case stm of
         genExp (buildVarAddress ident loc) texp_init (TSimple SType_Int)
         addrStep <- genExpAddr texp_step (TSimple SType_Int)
         out $ Lab labelFor
+        -- generazione della condizione 
         genCondition (ExpTyped (EOp (ExpTyped (ELExp (LExpTyped (LIdentMod id AbsGramm.NoParam) (TSimple SType_Int) loc)) (TSimple SType_Int) loc) (AbsGramm.LessEq) texp_end) (TSimple SType_Bool) loc) Fall labelFalse
         genStm tstm
+        -- aggiunta l'istruzione di incremento dell'iteratore
         out $ AssignBinOp (buildVarAddress ident loc) (buildVarAddress ident loc) (AbsTAC.PlusInt) addrStep (TACInt)
         out $ Goto labelFor
         out $ Lab labelFalse
@@ -479,8 +493,11 @@ genStm stm = case stm of
     SReturnExp  preturn texp -> do
         addrExp <- genExpAddr texp (getType texp)
         funType <- getFunType
+        -- controllo per vedere se il valore ritornato è quello richiesto dalla funzione
         if (funType /= getType texp && funType /= (TSimple SType_Void))
             then do
+                -- se l'espressione ha un valore diverso da quello richiesto come valore di ritorno
+                -- viene eseguito il casting
                 castTmp <- newTemp
                 out $ AssignUnOp castTmp (Cast $ convertToTACType funType) addrExp (convertToTACType funType)
                 out $ ReturnAddr castTmp
@@ -498,14 +515,13 @@ genStm stm = case stm of
     where 
         isBlockEmpty bl = if (SBlock (DBlock []) == bl ) then True else False
 
+-- funzione di generazione delle istruzione per il controllo sugli indici dell'array
 genArrayBounds :: Addr -> TypeSpec -> TacState ()
 genArrayBounds addr (TArray _ (PInteger (_,ident))) = do
   labOutOfBounds <- getOutOfBoundsLabel
   labInBounds <- newLabel
   out $ IfRel AbsTAC.Less addr (LitInt 0) labOutOfBounds
   out $ IfRel AbsTAC.GreaterEq addr (LitInt (read ident :: Int)) labOutOfBounds               
-
--- FUNZIONI AUSILIARIE
 
 -- gestione delle condizioni di un'istruzione While e If
 -- lo scopo è quello di evitare controlli superflui e far saltare il flusso di controllo nel punto giusto
@@ -608,9 +624,12 @@ genParams (param:params) = do
         genParamAux (ArgExpTyped []) = return ()
         genParamAux (ArgExpTyped ((texp, typ, mode):xs)) = do
             addrExp <- genExpAddr texp typ
+            -- controllo sulla necessità di dereferenziare
             case (needsDeref mode) of 
                 False -> out $ Param addrExp
                 True -> do
+                    -- nel caso ci sia bisogno di dereferenziare si crea un temporaneo
+                    -- nuovo per gestire la dereferenziazione
                     addrTemp <- newTemp
                     out $ AssignFromRef addrTemp addrExp TACAddr
                     out $ Param addrTemp
