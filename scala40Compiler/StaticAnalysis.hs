@@ -48,7 +48,6 @@ compatible typ_exp (TArray typ2 (PInteger (_,dim2))) = case typ_exp of
 
 
 ------------------------------------------------------------------------------------------------------------------------
-
 checkExpsMod :: [Exp] -> [(TypeSpec, ParamPassMod)] -> Logger Bool
 checkExpsMod [] [] = return True
 checkExpsMod [] _ = return False
@@ -424,21 +423,30 @@ inferStm stm env inLoop = case stm of
     texp_init <- inferExp exp_init env
     texp_end  <- inferExp exp_end env
     texp_step <- inferExp exp_step env
-    -- Da mettere a posto.
+    -- per ogni expression viene eseguito il controllo che siano di tipo compatibile con il tipo intero
     mapM (checkCompatible) [texp_init, texp_end, texp_step]
+
+
     (tstm, env') <- inferStm (addIteratorDec stm) env False
 
+    -- controllo per vedere se nel ciclo ci fosse un return
     if Env.hasReturn env'
       then return ( SFor id texp_init texp_end texp_step (getForStm stm tstm), Env.setReturnFound env)
       else return ( SFor id texp_init texp_end texp_step (getForStm stm tstm), env)
 
     where
+      -- funzione per estrarre la prima istruzione dal blocco inferito (la dichiarazione dell'iteratore
+      -- inserito in testa in precedenza) e ritornare il resto degli statement: il blocco se lo statement 
+      -- era un blocco, il singolo statement altrimenti
       getForStm (SBlock (DBlock stms)) (SBlock (DBlock (s:tstms))) = SBlock $ DBlock tstms
       getForStm _ (SBlock (DBlock (s1:[s2]))) = s2
-
+      -- viene generato il blocco di statement che verrà analizzato da inferStm:
+      --  - se lo stm è un blocco aggiungo in testa la dichiarazione dell'iteratore (per evitare che venga ri-dichiarato nel blocco)
+      --  - se non è un blocco, si crea un blocco con in testa la dichiarazione della variabile iteratore
       addIteratorDec (SBlock (DBlock stms)) = SBlock $ DBlock $ (SDecl $ DecVar id (TSimple SType_Int)):stms
       addIteratorDec _                      = SBlock $ DBlock $ [(SDecl $ DecVar id (TSimple SType_Int)), stm]
 
+      -- funzione per controllare la compatibilità dei tipi con il tipo intero
       checkCompatible texp@(ExpTyped exp _ _) = do
         if not $ compatible (getType texp) (TSimple SType_Int)
           then saveLog $ launchError loc (WrongExpType exp (getType texp) (TSimple SType_Int) )
@@ -571,19 +579,20 @@ inferExp exp env = case exp of
           typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
           paramsCorrect = checkModPassCorrect && (allCompatible tparams typ_args)
           isProc = isTypeVoid typ
-      
+        -- controllo che i parametri abbiano il tipo corretto corretto 
+        -- e siano di numero giusto
         if not paramsCorrect
           then
             saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
           else
             return ()
-
+        -- controllo che sia una funzione e non una procedura
         if isProc
           then
             saveLog $ launchError loc (UnexpectedProc ident)
           else
             return ()
-
+        -- se è stato restituito un messaggio di errore si ritorna la funzione tipata con l'errore
         if not paramsCorrect || isProc || errorFound tparams
           then
             returnFunCallWithType (TSimple SType_Error) typ_mod_args
