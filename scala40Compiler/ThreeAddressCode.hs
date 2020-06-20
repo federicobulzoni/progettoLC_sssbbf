@@ -124,6 +124,7 @@ genPreamble (param:params) = do
         genPreambleAux (PParam ((DParam mode id@(PIdent (dloc,ident)) typ):xs)) = do
             case mode of
                 ParamPassMod_valres -> out $ AssignFromPointer (buildVarCopyAddress ident dloc) (buildVarAddress ident dloc) (convertToTACType typ)
+                ParamPassMod_res -> genExp (buildVarCopyAddress ident dloc) (buildDefaultValue typ) typ
                 _ -> return ()
             genPreambleAux (PParam xs)
 
