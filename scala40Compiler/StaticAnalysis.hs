@@ -30,8 +30,6 @@ isTypeVoid typ = typ == (TSimple SType_Void)
 
 ------------------------------------------------------------------------------------------------------------------------
 
----- PROPOSTA VELOCE PER RISOLVERE COMPATIBILITA' TIPI
-
 compatible :: TypeSpec -> TypeSpec -> Bool
 compatible typ_exp (TSimple SType_Int) = elem typ_exp [TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
 compatible typ_exp (TSimple SType_Float) = elem typ_exp [TSimple SType_Float, TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]

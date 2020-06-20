@@ -8,11 +8,11 @@ import AbsGramm
 data FunState = FunState { funCode :: [TAC], funType :: TypeSpec, funParams :: [ParamClause] }
 
 type TacState a = State (
-    Int,      -- temporanei
-    Int,      -- label
-    [TAC],    -- codice
-    [FunState],   -- funzioni
-    (Label, Label),     -- label continue, label break
+    Int,            -- temporanei
+    Int,            -- label
+    [TAC],          -- codice
+    [FunState],     -- funzioni
+    (Label, Label), -- label continue, label break
     (Label, Label)  -- label out of bounds error, label end of non void error
     ) 
     a

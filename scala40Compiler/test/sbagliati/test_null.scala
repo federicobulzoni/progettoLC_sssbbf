@@ -14,4 +14,9 @@ def main() = {
         writeInt(arr[Null]);
     }
     foo(3);
+    return;
+}
+
+def foo2() : Int = {
+    return;
 }

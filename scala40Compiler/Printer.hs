@@ -148,7 +148,7 @@ instance Print AbsGramm.TypeSpec where
 
 instance Print [AbsGramm.TypeSpec] where
   prt = prtList
-  
+
 instance Print [[AbsGramm.TypeSpec]] where
   prt i e = concatD (map (\x -> concatD [doc (showString "("), prt 0 x, doc (showString ")") ] ) e )
 
