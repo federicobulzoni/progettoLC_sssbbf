@@ -163,7 +163,7 @@ getExceptionMsg except = case except of
 
     ArraySubscriptNotInt exp typ -> 
         "Array subscript must be an integer, but found " 
-        ++ (if isNotNull exp then printTree exp ++ " which has type " ++ printTree typ ++ "." else (color Default Italic "Null"))
+        ++ (if isNotNull exp then printTree exp ++ " which has type " ++ printTree typ else (color Default Italic "Null"))
         ++ "."
 
     

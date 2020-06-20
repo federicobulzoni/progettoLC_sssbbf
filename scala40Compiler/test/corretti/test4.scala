@@ -8,4 +8,5 @@ def main() = {
     var c : *Int = &o;
     b = Array(c,c,c);
     a = Array(b,b);
+    a[1.1] = c;
 }
