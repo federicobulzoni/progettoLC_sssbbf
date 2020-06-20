@@ -191,7 +191,7 @@ getExceptionMsg except = case except of
         ++ printTree typ1 ++ ", but expression " ++ color Default Italic (printTree exp2) ++ " has type " ++ printTree typ2 ++ "."
 
     WrongFlowCrontrolStatement ident ->
-        ident ++ " statement not in loop statement."
+        ident ++ " statement not in While or Do-While loop statement."
 
     WrongParamMethod ident ->
         "Wrong argument user in function " ++ color Default Italic (printTree ident)

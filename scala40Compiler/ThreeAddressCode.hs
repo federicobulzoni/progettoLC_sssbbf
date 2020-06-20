@@ -411,8 +411,6 @@ genStm stm = case stm of
 
     SFor id@(PIdent (loc,ident)) texp_init texp_end texp_step tstm -> do
         out . Comment $ "Start: For@" ++ printTree loc
-        oldBreak <- getBreak
-        oldContinue <- getContinue
         labelFor <- newLabel
         labelFalse <- newLabel
         setBreak labelFalse
@@ -425,8 +423,6 @@ genStm stm = case stm of
         out $ AssignBinOp (buildVarAddress ident loc) (buildVarAddress ident loc) (AbsTAC.PlusInt) addrStep (TACInt)
         out $ Goto labelFor
         out $ Lab labelFalse
-        setBreak oldBreak
-        setContinue oldContinue
         out . Comment $ "End: For@" ++ printTree loc
 
     SDoWhile tstm texp -> do
