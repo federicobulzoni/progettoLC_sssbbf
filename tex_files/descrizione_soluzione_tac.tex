@@ -27,7 +27,7 @@ La funzione {\tt genDecls} prende in input una lista di dichiarazioni e le scorr
     \item Dichiarazione di variabile: come nel caso precente costruiamo un indirizzo a partire da identificatore e locazione, e gli assegnamo un valore di default (\label{table:valori_default}) tramite la funzione {\tt buildDefaultValue}.
     \item Dichiarazione di funzione/procedura: in questo caso viene creata una nuova etichetta per la funzione. Viene chiamata la funzione {\tt genBlock} che (tramite {\tt genStms}) controlla la presenta dell'istruzione {\tt return} (nel caso delle procedure verrà aggiunto un'istruzione di return vuoto) e costruisce tutte le istruzioni TAC relative al corpo della funzione. Al termine di questo processo le istruzioni TAC che sono state create vengono estratte tramite operazione di pop dalla lista di liste di istruzioni dello stato e inserite in testa al codice globale del TAC. Questo viene fatto per far sì che una funzione dichiarata nel corpo di un'altra venga, inserita sopra quest'ultima a livello di Three Address Code, e non al suo interno. 
     
-    Inoltre, se la dichiarazione si trova nello scope globale e l'identificatore utilizzato è $\texttt{main}$, viene controllato che la funzione abbia una firma specifica: {\tt def main()}.
+    Inoltre, se la dichiarazione si trova nello scope globale e l'identificatore utilizzato è $\texttt{main}$, viene controllato che la funzione abbia la firma specifica {\tt def main()}.
 \end{itemize}
 
 \begin{table}
