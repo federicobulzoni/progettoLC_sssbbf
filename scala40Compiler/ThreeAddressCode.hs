@@ -18,7 +18,7 @@ getTACCode (_, _, code, _, _, _) = code
 -- Entry point. Genera il codice TAC del programma prog.
 -- hasMain = True, se nell'analisi di semantica statica è stato trovato un main
 genTAC :: Program -> Bool -> [TAC]
-genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [FunState [] (TSimple SType_Void)], (LabStm $ -1, LabStm $ -1), (LabStm $ -1, LabStm $ -1))
+genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [FunState [] (TSimple SType_Void) []], (LabStm $ -1, LabStm $ -1), (LabStm $ -1, LabStm $ -1))
 
 
 genProg :: Program -> Bool -> TacState ()
@@ -67,7 +67,7 @@ genDecl decl = case decl of
     -- definizione di funzione
     DefFun id@(PIdent (dloc, ident)) params typ block -> do
         -- creazione di un nuovo stream dove inserire le istruzioni della funzione
-        createStream typ
+        createStream typ params
         out $ (Lab (buildFunLabel ident dloc))
         -- controllo se si è in una funzione o in una procedura
         case typ of
@@ -89,6 +89,8 @@ genDecl decl = case decl of
         -- se si è in una funzione e l'ultima istruzione non è già un return, si aggiunge un return che
         -- restituisce un valore di default
         lastIsReturn <- genBlock block
+        out $ Comment "Postamble"
+        genPostamble params
         case (lastIsReturn,typ) of
             (False, TSimple SType_Void) -> out $ (ReturnVoid)
             (False, _ ) -> do
@@ -97,8 +99,6 @@ genDecl decl = case decl of
                 --addrExp <- genExpAddr (buildDefaultValue typ) typ
                 --out $ (ReturnAddr addrExp)
             otherwise -> return ()
-        out $ Comment "Postamble"
-        genPostamble params
         case typ of
             TSimple SType_Void -> out $ Comment "End procedure"
             otherwise -> out $ Comment "End function"
@@ -480,10 +480,16 @@ genStm stm = case stm of
         genParams params
         out $ Call (buildFunLabel ident loc) (sum (map (\(ArgExpTyped x) -> length x) params))
 
-    SReturn preturn -> 
+    SReturn preturn -> do
+        params <- getFunParams
+        out $ Comment "Postamble (premature)"
+        genPostamble params
         out $ ReturnVoid
 
     SReturnExp  preturn texp -> do
+        params <- getFunParams
+        out $ Comment "Postamble (premature)"
+        genPostamble params
         addrExp <- genExpAddr texp (getType texp)
         funType <- getFunType
         -- controllo per vedere se il valore ritornato è quello richiesto dalla funzione

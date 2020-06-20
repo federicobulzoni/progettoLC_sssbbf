@@ -5,7 +5,7 @@ import Control.Monad.State.Lazy
 import AbsTAC
 import AbsGramm
 
-data FunState = FunState { funCode :: [TAC], funType :: TypeSpec }
+data FunState = FunState { funCode :: [TAC], funType :: TypeSpec, funParams :: [ParamClause] }
 
 type TacState a = State (
     Int,      -- temporanei
@@ -48,6 +48,11 @@ getFunType = do
     (_, _, _, funs, _, _) <- get
     return $ funType (head funs)
 
+getFunParams ::  TacState [ParamClause]
+getFunParams = do
+    (_, _, _, funs, _, _) <- get
+    return $ funParams (head funs)
+
 setBreak :: Label -> TacState ()
 setBreak label = do
     (k, l, revcode, funs, (found_continue, _), err) <- get
@@ -75,7 +80,8 @@ out instr = do
     (k, l, revcode, funs, loop, err) <- get
     -- il codice globale rimane il medesimo, si aggiunge solo l'istruzione 
     -- in testa al suo "scope" di utilizzo
-    put (k, l, revcode, (FunState (instr : funCode (head funs)) (funType (head funs))) : (tail funs), loop, err)
+    let topFun = head funs in
+        put (k, l, revcode, FunState (instr : funCode topFun) (funType topFun) (funParams topFun) : (tail funs), loop, err)
 
 
 -- inserimento delle istruzioni di una funzione all'interno del codice principale
@@ -111,10 +117,10 @@ pushLastLabel label = do
 
 -- creazione di una nuova stream per quando si crea un blocco (funzione)
 -- utile per definire l'ordine delle funzioni innestate
-createStream :: TypeSpec -> TacState ()
-createStream typ = do
+createStream :: TypeSpec -> [ParamClause] -> TacState ()
+createStream typ params = do
     (k, l, revcode, funs, loop, err) <- get
-    put (k,l, revcode, (FunState [] typ) : funs, loop, err)
+    put (k,l, revcode, (FunState [] typ params) : funs, loop, err)
 
 
 newTemp :: TacState Addr

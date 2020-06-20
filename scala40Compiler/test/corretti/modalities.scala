@@ -4,9 +4,10 @@ def main() = {
 		a = a + 1;
 		d = a;
 		c = 2;
+		if (c > a) return c;
 		var r : Int = a;
 		var p : Int = a + b;
-		return 2;
+		return p;
 	}
 	var x : Int = 1;
 	var y : Int = 2;
@@ -14,6 +15,7 @@ def main() = {
 	var l : Float = foo(x)(1)(y)(w);
 
 	def bar(ref a : Array[Int](2)) = {
+		return;
 		a[1] = 4;
 	}
 
