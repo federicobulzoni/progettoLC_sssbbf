@@ -15,20 +15,16 @@ import Typed
 
 type Logger a = Writer [LogElement] a
 
--- Utilities 
--- saveLog
 -- salva un elemento di log nella lista di elementi di log che sarà ritornata da typeCheck.
 saveLog:: LogElement -> Logger ()
 saveLog logelem = do 
   tell [logelem]
   return ()
 
--- isTypeVoid
 -- preso un tipo ritorna True se tale tipo è Void, False altrimenti.
 isTypeVoid :: TypeSpec -> Bool
 isTypeVoid typ = typ == (TSimple SType_Void)
 
-------------------------------------------------------------------------------------------------------------------------
 compatible :: TypeSpec -> TypeSpec -> Bool
 compatible typ_exp (TSimple SType_Int)    = elem typ_exp [TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
 compatible typ_exp (TSimple SType_Float)  = elem typ_exp [TSimple SType_Float, TSimple SType_Int, TSimple SType_Char, TSimple SType_Bool]
@@ -47,7 +43,6 @@ compatible typ_exp (TArray typ2 (PInteger (_,dim2))) = case typ_exp of
   _                                 -> False
 
 
-------------------------------------------------------------------------------------------------------------------------
 checkExpsMod :: [Exp] -> [(TypeSpec, ParamPassMod)] -> Logger Bool
 checkExpsMod [] [] = return True
 checkExpsMod [] _ = return False
@@ -69,7 +64,7 @@ checkExpsMod (e:params') ((t,m):args') = do
     
 
 
--- isCompatible
+
 -- Presa una espressione tipata texp, ed un tipo richiesto typ, ritorna True se la espressione tipata
 -- è compatibile con il tipo richiesto; altrimenti ritorna False.
 -- All'interno di questa funzione è possibile differenziare le compatibilità per i diversi tipi presenti
@@ -83,7 +78,7 @@ allCompatible [] _ = False
 allCompatible _ [] = False
 allCompatible (x:xs) (y:ys) = length x == length y && (all (==True) (zipWith (compatible) (map (getType) x) y)) && (allCompatible xs ys)
             
--- startingEnv
+
 -- Definizione dell'environment iniziale di un programma. Contiene le informazioni a riguardo delle
 -- funzioni native presenti nel linguaggio.
 startingEnv :: Env
@@ -103,7 +98,6 @@ startingEnv =
       ("readChar",    FunInfo (0,0) (TSimple SType_Char)   [PParam []]),
       ("readString",  FunInfo (0,0) (TSimple SType_String) [PParam []]) ]
 
--- startFunScope
 -- Si occupa di inizializzare l'environment prima dell'inferenza degli statement contenuti nel suo body.
 startFunScope :: Env -> PIdent -> [ParamClause] -> TypeSpec -> Logger Env
 startFunScope env id@(PIdent (loc, ident)) params typ = do
@@ -121,7 +115,6 @@ startFunScope env id@(PIdent (loc, ident)) params typ = do
 genAnnotatedTree :: Program -> (Program, [LogElement])
 genAnnotatedTree prog = runWriter $ typeCheck prog
 
--- typeCheck
 -- Dato un programma scritto in sintassi astratta restituisce una lista di log ed un programma annotato.
 typeCheck :: Program -> Logger Program
 typeCheck (Prog decls) = do
@@ -328,7 +321,7 @@ inferStm stm env inLoop = case stm of
     return $ (SAssign tlexp texp, env)
 
 -------------------------------------------------------------------------------------------------------------------------------------------
-  SReturnExp preturn@(PReturn (loc, id)) exp -> --let ftyp = Env.getScopeType env in
+  SReturnExp preturn@(PReturn (loc, id)) exp ->
     do
       texp <- inferExp exp env
       checkError texp env
@@ -554,7 +547,7 @@ inferExp exp env = case exp of
 
 
 -------------------------------------------------------------------------------------------------------------------------------------------
-                                    -- lista di liste ArgExp [Exp]
+
   -- Molto simile a SProcCall, per dubbi riferirsi ai commenti di quest'ultima.
   EFunCall id@(PIdent (loc, ident)) params -> do
     -- Tre possibili errori:
@@ -698,7 +691,6 @@ inferBinOp expl op expr env = do
       saveLog $ launchError (getLoc texpl) (WrongOpApplication op (getType texpl) (getType texpr))
       return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
 
-    -- getTypeOp
     -- preso un operatore binario ritorna il suo tipo.
     getTypeOp :: Op -> TypeOp
     getTypeOp op = case op of
