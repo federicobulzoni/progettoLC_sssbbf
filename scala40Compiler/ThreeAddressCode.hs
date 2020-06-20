@@ -12,13 +12,13 @@ import Printer
 import Typed
 import StateManager
 
-getTACCode :: (Int, Int, [TAC], [[TAC]], Label, Label, Label, TypeSpec) -> [TAC]
-getTACCode (k, l, code, _, _, _, _, _) = code
+getTACCode :: (Int, Int, [TAC], [[TAC]], Label, Label, (Label,Label), TypeSpec) -> [TAC]
+getTACCode (_, _, code, _, _, _, _, _) = code
 
 -- Entry point. Genera il codice TAC del programma prog.
 -- hasMain = True, se nell'analisi di semantica statica è stato trovato un main
 genTAC :: Program -> Bool -> [TAC]
-genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [[]], (LabStm $ -1), (LabStm $ -1), (LabStm $ -1), (TSimple SType_Void))
+genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [[]], (LabStm $ -1), (LabStm $ -1), (LabStm $ -1, LabStm $ -1), (TSimple SType_Void))
 
 
 genProg :: Program -> Bool -> TacState ()
@@ -29,14 +29,20 @@ genProg (Prog decls) hasMain = do
             -- se non esiste si crea un'etichetta alla fine del programma con un relativo
             -- Goto dopo le dichiarazioni globali
             mainLabel <- newLabel
-            setOutOfBounds
+            outErrorLabel <- newLabel
+            endErrorLabel <- newLabel
+            setEndOfNonVoid endErrorLabel
+            setOutOfBounds outErrorLabel
             pushMain $ Goto mainLabel
             pushMain $ Comment "No main found"
             genDecls decls
             pushLastLabel mainLabel
             pushCurrentStream
         else do
-            setOutOfBounds
+            outErrorLabel <- newLabel
+            endErrorLabel <- newLabel
+            setEndOfNonVoid endErrorLabel
+            setOutOfBounds outErrorLabel
             genDecls decls
             pushCurrentStream
 
@@ -88,8 +94,10 @@ genDecl decl = case decl of
         case (lastIsReturn,typ) of
             (False, TSimple SType_Void) -> out $ (ReturnVoid)
             (False, _ ) -> do
-                addrExp <- genExpAddr (buildDefaultValue typ) typ
-                out $ (ReturnAddr addrExp)
+                errLabel <- getEndOfNonVoidLabel
+                out $ Goto errLabel
+                --addrExp <- genExpAddr (buildDefaultValue typ) typ
+                --out $ (ReturnAddr addrExp)
             otherwise -> return ()
         out $ Comment "Postamble"
         genPostamble params
