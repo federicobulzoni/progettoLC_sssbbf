@@ -54,6 +54,8 @@ compatible typ_exp (TArray typ2 (PInteger (_,dim2))) = case typ_exp of
 
 checkExpsMod :: [Exp] -> [(TypeSpec, ParamPassMod)] -> Logger Bool
 checkExpsMod [] [] = return True
+checkExpsMod [] _ = return False
+checkExpsMod _ [] = return False
 checkExpsMod (e:params') ((t,m):args') = do
   sameMod <- checkExpMod e m
   res <- checkExpsMod params' args'
@@ -646,6 +648,9 @@ inferExp exp env = case exp of
               saveLog $ launchError loc (UnexpectedProc ident)
               returnProcWithType (TSimple SType_Error) 
             (False, True, False, _)   -> do
+              saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+              returnProcWithType (TSimple SType_Error) 
+            (False, False, False, _)   -> do
               saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
               returnProcWithType (TSimple SType_Error) 
             (False, False, _, _)      -> returnProcWithType (TSimple SType_Error) 
