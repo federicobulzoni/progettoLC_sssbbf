@@ -195,4 +195,4 @@ getExceptionMsg except = case except of
         "Found " ++ ident ++ " statement not inside a While or Do-While loop statement."
 
     WrongParameterPassMod e m ->
-        "Expected l-expression as parameter with passing method " ++ color Default Italic (printTree m) ++ ", but found expression " ++ color Default Italic (printTree e) ++ "."
+        "Expected l-expression as parameter having mode " ++ color Default Italic (printTree m) ++ ", but found expression " ++ color Default Italic (printTree e) ++ "."
