@@ -3,9 +3,9 @@ var a : Array[Int](10);
 var N : Int = 10;
 
 					
-def bubbleSort (val a : Array[Int](10), ref dim : Int) : Array[Int](10) = {
+def bubbleSort (val a : Array[Int](10), ref dim : Int) = {
 	// Assegnamento errato.
-	var i : Int = True;
+	var i : Int = "ciao";
 	var j : Int = 0;
 
 	while (j < N - 1){
@@ -22,7 +22,6 @@ def bubbleSort (val a : Array[Int](10), ref dim : Int) : Array[Int](10) = {
 		j += 1;
 	}
 	// non viene ritornato un array come da firma della funzione.
-	return dim;
 }
 
 def main () = {
@@ -31,6 +30,6 @@ def main () = {
 		a[i] = readInt();
 	
 	// Troppi argomenti.
-	var orderedA : Array[Int](10) = bubbleSort(a, N, True);
+	var orderedA : Array[Int](10) = bubbleSort(a, N, "ciao");
 	return 0;
 }

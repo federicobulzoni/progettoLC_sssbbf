@@ -564,24 +564,33 @@ inferExp exp env = case exp of
       Failure except -> do
         saveLog $ launchError loc except
         return $ ExpTyped (EFunCall (PIdent ((0,0), ident)) (map (\x -> (ArgExp x)) tparams)) (TSimple SType_Error) loc
-      Success (FunInfo dloc typ paramclauses) -> 
+      Success (FunInfo dloc typ paramclauses) -> do
+        checkModPassCorrect <- checkExpsMod (concat tparams) (concat (map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses))
         let
           typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses
           typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
-        in do
-          checkModPassCorrect <- checkExpsMod (concat tparams) (concat typ_mod_args)
-          case (errorFound tparams, checkModPassCorrect, allCompatible tparams typ_args, isTypeVoid typ) of
-            (False, True, True, False) -> returnProcWithType typ typ_mod_args
-            (False, True, True, True)  -> do
-              saveLog $ launchError loc (UnexpectedProc ident)
-              returnProcWithType (TSimple SType_Error)  typ_mod_args
-            (False, True, False, _)    -> do
-              saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-              returnProcWithType (TSimple SType_Error) typ_mod_args
-            (False, False, _, _)       -> returnProcWithType (TSimple SType_Error) typ_mod_args
-            otherwise                  -> returnProcWithType (TSimple SType_Error) typ_mod_args
+          paramsCorrect = checkModPassCorrect && (allCompatible tparams typ_args)
+          isProc = isTypeVoid typ
+      
+        if not paramsCorrect
+          then
+            saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+          else
+            return ()
+
+        if isProc
+          then
+            saveLog $ launchError loc (UnexpectedProc ident)
+          else
+            return ()
+
+        if not paramsCorrect || isProc || errorFound tparams
+          then
+            returnFunCallWithType (TSimple SType_Error) typ_mod_args
+          else
+            returnFunCallWithType typ typ_mod_args
         where 
-          returnProcWithType typ' typ_mod_args = return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) typ' loc
+          returnFunCallWithType typ' typ_mod_args = return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) typ' loc
           errorFound params' = any (isTypeError) (concat params')
  -------------------------------------------------------------------------------------------------------------------------------------------
   ENot exp -> do
