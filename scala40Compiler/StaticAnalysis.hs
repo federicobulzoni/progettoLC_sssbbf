@@ -52,17 +52,6 @@ compatible typ_exp (TArray typ2 (PInteger (_,dim2))) = case typ_exp of
 
 ------------------------------------------------------------------------------------------------------------------------
 
---printTypeCheckErrors :: [LogElement] -> Int -> IO Bool
---printTypeCheckErrors [] index = return True
---printTypeCheckErrors (log:logs) index = do
---  putStrLn $ (printIndex index) ++  " " ++ printException log
---  res <- printTypeCheckErrors logs (index+1)
---  if isError log
---    then
---      return $ res && False 
---    else
---      return $ res && True
-
 checkExpsMod :: [Exp] -> [(TypeSpec, ParamPassMod)] -> Logger Bool
 checkExpsMod [] [] = return True
 checkExpsMod (e:params') ((t,m):args') = do
@@ -366,19 +355,6 @@ inferStm stm env inLoop = case stm of
     do
       texp <- inferExp exp env
       checkError texp
-      --case (isTypeError texp, isTypeVoid ftyp, compatible (getType texp) ftyp) of
-      --  (False, False, True) -> return $ (SReturnExp preturn texp, Env.setReturnFound env)
-      --  (False, False, False) -> do
-      --    -- se il tipo dello scope non è void, ma è incompatibile con quello dell'espressione
-      --    -- allora si lancia un'errore.
-      --    saveLog $ launchError loc (WrongExpType exp (getType texp) ftyp)
-      --    return $ (SReturnExp preturn texp, env)
-      --  (False, True, _) -> do
-      --    -- Se il tipo dello scope è Void, allora ci troviamo all'interno di una procedura
-      --    -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
-      --    saveLog $ launchError loc (UnexpectedReturn exp)
-      --    return $ (SReturnExp preturn texp, env)
-      --  (True, _, _) -> return $ (SReturnExp preturn texp, env)
       --if isTypeError texp
       --  then
       --    return $ (SReturnExp preturn texp, env)
@@ -417,9 +393,9 @@ inferStm stm env inLoop = case stm of
         checkCompatible texp ftyp = case compatible (getType texp) ftyp of
           True -> return $ (SReturnExp preturn texp, Env.setReturnFound env)
           False -> do
-            -- Se il tipo dello scope è Void, allora ci troviamo all'interno di una procedura
-            -- in questo caso viene lanciata un eccezione dato che stiamo usando un return con valore.
-            saveLog $ launchError loc (UnexpectedReturn exp)
+            -- se il tipo dello scope non è void, ma è incompatibile con quello dell'espressione
+            -- allora si lancia un'errore.
+            saveLog $ launchError loc (WrongExpType exp (getType texp) ftyp)
             return $ (SReturnExp preturn texp, env)
 
 -------------------------------------------------------------------------------------------------------------------------------------------
