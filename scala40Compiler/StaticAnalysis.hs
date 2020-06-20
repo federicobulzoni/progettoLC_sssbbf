@@ -180,26 +180,26 @@ inferDecl decl env = case decl of
         -- Se la dichiarazione che abbiamo appena inserito nello scope è la funzione main
         -- e se lo scope corrente è quello globale, allora abbiamo trovato il main del programma,
         -- lo notifichiamo grazie alla funzione Env.setReturnFound.
-        checkMain env'
-        --if ident == "main" && Env.isGlobalScope env' then
-        --  if (not (isTypeVoid typ)) || (notEmptyParams params)
-        --    then do
-        --      saveLog $ launchError loc WrongMainSignature
-        --      functionHandler (Env.setReturnFound env)
-        --    else
-        --      functionHandler (Env.setReturnFound env')
-        --else
-        --  functionHandler env'
+        --checkMain ident (Env.isGlobalScope env') env'
+        if ident == "main" && Env.isGlobalScope env' then
+          if (not (isTypeVoid typ)) || (notEmptyParams params)
+            then do
+              saveLog $ launchError loc WrongMainSignature
+              functionHandler (Env.setReturnFound env)
+            else
+              functionHandler (Env.setReturnFound env')
+        else
+          functionHandler env'
       Failure except -> do
         saveLog $ launchError loc except
         functionHandler env
       where 
-        checkMain env'' = if ident == "main" && Env.isGlobalScope env'' then checkMainSignature env'' else functionHandler env''
-        checkMainSignature env''= if (not (isTypeVoid typ)) || (notEmptyParams params) 
-          then do
-            saveLog $ launchError loc WrongMainSignature
-            functionHandler (Env.setReturnFound env)
-          else functionHandler (Env.setReturnFound env'')
+        --checkMain env'' = if ident == "main" && Env.isGlobalScope env'' then checkMainSignature env'' else functionHandler env''
+        --checkMainSignature env''= if (not (isTypeVoid typ)) || (notEmptyParams params) 
+        --  then do
+        --    saveLog $ launchError loc WrongMainSignature
+        --    functionHandler (Env.setReturnFound env)
+        --  else functionHandler (Env.setReturnFound env'')
         
         functionHandler e = do
           -- Creare nuovo scope avviato con i parametri e il nome della fun.
@@ -209,8 +209,7 @@ inferDecl decl env = case decl of
           -- Nel caso in cui stiam trattando una funzione, ma non è presente alcun
           -- return nel suo scope lo notifichiamo.
           if Env.hasReturn e' || isTypeVoid typ
-            then
-              return $ (DefFun id params typ (DBlock tstms), e)
+            then return $ (DefFun id params typ (DBlock tstms), e)
             else do
               saveLog $ launchWarning loc (MissingReturn ident)
               return $ (DefFun id params typ (DBlock tstms), e)
@@ -230,6 +229,8 @@ inferDecl decl env = case decl of
               functionHandler (Env.setReturnFound env')
         else
           functionHandler env'
+        --checkMain ident (Env.isGlobalScope env') env'
+
       Failure except -> do
         saveLog $ launchError loc except
         functionHandler env
@@ -263,7 +264,19 @@ inferDecl decl env = case decl of
         notEmptyParams [PParam []] = False
         notEmptyParams par = True
 
-  
+  --where
+  --  checkMain "main" True env'' decl = checkMainSignature env'' decl 
+  --  checkMain _ _ env'' _ = functionHandler env''
+  --  checkMainSignature env'' (DefFun (PIdent (loc', _)) params' typ' _) = checkMainSignatureAux env'' typ' loc' params' 
+  --  checkMainSignature env'' (DefFunInLine (PIdent (loc', _)) params' typ' _) = checkMainSignatureAux env'' typ' loc' params'
+  --  checkMainSignatureAux env'' typ' loc' params' = do
+  --    if (not (isTypeVoid typ')) || (notEmptyParams params') 
+  --      then do
+  --        saveLog $ launchError loc' WrongMainSignature
+  --        functionHandler (Env.setReturnFound env)
+  --      else functionHandler (Env.setReturnFound env'')
+
+    
 {-
 inferBlock :: Block -> TypeSpec -> Env -> Logger (Block, Env)
 inferBlock (DBlock []) _ env = return $ (DBlock [], env)
@@ -451,12 +464,13 @@ inferStm stm env inLoop = case stm of
         -- typ_args è il corrispettivo di typ_params, i due devono combaciare per poter affermare
         -- che la chiamata di procedura è valida.
         do
-          case (any (isTypeError) (concat tparams), not $ allCompatible tparams typ_args, not (isTypeVoid typ)) of
-            (True,_,_) -> return ()
-            (_,True,False) -> saveLog $ launchError loc (WrongProcParams ident typ_args (map (map getType) tparams))
-            (_,True,True) -> saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-            (_,False,True) -> saveLog $ launchWarning loc (UnusedReturnValue ident)
-            otherwise -> return ()
+          checkError tparams
+          --case (any (isTypeError) (concat tparams), not $ allCompatible tparams typ_args, not (isTypeVoid typ)) of
+          --  (True,_,_) -> return ()
+          --  (_,True,False) -> saveLog $ launchError loc (WrongProcParams ident typ_args (map (map getType) tparams))
+          --  (_,True,True) -> saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+          --  (_,False,True) -> saveLog $ launchWarning loc (UnusedReturnValue ident)
+          --  otherwise -> return ()
           checkModPassCorrect <- checkExpsMod (concat tparams) (concat typ_mod_args)
           if checkModPassCorrect
             then return (SProcCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args) , env)
@@ -464,7 +478,15 @@ inferStm stm env inLoop = case stm of
         where 
           typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
           typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses
-        
+
+          checkError params' = case any (isTypeError) (concat tparams) of
+            True -> return ()
+            False -> checkAllCompatible params'
+          checkAllCompatible params' = case (not $ allCompatible tparams typ_args, not (isTypeVoid typ)) of
+            (True,False) -> saveLog $ launchError loc (WrongProcParams ident typ_args (map (map getType) tparams))
+            (True,True) -> saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+            (False,True) -> saveLog $ launchWarning loc (UnusedReturnValue ident)
+            otherwise -> return ()
 -------------------------------------------------------------------------------------------------------------------------------------------
 
   SFor id@(PIdent (loc, ident)) exp_init exp_end exp_step stm -> do
@@ -617,7 +639,8 @@ inferExp exp env = case exp of
           -- Argomenti di quando lo dichiati
           -- Lista di liste di tipi degli argomenti.
           checkModPassCorrect <- checkExpsMod (concat tparams) (concat typ_mod_args)
-          case ((any (isTypeError) (concat tparams)), checkModPassCorrect, (allCompatible tparams typ_args), isTypeVoid typ) of
+          --case ((any (isTypeError) (concat tparams)), checkModPassCorrect, (allCompatible tparams typ_args), isTypeVoid typ) of
+          case (checkErrors tparams, checkModPassCorrect, checkCompatibility tparams, isTypeVoid typ) of
             (False, True, True, False) -> returnProcWithType typ
             (False, True, True, True) -> do
               saveLog $ launchError loc (UnexpectedProc ident)
@@ -650,6 +673,9 @@ inferExp exp env = case exp of
           typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses
           
           returnProcWithType typ' = return $ ExpTyped (EFunCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args)) typ' loc
+
+          checkErrors params' = any (isTypeError) (concat params')
+          checkCompatibility params' = allCompatible params' typ_args
  -------------------------------------------------------------------------------------------------------------------------------------------
   --ENot exp -> do
   -- texp <- inferExp exp env
