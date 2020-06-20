@@ -52,17 +52,34 @@ compatible typ_exp (TArray typ2 (PInteger (_,dim2))) = case typ_exp of
 
 ------------------------------------------------------------------------------------------------------------------------
 
+--printTypeCheckErrors :: [LogElement] -> Int -> IO Bool
+--printTypeCheckErrors [] index = return True
+--printTypeCheckErrors (log:logs) index = do
+--  putStrLn $ (printIndex index) ++  " " ++ printException log
+--  res <- printTypeCheckErrors logs (index+1)
+--  if isError log
+--    then
+--      return $ res && False 
+--    else
+--      return $ res && True
 
-checkExpsMod :: [Exp] -> [(TypeSpec, ParamPassMod)] -> Bool
-checkExpsMod [] [] = True
-checkExpsMod (e:params') ((t,m):args') = (checkExpMod e m) && checkExpsMod params' args'
-
-checkExpMod :: Exp -> ParamPassMod -> Bool
-checkExpMod (ExpTyped (ELExp _) _ _) _ = True
-checkExpMod _ (ParamPassMod_ref) = False
-checkExpMod _ (ParamPassMod_res) = False
-checkExpMod _ (ParamPassMod_valres) = False
-checkExpMod _ _ = True
+checkExpsMod :: [Exp] -> [(TypeSpec, ParamPassMod)] -> Logger Bool
+checkExpsMod [] [] = return True
+checkExpsMod (e:params') ((t,m):args') = do
+  sameMod <- checkExpMod e m
+  res <- checkExpsMod params' args'
+  if sameMod == True
+    then return $ res && True
+    else  do
+      saveLog $ launchError (getLoc e) (WrongParameterPassMod e m)
+      return $ res && False
+  where
+    checkExpMod :: Exp -> ParamPassMod -> Logger Bool
+    checkExpMod texp m = case (texp,m) of
+      (ExpTyped (ELExp _) _ _, m) -> return True
+      (_, ParamPassMod_val)      -> return True
+      (_, _)                     -> return False
+    
 
 
 -- isCompatible
@@ -386,7 +403,7 @@ inferStm stm env inLoop = case stm of
 
       where
         checkError texp = case isTypeError texp of
-          True -> return $ (SReturnExp preturn texp, Env.setReturnFound env)
+          True -> return $ (SReturnExp preturn texp, env)
           False -> checkTypeVoid texp (Env.getScopeType env)
         
         checkTypeVoid texp ftyp = case isTypeVoid ftyp of
@@ -464,11 +481,10 @@ inferStm stm env inLoop = case stm of
             (_,True,True) -> saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
             (_,False,True) -> saveLog $ launchWarning loc (UnusedReturnValue ident)
             otherwise -> return ()
-          if checkExpsMod (concat tparams) (concat typ_mod_args)
+          checkModPassCorrect <- checkExpsMod (concat tparams) (concat typ_mod_args)
+          if checkModPassCorrect
             then return (SProcCall (PIdent (dloc, ident)) (zipWith (\x y-> (ArgExpTyped (zipWith (\e (t,m)->(e,t,m)) x y))) tparams typ_mod_args) , env)
-            else do
-              saveLog $ launchError loc (WrongParamMethod ident)
-              return (SProcCall id params,env)
+            else return (SProcCall id params,env)
         where 
           typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
           typ_mod_args = map (\(PParam x) -> (map (\(DParam passMod ident typ) -> (typ,passMod)) x)) paramclauses
@@ -624,7 +640,8 @@ inferExp exp env = case exp of
         do
           -- Argomenti di quando lo dichiati
           -- Lista di liste di tipi degli argomenti.
-          case ((any (isTypeError) (concat tparams)), (checkExpsMod (concat tparams) (concat typ_mod_args)), (allCompatible tparams typ_args), isTypeVoid typ) of
+          checkModPassCorrect <- checkExpsMod (concat tparams) (concat typ_mod_args)
+          case ((any (isTypeError) (concat tparams)), checkModPassCorrect, (allCompatible tparams typ_args), isTypeVoid typ) of
             (False, True, True, False) -> returnProcWithType typ
             (False, True, True, True) -> do
               saveLog $ launchError loc (UnexpectedProc ident)
@@ -632,9 +649,7 @@ inferExp exp env = case exp of
             (False, True, False, _)   -> do
               saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
               returnProcWithType (TSimple SType_Error) 
-            (False, False, _, _)      -> do
-              saveLog $ launchError loc (WrongParamMethod ident)
-              returnProcWithType (TSimple SType_Error) 
+            (False, False, _, _)      -> returnProcWithType (TSimple SType_Error) 
             otherwise                         -> returnProcWithType (TSimple SType_Error)
         --if any (isTypeError) (concat tparams)
         --  then returnProcWithType (TSimple SType_Error)                 
@@ -652,9 +667,7 @@ inferExp exp env = case exp of
         --          else do
         --            saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
         --            returnProcWithType (TSimple SType_Error)
-        --      else do
-        --        saveLog $ launchError loc (WrongParamMethod ident)
-        --        returnProcWithType (TSimple SType_Error)
+        --      else returnProcWithType (TSimple SType_Error)
       
         where 
           typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
@@ -740,7 +753,7 @@ inferBinOp expl op expr env = do
     (_ , TSimple SType_Error, _ ) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
     (_ , _ , TSimple SType_Error) -> return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Error) (getLoc texpl) 
     (BooleanOp, typl, typr) ->
-      if typl == (TSimple SType_Bool) && typr == (TSimple SType_Bool)
+      if compatible typl (TSimple SType_Bool) && compatible typr (TSimple SType_Bool)
         then return $ ExpTyped (EOp texpl op texpr) (TSimple SType_Bool) (getLoc texpl)
         else returnBinOpError texpl op texpr
     (NumericOp, typl, typr) ->
