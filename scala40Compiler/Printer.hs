@@ -137,17 +137,21 @@ instance Print AbsGramm.TypeSpec where
     AbsGramm.TSimple stype -> prPrec i 0 (concatD [prt 0 stype])
     AbsGramm.TPointer typespec -> prPrec i 0 (concatD [doc (showString "*"), prt 0 typespec])
     AbsGramm.TArray typespec pinteger -> prPrec i 0 (concatD [doc (showString "Array"), doc (showString "["), prt 0 typespec, doc (showString "]"), doc (showString "("), prt 0 pinteger, doc (showString ")")])
+  prtList _ [x] = concatD [prt 0 x]
+  prtList _ (x:xs) = concatD [prt 0 x, prt 0 xs]
+
   prt2 i e = case e of
     AbsGramm.TSimple stype -> prPrec i 0 (concatD [prt2 0 stype])
     AbsGramm.TPointer typespec -> prPrec i 0 (concatD [doc (showString $ t "*"), prt2 0 typespec])
     AbsGramm.TArray typespec pinteger -> prPrec i 0 (concatD [doc (showString $ t "Array"), doc (showString $ t "["), prt2 0 typespec, doc (showString $ t "]"), doc (showString $ t "("), prt2 0 pinteger, doc (showString $ t ")")]) 
-  
+
+
 instance Print [AbsGramm.TypeSpec] where
   prt = prtList
-  
+
 instance Print [[AbsGramm.TypeSpec]] where
   prt i e = concatD (map (\x -> concatD [doc (showString "("), prt 0 x, doc (showString ")") ] ) e )
-    
+
 instance Print AbsGramm.SType where
   prt i e = case e of
     AbsGramm.SType_Float -> prPrec i 0 (concatD [doc (showString "Float")])

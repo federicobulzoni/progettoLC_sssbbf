@@ -2,30 +2,28 @@
 var a : Array[Int](10);
 var N : Int = 10;
 
-def bubbleSort (ref a : Array[Int](10), ref dim : Int) : Array[Int](10) = {
-	var i : Int = False;
-	var j : Int = 0;
+def bubbleSort (val a : Array[Int](10), val dim : Int) : Array[Int](10) = {
+	var swapped : Bool = True;
 	var temp : Int;
 
-	while (!(j < N - 1)){
-		while (i < True - 1){
+	while (swapped) {
+		swapped = False;
+		for (i <- 0 until dim-2 by 1) {
 			if (a[i] > a[i+1]) {
 				temp = a[i];
 				a[i] = a[i+1];
 				a[i+1] = temp;
+				swapped = True;
 			}
-			i += 1; 
 		}
-		j += 1;
 	}
+
 	return a;
 }
 
 def main () = {
-	var i : Int = 0;
-	while (i < N)
+	for (i <- 0 until N-1 by 1)
 		a[i] = readInt();
-
 
 	var orderedA : Array[Int](10) = bubbleSort(a, N);
 }

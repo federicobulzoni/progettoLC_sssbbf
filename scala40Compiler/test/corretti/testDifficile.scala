@@ -14,7 +14,7 @@ def proc1 () = {
     {
         i *= i;
         i /= i;
-        def proc2 (i : Int) = proc1 ();
+        def proc2 (ref i : Int) = proc1 ();
     }
 }
 
@@ -23,7 +23,7 @@ var aPointInt4 : Array[*Int](4);
 
  
 def main() = {
-    def main1 (a : Int) : Int = {
+    def main1 ( ref a : Int) : Int = {
         return a;
     }
     proc1 ();

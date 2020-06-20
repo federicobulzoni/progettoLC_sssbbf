@@ -51,6 +51,8 @@ compatible typ_exp (TArray typ2 (PInteger (_,dim2))) = case typ_exp of
 
 checkExpsMod :: [Exp] -> [(TypeSpec, ParamPassMod)] -> Logger Bool
 checkExpsMod [] [] = return True
+checkExpsMod [] _ = return False
+checkExpsMod _ [] = return False
 checkExpsMod (e:params') ((t,m):args') = do
   sameMod <- checkExpMod e m
   res <- checkExpsMod params' args'

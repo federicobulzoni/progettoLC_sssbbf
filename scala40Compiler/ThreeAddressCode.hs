@@ -12,13 +12,13 @@ import Printer
 import Typed
 import StateManager
 
-getTACCode :: (Int, Int, [TAC], [[TAC]], Label, Label, (Label,Label), TypeSpec) -> [TAC]
-getTACCode (_, _, code, _, _, _, _, _) = code
+getTACCode :: (Int, Int, [TAC], [FunState], (Label, Label), (Label,Label)) -> [TAC]
+getTACCode (_, _, code, _, _, _) = code
 
 -- Entry point. Genera il codice TAC del programma prog.
 -- hasMain = True, se nell'analisi di semantica statica è stato trovato un main
 genTAC :: Program -> Bool -> [TAC]
-genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [[]], (LabStm $ -1), (LabStm $ -1), (LabStm $ -1, LabStm $ -1), (TSimple SType_Void))
+genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [FunState [] (TSimple SType_Void) []], (LabStm $ -1, LabStm $ -1), (LabStm $ -1, LabStm $ -1))
 
 
 genProg :: Program -> Bool -> TacState ()
@@ -67,7 +67,7 @@ genDecl decl = case decl of
     -- definizione di funzione
     DefFun id@(PIdent (dloc, ident)) params typ block -> do
         -- creazione di un nuovo stream dove inserire le istruzioni della funzione
-        createStream
+        createStream typ params
         out $ (Lab (buildFunLabel ident dloc))
         -- controllo se si è in una funzione o in una procedura
         case typ of
@@ -83,14 +83,14 @@ genDecl decl = case decl of
 
         out $ Comment "Preamble"
         genPreamble params
-        oldFunType <- getFunType
-        setFunType typ
         out $ Comment "Body"
         
         -- controllo della presenza di un return come ultima istruzione e generazione istruzioni interne.
         -- se si è in una funzione e l'ultima istruzione non è già un return, si aggiunge un return che
         -- restituisce un valore di default
         lastIsReturn <- genBlock block
+        out $ Comment "Postamble"
+        genPostamble params
         case (lastIsReturn,typ) of
             (False, TSimple SType_Void) -> out $ (ReturnVoid)
             (False, _ ) -> do
@@ -99,14 +99,11 @@ genDecl decl = case decl of
                 --addrExp <- genExpAddr (buildDefaultValue typ) typ
                 --out $ (ReturnAddr addrExp)
             otherwise -> return ()
-        out $ Comment "Postamble"
-        genPostamble params
         case typ of
             TSimple SType_Void -> out $ Comment "End procedure"
             otherwise -> out $ Comment "End function"
         -- chiusura dello stream contenente le istruzioni della funzione
         pushCurrentStream
-        setFunType oldFunType
         isGlobal <- isGlobalScope
         -- controllo per vedere se siamo in presenza del main (nello scope globale)
         if ident == "main" && isGlobal
@@ -115,10 +112,6 @@ genDecl decl = case decl of
                 return ()
             else
                 return ()
-    where
-        isGlobalScope = do
-            (k, l, revcode, funs, found_continue, found_break, o, t) <- get
-            return $ length funs == 1 
 
 -- generazione del preambolo e delle copie necessarie per la gestione del
 -- metodo di passaggio dei parametri
@@ -487,10 +480,16 @@ genStm stm = case stm of
         genParams params
         out $ Call (buildFunLabel ident loc) (sum (map (\(ArgExpTyped x) -> length x) params))
 
-    SReturn preturn -> 
+    SReturn preturn -> do
+        params <- getFunParams
+        out $ Comment "Postamble (premature)"
+        genPostamble params
         out $ ReturnVoid
 
     SReturnExp  preturn texp -> do
+        params <- getFunParams
+        out $ Comment "Postamble (premature)"
+        genPostamble params
         addrExp <- genExpAddr texp (getType texp)
         funType <- getFunType
         -- controllo per vedere se il valore ritornato è quello richiesto dalla funzione

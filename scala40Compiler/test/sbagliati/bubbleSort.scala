@@ -3,7 +3,7 @@ var a : Array[Int](10);
 var N : Int = 10;
 
 					
-def bubbleSort (a : Array[Int](10), dim : Int) : Array[Int](10) = {
+def bubbleSort (val a : Array[Int](10), ref dim : Int) : Array[Int](10) = {
 	// Assegnamento errato.
 	var i : Int = True;
 	var j : Int = 0;
