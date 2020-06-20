@@ -26,55 +26,55 @@ printTACAux (x:xs) = (padStringLabel "" ++ buildTACInstruction x):(printTACAux x
 buildTACInstruction :: TAC -> String
 buildTACInstruction instr = case instr of
     AssignBinOp addr1 addr2 op addr3 typ -> 
-        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,buildAddr addr2,buildBinOpr op,buildAddr addr3, opComment op]
+        intercalate " " [buildAddr addr1 True,"=",buildColAssignType typ,buildAddr addr2 True,buildBinOpr op,buildAddr addr3 True, opComment op]
 
     AssignUnOp addr1 op addr2 typ ->
-        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,buildUnOpr op,buildAddr addr2]
+        intercalate " " [buildAddr addr1 True,"=",buildColAssignType typ,buildUnOpr op,buildAddr addr2 True]
 
     Assign addr1 addr2 typ ->
-        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,buildAddr addr2]
+        intercalate " " [buildAddr addr1 True,"=",buildColAssignType typ,buildAddr addr2 True]
         
     AssignFromArray addr1 addr2 addr3 typ ->
-        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,buildAddr addr2,"[",buildAddr addr3,"]"]
+        intercalate " " [buildAddr addr1 True,"=",buildColAssignType typ,buildAddr addr2 True,"[",buildAddr addr3 True,"]"]
 
     AssignToArray addr1 addr2 addr3 typ ->
-        intercalate " " [buildAddr addr1,"[",buildAddr addr2,"]","=",buildColAssignType typ,buildAddr addr3]
+        intercalate " " [buildAddr addr1 True,"[",buildAddr addr2 True,"]","=",buildColAssignType typ,buildAddr addr3 True]
 
     AssignFromRef addr1 addr2 typ ->
-        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,"&",buildAddr addr2]
+        intercalate " " [buildAddr addr1 True,"=",buildColAssignType typ,"&",buildAddr addr2 True]
         
     AssignFromPointer addr1 addr2 typ ->
-        intercalate " " [buildAddr addr1,"=",buildColAssignType typ,"*",buildAddr addr2] 
+        intercalate " " [buildAddr addr1 True,"=",buildColAssignType typ,"*",buildAddr addr2 True] 
         
     AssignToPointer addr1 addr2 typ ->
-        intercalate " " ["*",buildAddr addr1,"=",buildColAssignType typ,buildAddr addr2] 
+        intercalate " " ["*",buildAddr addr1 True,"=",buildColAssignType typ,buildAddr addr2 True] 
         
     AssignFromFunction addr1 label n typ ->
-        intercalate " " [buildAddr addr1,"=",buildColAssignType typ, (color Blue Bold "fcall"),buildLabel label,",",show n] 
+        intercalate " " [buildAddr addr1 True,"=",buildColAssignType typ, (color Blue Bold "fcall"),buildLabel label,",",show n] 
         
     Goto label -> 
         (color Blue Bold "goto ") ++ buildLabel label
     
     IfBool addr1 label -> 
-        (color Blue Bold "if ") ++ buildAddr addr1 ++ (color Blue Bold " goto ") ++  buildLabel label
+        (color Blue Bold "if ") ++ buildAddr addr1 True ++ (color Blue Bold " goto ") ++  buildLabel label
 
     IfRel op addr1 addr2 label -> 
-        (color Blue Bold "if ") ++ buildAddr addr1 ++ " " ++ buildBinOpr op ++ " " ++ buildAddr addr2 ++ (color Blue Bold " goto ") ++ buildLabel label
+        (color Blue Bold "if ") ++ buildAddr addr1 True ++ " " ++ buildBinOpr op ++ " " ++ buildAddr addr2 True ++ (color Blue Bold " goto ") ++ buildLabel label
 
     IfFalse addr1 label -> 
-        (color Blue Bold "ifFalse ") ++ buildAddr addr1 ++ (color Blue Bold " goto ") ++ buildLabel label
+        (color Blue Bold "ifFalse ") ++ buildAddr addr1 True ++ (color Blue Bold " goto ") ++ buildLabel label
     
     ReturnVoid -> 
         (color Blue Bold "return")
 
     ReturnAddr addr1 -> 
-        (color Blue Bold "return ") ++ buildAddr addr1
+        (color Blue Bold "return ") ++ buildAddr addr1 True
 
     Param addr1 -> 
-        (color Blue Bold "param ") ++ buildAddr addr1
+        (color Blue Bold "param ") ++ buildAddr addr1 True
 
     Call label n ->
-        intercalate " " ["pcall",buildLabel label,",",show n]
+        intercalate " " [(color Blue Bold "pcall"),buildLabel label,",",show n]
 
     Comment comment ->
         color Default Italic $ color Default Faint $ "// " ++ comment
@@ -82,7 +82,7 @@ buildTACInstruction instr = case instr of
     CommentArgs tactyp_addr -> 
         color Default Italic $ color Default Faint $ "// Args: " ++ if (length tactyp_addr == 0)
             then "None"
-            else intercalate ", " (map (\(t,a) ->(buildAddr a)) tactyp_addr)
+            else intercalate ", " (map (\(t,a) ->(buildAddr a False)) tactyp_addr)
 
 
 opComment :: BinOp -> String
@@ -118,10 +118,14 @@ buildUnOpr op = case op of
     AbsTAC.Not       -> "!"
     AbsTAC.Cast typ  -> "(" ++ buildAssignType typ ++ ")"
 
-buildAddr :: Addr -> String
-buildAddr addr = case addr of
-    Var ident (r,c)   -> id (color Green Bold ident) ++ (color Green Italic ("@(" ++ show r ++ "," ++ show c ++ ")"))
-    VarCopy ident (r,c) -> id (color Green Bold ident) ++ (color Green Italic ("@copy@(" ++ show r ++ "," ++ show c ++ ")"))
+buildAddr :: Addr -> Bool -> String
+buildAddr addr colored = case addr of
+    Var ident (r,c)  -> if colored
+        then id (color Green Bold ident) ++ (color Green Italic ("@(" ++ show r ++ "," ++ show c ++ ")"))
+        else  id ident ++ "@(" ++ show r ++ "," ++ show c ++ ")"
+    VarCopy ident (r,c) -> if colored
+        then id (color Green Bold ident) ++ (color Green Italic ("@copy@(" ++ show r ++ "," ++ show c ++ ")"))
+        else id ident ++ "@copy@(" ++ show r ++ "," ++ show c ++ ")"
     Temp n            -> id "t" ++ show n
     LitString n       -> n
     LitFloat n        -> show n

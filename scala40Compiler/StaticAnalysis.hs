@@ -650,23 +650,23 @@ inferExp exp env = case exp of
               returnProcWithType (TSimple SType_Error) 
             (False, False, _, _)      -> returnProcWithType (TSimple SType_Error) 
             otherwise                         -> returnProcWithType (TSimple SType_Error)
-        --if any (isTypeError) (concat tparams)
-        --  then returnProcWithType (TSimple SType_Error)                 
-        --  else
-        --    if checkExpsMod (concat tparams) (concat typ_mod_args)
-        --      then
-        --        if allCompatible tparams typ_args
-        --          then 
-        --            if isTypeVoid typ
-        --              then do
-        --                saveLog $ launchError loc (UnexpectedProc ident)
-        --                returnProcWithType (TSimple SType_Error)                   
-        --              else 
-        --                returnProcWithType typ              
-        --          else do
-        --            saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
-        --            returnProcWithType (TSimple SType_Error)
-        --      else returnProcWithType (TSimple SType_Error)
+          --if any (isTypeError) (concat tparams)
+          --  then returnProcWithType (TSimple SType_Error)                 
+          --  else
+          --    if checkModPassCorrect
+          --      then
+          --        if allCompatible tparams typ_args
+          --          then 
+          --            if isTypeVoid typ
+          --              then do
+          --                saveLog $ launchError loc (UnexpectedProc ident)
+          --                returnProcWithType (TSimple SType_Error)                   
+          --              else 
+          --                returnProcWithType typ              
+          --          else do
+          --            saveLog $ launchError loc (WrongFunctionParams ident typ_args (map (map getType) tparams) typ)
+          --            returnProcWithType (TSimple SType_Error)
+          --      else returnProcWithType (TSimple SType_Error)
       
         where 
           typ_args = map (\x -> ( map (\(t,m) ->t) x ) ) typ_mod_args
