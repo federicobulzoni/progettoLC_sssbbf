@@ -109,12 +109,12 @@ getExceptionMsg except = case except of
 
     WrongWhileCondition exp typ ->
         "Expected boolean expression, but found " ++ printTree exp
-        ++ (if isNotNull exp then " of type " ++ printTree typ ++ ":" else "") ++ ":"
+        ++ (if isNotNull exp then " of type " ++ printTree typ else "") ++ ":"
         ++ "\n\t" ++ "while ( " ++ printTree exp ++ " )"
     
     WrongIfCondition exp typ ->
         "Expected boolean expression, but found " ++ printTree exp
-        ++ (if isNotNull exp then " of type " ++ printTree typ ++ ":" else "") ++ ":"
+        ++ (if isNotNull exp then " of type " ++ printTree typ else "") ++ ":"
         ++ "\n\t" ++ "if ( " ++ printTree exp ++ " )"
     
     WrongReturnValue typ -> 
@@ -163,7 +163,7 @@ getExceptionMsg except = case except of
 
     ArraySubscriptNotInt exp typ -> 
         "Array subscript must be an integer, but found " 
-        ++ (if isNotNull exp then printTree exp ++ " which has type " ++ printTree typ ++ "." else (color Default Italic "Null"))
+        ++ (if isNotNull exp then printTree exp ++ " which has type " ++ printTree typ else (color Default Italic "Null"))
         ++ "."
 
     

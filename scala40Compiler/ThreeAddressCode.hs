@@ -20,7 +20,6 @@ getTACCode (_, _, code, _, _, _) = code
 genTAC :: Program -> Bool -> [TAC]
 genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [FunState [] (TSimple SType_Void) []], (LabStm $ -1, LabStm $ -1), (LabStm $ -1, LabStm $ -1))
 
-
 genProg :: Program -> Bool -> TacState ()
 genProg (Prog decls) hasMain = do
     -- controlla la presenta di un main
@@ -144,6 +143,9 @@ genPostamble (param:params) = do
                 False -> return ()
             genPostambleAux (PParam xs)
 
+-- funzione che presa l'espressione la controlla
+-- e all'occorrenza (quando siamo in presenza di espressioni complesse)
+-- genera un nuovo temporaneo e genera i casting
 genExpAddr :: Exp -> TypeSpec -> TacState Addr
 genExpAddr texp typ =
     case (getType texp == typ, isLiteral texp, isLExp texp) of
@@ -164,6 +166,8 @@ genExpAddr texp typ =
             genExp addrExp texp typ
             return addrExp
 
+-- funzione che valuta ogni tipo di espressione e se serve
+-- esegue il cast
 genExp :: Addr -> Exp -> TypeSpec -> TacState ()
 genExp addr texp@(ExpTyped exp _ _) typ = case exp of
     EOp texpl op texpr -> do

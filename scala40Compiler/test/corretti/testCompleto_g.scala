@@ -9,7 +9,6 @@ def foo(val arr1 : Array[*Int](3)) : Float = {
 
     var d1 : Int = -'c';
     var d : Float = foo2(b)(d1); 
-    //var d : Float = foo2(b, -b);
 
     for (iter <- 0 until *arr1[1] by 'c'){
         while(iter < iter^2){
@@ -35,5 +34,5 @@ def main() = {
     var a : Int = 3;
     var b : Int = 2;
     var c : Int = a;
-    foo(Array(&a, &b, &c));
+    var re : Float = foo(Array(&a, &b, &c));
 }
