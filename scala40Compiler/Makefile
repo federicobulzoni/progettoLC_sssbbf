@@ -1,6 +1,6 @@
 # Makefile Scala40Compiler
-DEMO_ERR = bubbleSort_sbadato
-DEMO_TAC = bubbleSort_corretto
+DEMO_ERR = bubbleSort
+DEMO_TAC = bubbleSort
 PATH_DEMO = test
 
 all : Scala40Compiler
