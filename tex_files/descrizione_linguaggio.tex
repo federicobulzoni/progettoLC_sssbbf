@@ -3,8 +3,8 @@
 \subsection*{Parole riservate}
 Le parole riservate in \SBF\ sono le seguenti:
 \begin{gather*}
-\If,\ \Else,\ \Do,\ \While,\ \Def,\ \Return,\ \Var,\ \texttt{Array},\ \False,\ \True,\\
-\texttt{Null},\ \texttt{Char},\ \texttt{String},\ \texttt{Int},\ \texttt{Float},\ \texttt{Bool}.
+\If,\ \Else,\ \Do,\ \While,\ \Def,\ \Return,\ \Var,\ \texttt{Array},\ \False,\ \True,\ \texttt{until},\ \texttt{by},\\
+ \texttt{Null},\ \texttt{Char},\ \texttt{String},\ \texttt{Int},\ \texttt{Float},\ \texttt{Bool},\ \texttt{val},\ \texttt{ref},\ \texttt{res},\ \texttt{valres}.
 \end{gather*}
 
 \subsection*{Identificatori}
@@ -63,16 +63,20 @@ I token possono essere separati dai caratteri di spaziatura standard o commenti.
 	\end{align*}
 	mentre l'elemento $\token{ParamClauses}$ è una sequenza, non vuota, di $\token{ParamClause}$, e ciascun $\token{ParamClause}$ ha la forma
 	\begin{equation*}
-	\token{ParamClause} ::=\ \texttt{(}\ \token{Args}\ \texttt{)}
+	\token{ParamClause} ::=\ \texttt{(}\ \token{Params}\ \texttt{)}
 	\end{equation*}
-	$\token{Args}$ è una sequenza, che può essere vuota, di elementi separati da virgola della forma
+	$\token{Params}$ è una sequenza, che può essere vuota, di elementi separati da virgola della forma
 	\begin{equation*}
-	\token{Arg} ::=\ \token{Ident}\ \texttt{:}\ \token{TypeSpec}
+	\token{Param} ::=\ \token{Mode}\ \token{Ident}\ \texttt{:}\ \token{TypeSpec}
+ 	\end{equation*}
+ 	dove $\token{Mode}$ indica la modalità di passaggio del parametro
+ 	\begin{equation*}
+ 	\token{Mode} ::=\ \texttt{val}\ |\ \texttt{ref}\ |\ \texttt{res}\ |\ \texttt{valres}
 	\end{equation*}
 	
 	Ad esempio, una specifica di tipo valida è $\texttt{Array[*Int](2)}$, che indica un array di puntatori ad interi di dimensione $2$. Ad esempio, una definizione di funzione valida è
 	\begin{verbatim}
-	def foo(val a: Array[*Int](2), val p: *Int)(x: Int): Int = 
+	def foo(val a: Array[*Int](2), val p: *Int)(val x: Int): Int = 
 		*a[1] + *a[2] + *p + x;
 	\end{verbatim}
 	Essa prende come parametri un array di puntatori ad interi, un puntatore ad un intero e un intero e restituisce un intero.
@@ -89,15 +93,17 @@ I token possono essere separati dai caratteri di spaziatura standard o commenti.
 	|\ &\token{LExpr}\ \token{OpAssign}\ \token{Expr}\ \texttt{;}\\
 	|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
 	|\ &\texttt{if}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\ \texttt{else}\ \token{Stmt}\\
-	|\ &\texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
+	|\ &\texttt{for}\ \texttt{(}\ \token{Ident}\ \texttt{<-}\ \token{Expr}\ \texttt{until}\ \token{Expr}\ \texttt{by}\ \token{Expr}\ \texttt{)}\ \token{Stmt}\\
 	|\ &\texttt{do}\ \token{Stmt}\ \texttt{while}\ \texttt{(}\ \token{Expr}\ \texttt{)}\ \texttt{;}\\
+	|\ &\texttt{break}\ \texttt{;}\\
+ 	|\ &\texttt{continue}\ \texttt{;}\\
 	|\ &\texttt{return}\ \texttt{;}\\
 	|\ &\texttt{return}\ \token{Expr}\ \texttt{;}\\
-	|\ &\token{Ident}\ \token{ParamsList}\ \texttt{;}
+	|\ &\token{Ident}\ \token{Args}\ \texttt{;}
 	\end{align*}
-	dove, nell'ultima istruzione, che corrisponde alla chiamata di procedura o funzione, $\token{ParamsList}$ è una sequenza, non vuota, di $\token{Params}$ della forma
+	dove, nell'ultima istruzione, che corrisponde alla chiamata di procedura o funzione, $\token{Args}$ è una sequenza, non vuota, di $\token{Arg}$ della forma
 	\begin{equation*}
-	\token{Params} ::=\ \texttt{(}\ \token{ExprList}\ \texttt{)}
+	\token{Arg} ::=\ \texttt{(}\ \token{ExprList}\ \texttt{)}
 	\end{equation*}
 	e $\token{ExprList}$ è una sequenza, che può essere vuota, di $\token{Expr}$ separate da virgola.
 	
@@ -121,10 +127,11 @@ I token possono essere separati dai caratteri di spaziatura standard o commenti.
 	|\ &\token{LExpr}\\
 	|\ &\texttt{\&}\ \token{LExpr}\\
 	|\ &\texttt{Array}\ \texttt{(}\ \token{ExprList}\ \texttt{)}\\
-	|\ &\token{Ident}\ \token{ParamsList}\\
+	|\ &\token{Ident}\ \token{Args}\\
 	|\ &\token{Expr}\ \token{BinOp}\ \token{Expr}\\
 	|\ &\token{UnOp}\ \token{Expr}\\
 	|\ &\texttt{(}\ \token{Expr}\ \texttt{)}
+	|\ &\token{Ident}\ \token{Args}\\
 	\end{align*}
 	\begin{align*}
 	\token{BinOp} ::=\ 
@@ -186,7 +193,7 @@ Gli operatori binari sono classificati in \texttt{numerici}, \texttt{booleani}, 
 Classe & Membri \\ \hline
 Numerici & $\texttt{+},\ \texttt{-},\ \texttt{*},\ \texttt{/},\ \texttt{\^{}},\ \texttt{\%}$\\
 Booleani & $\texttt{||},\ \texttt{\&\&}$ \\
-Relazionali &$\texttt{<},\ \texttt{<=},\ \texttt{>},\ \texttt{>=},\ \texttt{==},\ \texttt{!=} $ \\
+Relazionali &$\texttt{<},\ \texttt{<=},\ \texttt{>},\ \texttt{>=} , \texttt{<},\ \texttt{<=},\ \texttt{>},\ \texttt{>=} $ \\
 \end{tabular}
 \caption{Classificazione operatori binari.}
 \label{tab:tipoOpBinari}
@@ -211,13 +218,13 @@ Le regole di inferenza per le altre espressioni sono riportate in tabella \ref{t
 \resizebox{\textwidth}{!}{
 \begin{tabular}{l|l|l}
 Operatore         &         Vincoli            & Tipo \\ \hline
-Array($e_1$, $\dots$, $e_n$) & $\forall_i (\tau(e_i) \leq max(\lbrace \tau(e_1), \dots, \tau(e_n)\rbrace)$ & $Array[max(\lbrace \tau(e_1), \dots, \tau(e_n)\rbrace)](n)$\\
-if $e_c$ then $e_T$ else $e_F$ & $e_c \leq Bool \wedge e_T \leq max(\tau(e_T), \tau(e_F)) \wedge e_F \leq max(\tau(e_T), \tau(e_F))$ & $max(\tau(e_T), \tau(e_F))$\\
+Array($e_1$, $\dots$, $e_n$) & $\forall_i (\tau(e_i) \leq max(\rbrace \tau(e_1), \dots, \tau(e_n)\rbrace)$ & $Array[max(\lbrace \tau(e_1), \dots, \tau(e_n)\rbrace)][n]$\\
+if $e_c$ then $e_T$ else $e_F$ & $e_c \leq Bool \wedge e_T \leq max(\tau(e_T), \tau(e_F)) \wedge e_F \leq max(\tau(e_T), \tau(e_F))$ & $max(\tau(e_T), \tau(e_F)$\\
 \end{tabular}
 }
 
 \caption{Regole di derivazione per l'operatore di creazione di array e l'operatore condizionale.}
-\label{tab:altro}
+\label{tab:binari}
 \end{table}
 
 Riguardo alle $L$-espressioni, ogni identificatore all'interno di un programma \texttt{Scala40} ha associato un tipo, nel caso delle variabili tale tipo è il tipo di dichiarazione della variabile, nel caso delle funzioni è il loro tipo di ritorno. Le regole di derivazione per gli operatori su $L$-espressioni di accesso ad un array, referenziamento e dereferenziamento sono riportate in tabella \ref{tab:LExp}.
@@ -232,7 +239,7 @@ $lexp[e_a]$ & $\tau(e_a) \leq Bool \wedge \tau(lexp) = Array[typ](dim)$  con $ty
 \end{tabular}
 }
 \caption{Regole di derivazione per gli operatori su $L$-espressioni.}
-\label{tab:LExp}
+\label{lab:LExp}
 \end{table}
 
 Negli statement di assegnamento è richiesto che il tipo della $R$-espressione sia compatibile con il tipo della $L$-espressione a cui si vuole assegnare.
@@ -244,13 +251,13 @@ La signature della procedura principale di un programma \texttt{Scala40} è fiss
 Le chiamate di procedura non possono essere utilizzate come espressioni in quanto non hanno alcun valore di ritorno.
 
 Riguardo al passaggio dei parametri attuali nelle chiamate di funzioni/procedure si richiede che il parametro attuale sia una $L$-espressione nel caso in cui il corrispondente parametro formale sia dichiarato con modalità per \texttt{riferimento}, per \texttt{risultato} o per \texttt{valore-risultato}. Nel caso in cui il parametro formale sia dichiarato con modalità per \texttt{valore} non ci sono vincoli sul corrispondente parametro attuale.
-Si richiede una corrispondenza biunivoca tra la firma di una chiamata di procedura/funzione e la corrispondente firma di procedura/funzione, ogni parametro attuale oltre a rispettare i vincoli sulla modalità deve avere tipo compatibile con il tipo del corrispondente parametro formale.
+Si richiede una corrispondenza bi-univoca tra la firma di una chiamata di procedura/funzione e la corrispondente firma di procedura/funzione, ogni parametro attuale oltre a rispettare i vincoli sulla modalità deve avere tipo compatibile con il tipo del corrispondente parametro formale.
 
 Negli statement \texttt{return exp} si richiede che il tipo della espressione \texttt{exp} sia compatibile con il tipo dello scope in cui l'istruzione è contenuta, se così non è un errore viene lanciato.
 
 Non è permesso utilizzare statement \texttt{return exp} all'interno di procedure, sono chiaramente permessi gli statement \texttt{return} senza espressione di ritorno; vale il viceversa nel caso delle funzioni.
 
-\subsection*{Break e continue}
+\subsection*{Altri vincoli forti}
 Gli statement \texttt{break} e \texttt{continue} sono utilizzabili solamente all'interno di cicli indeterminati (\texttt{while} e \texttt{do ... while}), nel caso ne si rilevi un utilizzo inappropriato viene lanciato un errore.
 
 \subsection*{Vincoli deboli}
