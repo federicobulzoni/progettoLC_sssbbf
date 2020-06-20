@@ -260,6 +260,7 @@ Non è permesso utilizzare statement \texttt{return exp} all'interno di procedur
 \subsection*{Altri vincoli forti}
 Gli statement \texttt{break} e \texttt{continue} sono utilizzabili solamente all'interno di cicli indeterminati (\texttt{while} e \texttt{do ... while}), nel caso ne si rilevi un utilizzo inappropriato viene lanciato un errore.
 
+All'interno di un ciclo \texttt{for} la variabile di iterazione è considerata come una implicita dichiarazione locale del corpo.
 \subsection*{Vincoli deboli}
 La violazione dei seguenti vincoli non impedisce il proseguimento alle successive fasi della compilazione, tuttavia viene visualizzato un messaggio di avviso in quanto si ritiene che il comportamento ottenuto possa non essere quello cercato.
 

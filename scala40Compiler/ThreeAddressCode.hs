@@ -20,7 +20,6 @@ getTACCode (_, _, code, _, _, _) = code
 genTAC :: Program -> Bool -> [TAC]
 genTAC prog hasMain = reverse $ getTACCode $ execState (genProg prog hasMain) (0, 0 ,[], [FunState [] (TSimple SType_Void) []], (LabStm $ -1, LabStm $ -1), (LabStm $ -1, LabStm $ -1))
 
-
 genProg :: Program -> Bool -> TacState ()
 genProg (Prog decls) hasMain = do
     -- controlla la presenta di un main
