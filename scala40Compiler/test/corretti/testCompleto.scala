@@ -7,7 +7,7 @@ def foo(val arr1 : Array[*Int](3)) : Float = {
 
     def foo2(ref p1 : Int) (res p2 : Int) : Float = p1 * p2 * 3.3;
 
-    var d1 : Int = -b;
+    var d1 : Int = -'c';
     var d : Float = foo2(b)(d1); 
     //var d : Float = foo2(b, -b);
 
