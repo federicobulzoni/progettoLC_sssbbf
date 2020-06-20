@@ -148,7 +148,7 @@ Il linguaggio ha scoping statico con visibilità dal punto di dichiarazione in p
 Gli identificatori di variabili e funzioni/procedure devono essere univoci all'interno di uno stesso scope. Lo spazio dei nomi è unico, ossia non è permesso dichiarare una variabile e una funzione/procedura con lo stesso nome. 
 
 \subsection*{Vincoli riguardanti i tipi}
-Il linguaggio ha 5 tipi base: \texttt{Bool}, \texttt{Char}, \texttt{Int}, \texttt{Float} e \texttt{String}; le compatibilità tra i tipi di base sono riportate in tabella \ref{tab:compatibilitaTipiBase}. \\
+Il linguaggio ha 5 tipi base: \texttt{Bool}, \texttt{Char}, \texttt{Int}, \texttt{Float} e \texttt{String}; le compatibilità tra i tipi di base sono riportate in tabella \ref{tab:compatibilitaTipiBase}. La rappresentazione grafica delle compatibilità è in figura \ref{tab:albero}.
 
 \begin{table}[]
 \begin{tabular}{l|lllll}
@@ -162,6 +162,38 @@ String & F    & F    & F   & F     & T
 \caption{Tabella compatibilità tra tipi di base: una entry $(t_i, t_j)$ ha valore $T$ se il tipo $t_i$ può essere convertito al tipo $t_j$, ha valore $F$ altrimenti.}
 \label{tab:compatibilitaTipiBase}
 \end{table}
+
+\begin{figure}
+	\centering
+	\begin{tikzpicture}[ 
+	label distance=3mm,
+	every label/.style={blue},
+	event/.style={rectangle, draw, text centered,anchor=north},
+	edge from parent/.style={very thick,draw=black!70,-latex},
+	edge from parent path={(\tikzparentnode.south) -- ++(0,-0.50cm)-| (\tikzchildnode.north)},
+	]
+	\node [circle] (){String}
+	
+	;\end{tikzpicture}
+	\begin{tikzpicture}
+	[ 
+	label distance=3mm,
+	every label/.style={blue},
+	event/.style={rectangle,draw,text centered,anchor=north},
+	edge from parent/.style={very thick,draw=black!70,-latex},
+	edge from parent path={(\tikzparentnode.south) -- ++(0,-0.50cm)-| (\tikzchildnode.north)},
+	]
+	\node []{Float}
+	child {node {Int}
+		child{ node {Char} 
+			child { node {Bool}}
+		}
+	};
+	\end{tikzpicture}
+	\caption{Rappresentazione grafica della compatibilità tra tipi base.}
+	\label{tab:albero}
+\end{figure}
+
 
 Oltre ai tipi di base  sono presenti due tipi composti: \texttt{*typ}, puntatore a \texttt{typ} e \texttt{Array[typ](dim)}, array di dimensione \texttt{dim} di elementi di tipo \texttt{typ}, dove \texttt{typ} è un tipo base o un tipo composto e \texttt{dim} è un intero; il tipo speciale \texttt{*Void} è utilizzato internamente per codificare il valore \texttt{Null}. È possibile assegnare il valore \texttt{Null} a qualsiasi elemento di tipo puntatore a \texttt{typ} qualunque sia il tipo \texttt{typ} puntato.
 I tipi composti seguono le seguenti regole di compatibilità:
@@ -193,7 +225,7 @@ Gli operatori binari sono classificati in \texttt{numerici}, \texttt{booleani}, 
 Classe & Membri \\ \hline
 Numerici & $\texttt{+},\ \texttt{-},\ \texttt{*},\ \texttt{/},\ \texttt{\^{}},\ \texttt{\%}$\\
 Booleani & $\texttt{||},\ \texttt{\&\&}$ \\
-Relazionali &$\texttt{<},\ \texttt{<=},\ \texttt{>},\ \texttt{>=} , \texttt{<},\ \texttt{<=},\ \texttt{>},\ \texttt{>=} $ \\
+Relazionali &$\texttt{<},\ \texttt{<=},\ \texttt{>},\ \texttt{>=} , \texttt{==},\ \texttt{!=} $ \\
 \end{tabular}
 \caption{Classificazione operatori binari.}
 \label{tab:tipoOpBinari}
@@ -224,7 +256,7 @@ if $e_c$ then $e_T$ else $e_F$ & $e_c \leq Bool \wedge e_T \leq max(\tau(e_T), \
 }
 
 \caption{Regole di derivazione per l'operatore di creazione di array e l'operatore condizionale.}
-\label{tab:binari}
+\label{tab:altro}
 \end{table}
 
 Riguardo alle $L$-espressioni, ogni identificatore all'interno di un programma \texttt{Scala40} ha associato un tipo, nel caso delle variabili tale tipo è il tipo di dichiarazione della variabile, nel caso delle funzioni è il loro tipo di ritorno. Le regole di derivazione per gli operatori su $L$-espressioni di accesso ad un array, referenziamento e dereferenziamento sono riportate in tabella \ref{tab:LExp}.
@@ -239,7 +271,7 @@ $lexp[e_a]$ & $\tau(e_a) \leq Bool \wedge \tau(lexp) = Array[typ](dim)$  con $ty
 \end{tabular}
 }
 \caption{Regole di derivazione per gli operatori su $L$-espressioni.}
-\label{lab:LExp}
+\label{tab:LExp}
 \end{table}
 
 Negli statement di assegnamento è richiesto che il tipo della $R$-espressione sia compatibile con il tipo della $L$-espressione a cui si vuole assegnare.

@@ -103,7 +103,7 @@ isGlobalScope = do
     (_, _, _, funs, _, _) <- get
     return $ length funs == 1 
 
--- inserimento istruzione Call al main se presente
+-- inserimento istruzione nello scope globale
 pushMain :: TAC -> TacState ()
 pushMain instr = do
     (k, l, revcode, funs, loop, err) <- get
